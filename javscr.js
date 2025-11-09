@@ -1,4 +1,5 @@
 // Données des clubs
+/*
 const clubs = [
     'Man City', 'Real Madrid', 'Inter', 'Arsenal', 'Leverkusen', 'Bayern', 
     'Barcelona', 'Liverpool', 'Paris SG', 'Dortmund', 'Atalanta', 'RB Leipzig', 
@@ -345,3 +346,85 @@ function afficherEnjeux() {
     
     document.getElementById('tableau-enjeux').innerHTML = html;
 }
+*/
+
+
+
+
+
+
+
+
+
+
+
+// Remplacer les fonctions existantes par des appels API
+async function chargerDonnees() {
+    try {
+        const response = await fetch('/api/clubs');
+        const clubs = await response.json();
+        
+        // Initialiser les selects avec les vrais clubs
+        initialiserSelectsAvecDonnees(clubs);
+        
+        // Charger les autres données
+        await chargerClassement();
+        await chargerProbabilites();
+        
+    } catch (error) {
+        console.error('Erreur chargement données:', error);
+    }
+}
+
+async function chargerClassement(journee = 'J7') {
+    try {
+        const response = await fetch(`/api/classement/${journee}`);
+        const classement = await response.json();
+        afficherClassement(classement);
+    } catch (error) {
+        console.error('Erreur chargement classement:', error);
+    }
+}
+
+async function chargerDistribution(club, type) {
+    try {
+        const response = await fetch(`/api/distribution/${club}/${type}`);
+        const distribution = await response.json();
+        afficherChart(distribution, club, type);
+    } catch (error) {
+        console.error('Erreur chargement distribution:', error);
+    }
+}
+
+async function chargerProbabilites(seuil = 'top8') {
+    try {
+        const response = await fetch(`/api/probabilites/${seuil}`);
+        const probabilites = await response.json();
+        afficherProbabilitesChart(probabilites, seuil);
+    } catch (error) {
+        console.error('Erreur chargement probabilités:', error);
+    }
+}
+
+async function simulerMatchAPI(club1, club2) {
+    try {
+        const response = await fetch('/api/simuler-match', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ club1, club2 })
+        });
+        const resultat = await response.json();
+        afficherResultatMatch(resultat, club1, club2);
+    } catch (error) {
+        console.error('Erreur simulation match:', error);
+    }
+}
+
+// Mettre à jour les écouteurs d'événements
+document.getElementById('simuler-match').addEventListener('click', function() {
+    const club1 = document.getElementById('club1-select').value;
+    const club2 = document.getElementById('club2-select').value;
+    simulerMatchAPI(club1, club2);
+});
