@@ -9,12 +9,23 @@ from IPython.display import FileLink
 # On récupère d'abord les données concernant les clubs participant à la ligue des champions, à la veille du début de la compétition.
 
 
-elo_rating = 'C:\\Users\\Oscar\\OneDrive\\Documents\\2A\\Projet_IMI_ldc\\Données\\Classements elo\\Elo rating pré ldc.csv'
+elo_rating = "C:\\Users\\pc\\OneDrive\\Bureau\\tdlog\\mir012005.github.io\\Elo_rating_pré_ldc.csv"
 elo = pd.read_csv(elo_rating)
 
-clubs_en_ldc = sorted(['Man City', 'Real Madrid', 'Inter', 'Arsenal', 'Leverkusen', 'Bayern', 'Barcelona', 'Liverpool', 'Paris SG', 'Dortmund', 'Atalanta', 'RB Leipzig', 'Atletico', 'Sporting', 'Juventus', 'Milan', 'Stuttgart', 'PSV', 'Girona', 'Aston Villa', 'Monaco', 'Bologna', 'Benfica', 'Lille', 'Feyenoord', 'Sparta Praha', 'Brugge', 'Brest', 'Salzburg', 'Celtic', 'Sturm Graz', 'Shakhtar', 'Dinamo Zagreb', 'Crvena Zvezda', 'Young Boys', 'Slovan Bratislava'])
-elo_pre_ldc = elo[elo["Club"].isin(clubs_en_ldc)]
+#clubs_en_ldc = sorted(['Man City', 'Real Madrid', 'Inter', 'Arsenal', 'Leverkusen', 'Bayern', 'Barcelona', 'Liverpool', 'Paris SG', 'Dortmund', 'Atalanta', 'RB Leipzig', 'Atletico', 'Sporting', 'Juventus', 'Milan', 'Stuttgart', 'PSV', 'Girona', 'Aston Villa', 'Monaco', 'Bologna', 'Benfica', 'Lille', 'Feyenoord', 'Sparta Praha', 'Brugge', 'Brest', 'Salzburg', 'Celtic', 'Sturm Graz', 'Shakhtar', 'Dinamo Zagreb', 'Crvena Zvezda', 'Young Boys', 'Slovan Bratislava'])
+clubs_en_ldc = sorted([
+    "Paris Saint‑Germain", "Real Madrid", "Manchester City", "Bayern München",
+    "Liverpool", "Inter Milan", "Chelsea", "Borussia Dortmund", "Barcelona",
+    "Arsenal", "Bayer Leverkusen", "Atlético Madrid", "Benfica", "Atalanta",
+    "Villarreal", "Juventus", "Eintracht Frankfurt", "Club Brugge",
+    "Tottenham Hotspur", "PSV Eindhoven", "Ajax", "Napoli", "Sporting CP",
+    "Olympiacos", "Slavia Praha", "Bodø/Glimt", "Marseille",
+    "Copenhagen", "Monaco", "Galatasaray", "Union Saint‑Gilloise",
+    "Qarabağ", "Athletic Club", "Newcastle United", "Pafos", "Kairat Almaty"
+])
 
+elo_pre_ldc = elo[elo["Club"].isin(clubs_en_ldc)]
+"""
 elo_J5 = pd.read_csv('C:\\Users\\Oscar\\OneDrive\\Documents\\2A\\Projet_IMI_ldc\\Données\\Classements elo\\Elo J5.csv')
 elo_ldc_J5 = elo_J5[elo_J5["Club"].isin(clubs_en_ldc)]
 
@@ -23,9 +34,10 @@ elo_ldc_J6 = elo_J6[elo_J6["Club"].isin(clubs_en_ldc)]
 
 elo_J7 = pd.read_csv('C:\\Users\\Oscar\\OneDrive\\Documents\\2A\\Projet_IMI_ldc\\Données\\Classements elo\\Elo J7.csv')
 elo_ldc_J7 = elo_J7[elo_J7["Club"].isin(clubs_en_ldc)]
-
+"""
 # Choix de l'elo 
-elo_ldc = elo_ldc_J7
+#elo_ldc = elo_ldc_J7
+elo_ldc = elo_pre_ldc
 
 def elo_of(club):
     # étant donné une chaine de caractère indiquant un club en ldc, retourne son elo

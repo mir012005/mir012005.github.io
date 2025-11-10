@@ -1,81 +1,84 @@
-from flask import Flask, jsonify, request, send_from_directory
+# app.py
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-import Modele_elo_rating as model
-import json
-import os
+import pandas as pd
+from Modele_elo_rating import simulation_pour_enjeux, distribution_par_position, classement_par_adversaires
+from results import convert_txt_to_csv
 
 app = Flask(__name__)
-CORS(app)  # Autoriser les requêtes cross-origin
+CORS(app)
 
-# Servir les fichiers statiques
-@app.route('/')
-def serve_index():
-    return send_from_directory('../frontend', 'index.html')
+# --- Chargement des données ---
+DATA_FILE = "data/csv-cl-2024-2025.csv"
+donnees = pd.read_csv(DATA_FILE).to_dict(orient="list")  # adapter selon format attendu
 
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('../frontend', path)
+# --- Endpoints ---
 
-# Routes API
-@app.route('/api/clubs')
-def get_clubs():
-    return jsonify(model.clubs_en_ldc)
-
-@app.route('/api/classement/<journee>')
-def get_classement(journee):
-    # Adapter selon votre modèle
-    if journee == 'J7':
-        classement = model.générer_classement(données=model.données_J7, debut=8, fin=8)
-    elif journee == 'J6':
-        classement = model.générer_classement(données=model.données_J6, debut=7, fin=8)
-    else:
-        classement = model.générer_classement()
-    
-    return classement.to_json()
-
-@app.route('/api/distribution/<club>/<type_dist>')
-def get_distribution(club, type_dist):
-    if type_dist == 'position':
-        distribution = model.distribution_position_par_club(N=10000)
-    else:
-        distribution = model.distribution_points_par_club(N=10000)
-    
-    return jsonify(distribution.get(club, {}))
-
-@app.route('/api/probabilites/<seuil>')
-def get_probabilites(seuil):
-    distribution = model.distribution_position_par_club(N=10000)
-    probas = {}
-    
-    for club in model.clubs_en_ldc:
-        if seuil == 'top8':
-            probas[club] = model.proba_top_8(club, distribution)
-        else:
-            probas[club] = model.proba_qualification(club, distribution)
-    
-    return jsonify(probas)
-
-@app.route('/api/simuler-match', methods=['POST'])
-def simuler_match():
+@app.route("/simulate", methods=["POST"])
+def simulate():
+    """
+    Body JSON attendu:
+    {
+        "club": "Paris SG",
+        "journee": 7,
+        "N": 1000
+    }
+    """
     data = request.json
-    club1 = data.get('club1')
-    club2 = data.get('club2')
-    
-    score_moyen = model.score_moyen(club1, club2)
-    proba_victoire = model.win_expectation(club1, club2)
-    
-    return jsonify({
-        'score_moyen': score_moyen,
-        'proba_victoire1': proba_victoire,
-        'proba_victoire2': 1 - proba_victoire,
-        'proba_nul': 0.2  # À calculer selon votre modèle
-    })
+    club = data.get("club")
+    journee = int(data.get("journee", 1))
+    N = int(data.get("N", 1000))
 
-@app.route('/api/enjeux/<journee>')
-def get_enjeux(journee):
-    j = int(journee)
-    enjeux = model.simulation_pour_enjeux(journee=j, données=model.données_J6, debut=7, N=1000)
-    return jsonify(enjeux)
+    try:
+        enjeux_ = simulation_pour_enjeux(journee=journee, données=donnees, debut=1, demi=True, N=N)
+        distribution = distribution_par_position(N=N, données=donnees, debut=1, demi=False)
+        return jsonify({
+            "success": True,
+            "club": club,
+            "enjeux": enjeux_.get(club, {}),
+            "distribution": distribution.get(club, {})
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+@app.route("/adversaires/<club>", methods=["GET"])
+def adversaires(club):
+    """
+    Retourne les stats cumulées des adversaires pour un club donné
+    """
+    try:
+        df = classement_par_adversaires(données=donnees)
+        if club not in df["Clubs"].values:
+            return jsonify({"success": False, "error": "Club introuvable"}), 404
+        stats = df[df["Clubs"]==club].to_dict(orient="records")[0]
+        return jsonify({"success": True, "club": club, "adversaires": stats})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/matchs", methods=["GET"])
+def matchs():
+    from Modele_elo_rating import calendrier
+    return jsonify({"success": True, "calendrier": calendrier})
+
+@app.route("/convert", methods=["POST"])
+def convert():
+    """
+    Convertit un fichier texte en CSV via results.py
+    Body JSON attendu:
+    {
+        "input_file": "path/to/file.txt",
+        "output_file": "path/to/output.csv"
+    }
+    """
+    data = request.json
+    input_file = data.get("input_file")
+    output_file = data.get("output_file")
+    try:
+        convert_txt_to_csv(input_file=input_file, output_file=output_file)
+        return jsonify({"success": True, "message": f"{input_file} converti en {output_file}"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# --- Run Flask ---
+if __name__ == "__main__":
+    app.run(debug=True)
