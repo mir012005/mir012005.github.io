@@ -939,7 +939,7 @@ def affichage_simplifié_pdf(club,distribution_probas,points=False):
 
 # On s'intéresse à simuler à partir des résultats jusqu'à la J5
 
-
+"""
 classement_J5 = teams = [
     "Liverpool",
     "Inter",
@@ -1096,6 +1096,163 @@ buts_J5 = {
     'Slovan Bratislava': 4,
     'Young Boys': 2
 }
+"""
+# List ordered by Rank (1st to 36th)
+classement_J5 = [
+    "Arsenal",
+    "Paris SG",
+    "Bayern",
+    "Inter",
+    "Real Madrid",
+    "Dortmund",
+    "Chelsea",
+    "Sporting",
+    "Man City",
+    "Atalanta",
+    "Newcastle",
+    "Atletico",
+    "Liverpool",
+    "Galatasaray",
+    "PSV",
+    "Tottenham",
+    "Leverkusen",
+    "Barcelona",
+    "Karabakh Agdam",
+    "Napoli",
+    "Marseille",
+    "Juventus",
+    "Monaco",
+    "Paphos",
+    "St Gillis",
+    "Brugge",
+    "Bilbao",
+    "Frankfurt",
+    "FC Kobenhavn",
+    "Benfica",
+    "Slavia Praha",
+    "Bodoe Glimt",
+    "Olympiakos",
+    "Villarreal",
+    "Kairat",
+    "Ajax"
+]
+
+points_J5 = {
+    'Arsenal': 15,
+    'Paris SG': 12,
+    'Bayern': 12,
+    'Inter': 12,
+    'Real Madrid': 12,
+    'Dortmund': 10,
+    'Chelsea': 10,
+    'Sporting': 10,
+    'Man City': 10,
+    'Atalanta': 10,
+    'Newcastle': 9,
+    'Atletico': 9,
+    'Liverpool': 9,
+    'Galatasaray': 9,
+    'PSV': 8,
+    'Tottenham': 8,
+    'Leverkusen': 8,
+    'Barcelona': 7,
+    'Karabakh Agdam': 7,
+    'Napoli': 7,
+    'Marseille': 6,
+    'Juventus': 6,
+    'Monaco': 6,
+    'Paphos': 6,
+    'St Gillis': 6,
+    'Brugge': 4,
+    'Bilbao': 4,
+    'Frankfurt': 4,
+    'FC Kobenhavn': 4,
+    'Benfica': 3,
+    'Slavia Praha': 3,
+    'Bodoe Glimt': 2,
+    'Olympiakos': 2,
+    'Villarreal': 1,
+    'Kairat': 1,
+    'Ajax': 0
+}
+
+diff_buts_J5 = {
+    'Arsenal': 13,
+    'Paris SG': 11,
+    'Bayern': 9,
+    'Inter': 9,
+    'Real Madrid': 7,
+    'Dortmund': 6,
+    'Chelsea': 6,
+    'Sporting': 6,
+    'Man City': 5,
+    'Atalanta': 1,
+    'Newcastle': 7,
+    'Atletico': 2,
+    'Liverpool': 2,
+    'Galatasaray': 1,
+    'PSV': 5,
+    'Tottenham': 3,
+    'Leverkusen': -2,
+    'Barcelona': 2,
+    'Karabakh Agdam': -1,
+    'Napoli': -3,
+    'Marseille': 2,
+    'Juventus': 0,
+    'Monaco': -2,
+    'Paphos': -3,
+    'St Gillis': -7,
+    'Brugge': -5,
+    'Bilbao': -5,
+    'Frankfurt': -7,
+    'FC Kobenhavn': -7,
+    'Benfica': -4,
+    'Slavia Praha': -6,
+    'Bodoe Glimt': -4,
+    'Olympiakos': -8,
+    'Villarreal': -8,
+    'Kairat': -10,
+    'Ajax': -15
+}
+
+buts_J5 = {
+    'Arsenal': 14,
+    'Paris SG': 19,
+    'Bayern': 15,
+    'Inter': 12,
+    'Real Madrid': 12,
+    'Dortmund': 17,
+    'Chelsea': 12,
+    'Sporting': 11,
+    'Man City': 10,
+    'Atalanta': 6,
+    'Newcastle': 11,
+    'Atletico': 12,
+    'Liverpool': 10,
+    'Galatasaray': 8,
+    'PSV': 13,
+    'Tottenham': 10,
+    'Leverkusen': 8,
+    'Barcelona': 12,
+    'Karabakh Agdam': 8,
+    'Napoli': 6,
+    'Marseille': 8,
+    'Juventus': 10,
+    'Monaco': 6,
+    'Paphos': 4,
+    'St Gillis': 5,
+    'Brugge': 8,
+    'Bilbao': 4,
+    'Frankfurt': 7,
+    'FC Kobenhavn': 7,
+    'Benfica': 4,
+    'Slavia Praha': 2,
+    'Bodoe Glimt': 7,
+    'Olympiakos': 5,
+    'Villarreal': 2,
+    'Kairat': 4,
+    'Ajax': 1
+}
 
 buts_ext_J5 = {x : 0 for x in classement_J5}
 nb_v_J5 = {x : 0 for x in classement_J5}
@@ -1136,7 +1293,7 @@ def ajouter_matchs_donnés(données,matchs):
     nclassement = sorted(données["classement"], key = lambda x: (-npoints[x],-ndiff_buts[x],-nbuts[x],-nbuts_ext[x],-nnb_v[x],-nnb_v_ext[x]))
 
     return dico_de_données(nclassement , npoints, ndiff_buts, nbuts, nbuts_ext, nnb_v, nnb_v_ext)
-
+"""
 matchs = [['Girona','Liverpool',[0,1]],['Dinamo Zagreb','Celtic',[0,0]],['Brest','PSV',[1,0]],['Shakhtar','Bayern',[1,5]],
           ['Salzburg','Paris SG',[0,3]],['RB Leipzig','Aston Villa',[2,3]],['Brugge','Sporting',[2,1]],
           ['Leverkusen','Inter',[1,0]],['Atalanta','Real Madrid',[2,3]],['Lille','Sturm Graz',[3,2]],
@@ -1145,6 +1302,8 @@ matchs = [['Girona','Liverpool',[0,1]],['Dinamo Zagreb','Celtic',[0,0]],['Brest'
           ['Benfica','Bologna',(0,0)],['Dortmund','Barcelona',(2,3)]]
 
 données_J6 = ajouter_matchs_donnés(données_J5,matchs)
+"""
+
 
 # Détermination de l'importance d'un match pour une équipe
 # 
@@ -1186,12 +1345,12 @@ def simuler_defaite(club,journee, données={"classement" : None, "points" : None
 
 def simuler_victoire(club,journee, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
                     "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1):
-    # simule une phase de ligue où le club en argument a perdu en journée j, retourne la position du club 
+    # simule une phase de ligue où le club en argument a gagné en journée j, retourne la position du club 
     assert(journee>=debut)
     # Simulation jusqu'à la journée où a lieu le match étudié
     ndonnées = simulation_ligue(données,debut,fin=journee-1)
 
-    # Simulation de la journée étudiée en garantissant une défaite de club
+    # Simulation de la journée étudiée en garantissant une victoire de club
     for (club1,club2) in calendrier["Journée " + str(journee)]:
         if club1==club:
             (i,j) = retourne_score(club1,club2)
