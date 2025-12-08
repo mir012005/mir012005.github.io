@@ -1,0 +1,33 @@
+# backend/main.py
+from fastapi import FastAPI
+from simulation import get_probas_classement, simulation_ligue
+from engine import win_expectation, retourne_score
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "API de Simulation LDC 2026 en ligne"}
+
+@app.get("/predict-match")
+def predict_match(team1: str, team2: str):
+    """Prédiction simple d'un match."""
+    win_prob = win_expectation(team1, team2)
+    score = retourne_score(team1, team2)
+    return {
+        "match": f"{team1} vs {team2}",
+        "win_probability_home": round(win_prob * 100, 1),
+        "predicted_score": f"{score[0]} - {score[1]}"
+    }
+
+@app.get("/simulate-ranking")
+def simulate_ranking(iterations: int = 100):
+    """Lance une simulation Monte Carlo (lourd !)."""
+    probas = get_probas_classement(n_simulations=iterations)
+    return probas
+
+@app.get("/single-run")
+def single_run():
+    """Simule une seule saison et renvoie le classement."""
+    ranking = simulation_ligue(debut=6, fin=8)
+    return {"classement_final": ranking}
