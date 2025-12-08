@@ -8,8 +8,12 @@ from IPython.display import FileLink
 
 # On récupère d'abord les données concernant les clubs participant à la ligue des champions, à la veille du début de la compétition.
 
+from pathlib import Path
 
-elo_rating = "C:\\Users\\pc\\OneDrive\\Bureau\\tdlog\\mir012005.github.io\\Elo_rating_pré_ldc.csv"
+
+base_dir = Path(__file__).parent
+elo_rating = base_dir / "Elo_rating_pré_ldc.csv"
+#elo_rating = "C:\\Users\\pc\\OneDrive\\Bureau\\tdlog\\mir012005.github.io\\Elo_rating_pré_ldc.csv"
 elo = pd.read_csv(elo_rating)
 
 #clubs_en_ldc = sorted(['Man City', 'Real Madrid', 'Inter', 'Arsenal', 'Leverkusen', 'Bayern', 'Barcelona', 'Liverpool', 'Paris SG', 'Dortmund', 'Atalanta', 'RB Leipzig', 'Atletico', 'Sporting', 'Juventus', 'Milan', 'Stuttgart', 'PSV', 'Girona', 'Aston Villa', 'Monaco', 'Bologna', 'Benfica', 'Lille', 'Feyenoord', 'Sparta Praha', 'Brugge', 'Brest', 'Salzburg', 'Celtic', 'Sturm Graz', 'Shakhtar', 'Dinamo Zagreb', 'Crvena Zvezda', 'Young Boys', 'Slovan Bratislava'])
@@ -643,7 +647,7 @@ def distribution_position_par_club(N=10000, données={"classement" : None, "poin
     
     return d
 
-#distribution_probas_classement = distribution_position_par_club()
+distribution_probas_classement = distribution_position_par_club()
 
 # On peut calculer la moyenne et l'écart type de la distribution pour un club donné :
 
@@ -702,7 +706,7 @@ def afficher_distribution_classement_club(club,distribution_probas,fin=8):
     plt.tight_layout()
     plt.show()
 
-#afficher_distribution_classement_club("Paris SG",distribution_probas_classement)
+afficher_distribution_classement_club("Paris SG",distribution_probas_classement)
 
 # On peut faire la même chose pour le nombre de points attendus pour chaque club
 
@@ -1300,9 +1304,144 @@ matchs = [['Girona','Liverpool',[0,1]],['Dinamo Zagreb','Celtic',[0,0]],['Brest'
           ['Atletico','Slovan Bratislava',[3,1]],['Stuttgart','Young Boys',[5,1]],['Juventus','Man City',[2,0]],
           ['Arsenal','Monaco',[3,0]],['Milan','Crvena Zvezda',[2,1]],['Feyenoord','Sparta Praha',[4,2]],
           ['Benfica','Bologna',(0,0)],['Dortmund','Barcelona',(2,3)]]
+# Results parsed for the 2025/2026 Season (Matchdays 1-4)
+# Format: (Home Team, Away Team, Home Goals, Away Goals)
 
-données_J6 = ajouter_matchs_donnés(données_J5,matchs)
+resultats_J1 = [
+    ("Bilbao", "Arsenal", 0, 2),
+    ("PSV", "St Gillis", 1, 3),
+    ("Real Madrid", "Marseille", 2, 1),
+    ("Juventus", "Dortmund", 4, 4),
+    ("Tottenham", "Villarreal", 1, 0),
+    ("Benfica", "Karabakh Agdam", 2, 3),
+    ("Olympiacos", "Paphos", 0, 0),
+    ("Slavia Praha", "Bodoe Glimt", 2, 2),
+    ("Paris SG", "Atalanta", 4, 0),
+    ("Liverpool", "Atletico", 3, 2),
+    ("Bayern", "Chelsea", 3, 1),
+    ("Ajax", "Inter", 0, 2),
+    ("Brugge", "Monaco", 4, 1),
+    ("FC Kobenhavn", "Leverkusen", 2, 2),
+    ("Newcastle", "Barcelona", 1, 2),
+    ("Man City", "Napoli", 2, 0),
+    ("Frankfurt", "Galatasaray", 5, 1),
+    ("Sporting", "Kairat", 4, 1)
+]
+
+resultats_J2 = [
+    ("Kairat", "Real Madrid", 0, 5),
+    ("Atalanta", "Brugge", 2, 1),
+    ("Atletico", "Frankfurt", 5, 1),
+    ("Marseille", "Ajax", 4, 0),
+    ("Galatasaray", "Liverpool", 1, 0),
+    ("Chelsea", "Benfica", 1, 0),
+    ("Paphos", "Bayern", 1, 5),
+    ("Bodoe Glimt", "Tottenham", 2, 2),
+    ("Inter", "Slavia Praha", 3, 0),
+    ("St Gillis", "Newcastle", 0, 4),
+    ("Karabakh Agdam", "FC Kobenhavn", 2, 0),
+    ("Villarreal", "Juventus", 2, 2),
+    ("Napoli", "Sporting", 2, 1),
+    ("Leverkusen", "PSV", 1, 1),
+    ("Arsenal", "Olympiacos", 2, 0),
+    ("Barcelona", "Paris SG", 1, 2),
+    ("Monaco", "Man City", 2, 2),
+    ("Dortmund", "Bilbao", 4, 1)
+]
+
+resultats_J3 = [
+    ("Kairat", "Paphos", 0, 0),
+    ("Barcelona", "Olympiacos", 6, 1),
+    ("Arsenal", "Atletico", 4, 0),
+    ("Leverkusen", "Paris SG", 2, 7),
+    ("Villarreal", "Man City", 0, 2),
+    ("PSV", "Napoli", 6, 2),
+    ("FC Kobenhavn", "Dortmund", 2, 4),
+    ("St Gillis", "Inter", 0, 4),
+    ("Newcastle", "Benfica", 3, 0),
+    ("Galatasaray", "Bodoe Glimt", 3, 1),
+    ("Bilbao", "Karabakh Agdam", 3, 1),
+    ("Chelsea", "Ajax", 5, 1),
+    ("Atalanta", "Slavia Praha", 0, 0),
+    ("Frankfurt", "Liverpool", 1, 5),
+    ("Sporting", "Marseille", 2, 1),
+    ("Monaco", "Tottenham", 0, 0),
+    ("Real Madrid", "Juventus", 1, 0),
+    ("Bayern", "Brugge", 4, 0)
+]
+
+
+
+matchs_J1 = [['Bilbao', 'Arsenal', [0, 2]], ['PSV', 'St Gillis', [1, 3]], ['Real Madrid', 'Marseille', [2, 1]], 
+             ['Juventus', 'Dortmund', [4, 4]], ['Tottenham', 'Villarreal', [1, 0]], ['Benfica', 'Karabakh Agdam', [2, 3]], 
+             ['Olympiakos', 'Paphos', [0, 0]], ['Slavia Praha', 'Bodoe Glimt', [2, 2]], ['Paris SG', 'Atalanta', [4, 0]], 
+             ['Liverpool', 'Atletico', [3, 2]], ['Bayern', 'Chelsea', [3, 1]], ['Ajax', 'Inter', [0, 2]], 
+             ['Brugge', 'Monaco', [4, 1]], ['FC Kobenhavn', 'Leverkusen', [2, 2]], ['Newcastle', 'Barcelona', [1, 2]], 
+             ['Man City', 'Napoli', [2, 0]], ['Frankfurt', 'Galatasaray', [5, 1]], ['Sporting', 'Kairat', [4, 1]]]
+
+matchs_J2 = [['Kairat', 'Real Madrid', [0, 5]], ['Atalanta', 'Brugge', [2, 1]], ['Atletico', 'Frankfurt', [5, 1]], 
+             ['Marseille', 'Ajax', [4, 0]], ['Galatasaray', 'Liverpool', [1, 0]], ['Chelsea', 'Benfica', [1, 0]], 
+             ['Paphos', 'Bayern', [1, 5]], ['Bodoe Glimt', 'Tottenham', [2, 2]], ['Inter', 'Slavia Praha', [3, 0]], 
+             ['St Gillis', 'Newcastle', [0, 4]], ['Karabakh Agdam', 'FC Kobenhavn', [2, 0]], ['Villarreal', 'Juventus', [2, 2]], 
+             ['Napoli', 'Sporting', [2, 1]], ['Leverkusen', 'PSV', [1, 1]], ['Arsenal', 'Olympiakos', [2, 0]], 
+             ['Barcelona', 'Paris SG', [1, 2]], ['Monaco', 'Man City', [2, 2]], ['Dortmund', 'Bilbao', [4, 1]]]
+
+matchs_J3 = [['Kairat', 'Paphos', [0, 0]], ['Barcelona', 'Olympiakos', [6, 1]], ['Arsenal', 'Atletico', [4, 0]], 
+             ['Leverkusen', 'Paris SG', [2, 7]], ['Villarreal', 'Man City', [0, 2]], ['PSV', 'Napoli', [6, 2]], 
+             ['FC Kobenhavn', 'Dortmund', [2, 4]], ['St Gillis', 'Inter', [0, 4]], ['Newcastle', 'Benfica', [3, 0]], 
+             ['Galatasaray', 'Bodoe Glimt', [3, 1]], ['Bilbao', 'Karabakh Agdam', [3, 1]], ['Chelsea', 'Ajax', [5, 1]], 
+             ['Atalanta', 'Slavia Praha', [0, 0]], ['Frankfurt', 'Liverpool', [1, 5]], ['Sporting', 'Marseille', [2, 1]], 
+             ['Monaco', 'Tottenham', [0, 0]], ['Real Madrid', 'Juventus', [1, 0]], ['Bayern', 'Brugge', [4, 0]]]
+
+resultats_J4 = [
+    ("Slavia Praha", "Arsenal", 0, 3),
+    ("Napoli", "Frankfurt", 0, 0),
+    ("Olympiacos", "PSV", 1, 1),
+    ("Juventus", "Sporting", 1, 1),
+    ("Bodoe Glimt", "Monaco", 0, 1),
+    ("Tottenham", "FC Kobenhavn", 4, 0),
+    ("Liverpool", "Real Madrid", 1, 0),
+    ("Paris SG", "Bayern", 1, 2),
+    ("Atletico", "St Gillis", 3, 1),
+    ("Karabakh Agdam", "Chelsea", 2, 2),
+    ("Paphos", "Villarreal", 1, 0),
+    ("Man City", "Dortmund", 4, 1),
+    ("Inter", "Kairat", 2, 1),
+    ("Benfica", "Leverkusen", 0, 1),
+    ("Brugge", "Barcelona", 3, 3),
+    ("Ajax", "Galatasaray", 0, 3),
+    ("Marseille", "Atalanta", 0, 1),
+    ("Newcastle", "Bilbao", 2, 0)
+]
+matchs_J4 = [['Slavia Praha', 'Arsenal', [0, 3]], ['Napoli', 'Frankfurt', [0, 0]], ['Olympiakos', 'PSV', [1, 1]], 
+             ['Juventus', 'Sporting', [1, 1]], ['Bodoe Glimt', 'Monaco', [0, 1]], ['Tottenham', 'FC Kobenhavn', [4, 0]], 
+             ['Liverpool', 'Real Madrid', [1, 0]], ['Paris SG', 'Bayern', [1, 2]], ['Atletico', 'St Gillis', [3, 1]], 
+             ['Karabakh Agdam', 'Chelsea', [2, 2]], ['Paphos', 'Villarreal', [1, 0]], ['Man City', 'Dortmund', [4, 1]], 
+             ['Inter', 'Kairat', [2, 1]], ['Benfica', 'Leverkusen', [0, 1]], ['Brugge', 'Barcelona', [3, 3]], 
+             ['Ajax', 'Galatasaray', [0, 3]], ['Marseille', 'Atalanta', [0, 1]], ['Newcastle', 'Bilbao', [2, 0]]]
 """
+matchs = [
+    ['Napoli', 'Karabakh Agdam', [2, 0]],     # Napoli assure à domicile
+    ['Marseille', 'Newcastle', [2, 1]],        # L'OM s'impose au Vélodrome
+    ['Dortmund', 'Villarreal', [4, 0]],        # Dortmund écrase Villarreal
+    ['Chelsea', 'Barcelona', [3, 0]],          # Chelsea domine largement le Barça
+    ['Man City', 'Leverkusen', [0, 2]],        # La surprise : City chute à l'Etihad
+    ['Ajax', 'Benfica', [0, 2]],               # L'Ajax n'y arrive toujours pas
+    ['Galatasaray', 'St Gillis', [0, 1]],      # L'Union SG surprend Galatasaray
+    ['Slavia Praha', 'Bilbao', [0, 0]],        # Match nul fermé
+    ['Bodoe Glimt', 'Juventus', [2, 3]],
+
+    ['Arsenal', 'Bayern', [3, 1]],             # Arsenal frappe fort et prend la tête
+    ['Atletico', 'Inter', [2, 1]],             # L'Atlético fait tomber l'Inter
+    ['Liverpool', 'PSV', [1, 4]],              # Grosse désillusion pour Liverpool à Anfield
+    ['Olympiakos', 'Real Madrid', [3, 4]],     # Match fou, le Real s'en sort
+    ['Paris SG', 'Tottenham', [5, 3]],         # Festival offensif au Parc
+    ['Sporting', 'Brugge', [3, 0]],            # Le Sporting solide
+    ['FC Kobenhavn', 'Kairat', [3, 2]],        # Copenhague gagne son duel
+    ['Paphos', 'Monaco', [2, 2]],              # Monaco piégé à Chypre
+    ['Frankfurt', 'Atalanta', [0, 3]]
+]
+données_J6 = ajouter_matchs_donnés(données_J5,matchs)
 
 
 # Détermination de l'importance d'un match pour une équipe
@@ -1666,7 +1805,7 @@ def simulation_pour_enjeux(journee,données={"classement" : None, "points" : Non
 
 
 # Mise à jour du mardi 22 décembre
-
+"""
 matchs = [['Atalanta','Sturm Graz',[5,0]],['Monaco','Aston Villa',[1,0]],['Atletico','Leverkusen',[2,1]],['Slovan Bratislava','Stuttgart',[1,3]],['Crvena Zvezda','PSV',[2,3]],['Liverpool','Lille',[2,1]],['Bologna','Dortmund',[2,1]],['Benfica','Barcelona',[4,5]],['Brugge','Juventus',[0,0]]]
 données_J67 = ajouter_matchs_donnés(données=données_J6,matchs=matchs)
 
@@ -1682,6 +1821,8 @@ matchs = [["Shakhtar", "Brest",[2,0]],
         ["Paris SG", "Man City",[4,2]],
         ["Sparta Praha", "Inter",[0,1]]]
 données_J7 = ajouter_matchs_donnés(données=données_J67,matchs=matchs)
+
+
 
 
 ## Afficher les probas sur le nombre de points du 25è
@@ -1761,3 +1902,4 @@ def classement_par_adversaires(données=données_J8):
     print(df)
 
 classement_par_adversaires()
+"""
