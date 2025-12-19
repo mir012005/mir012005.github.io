@@ -25,6 +25,16 @@ def static_files(path):
 # 2. ROUTES API
 # ------------------------------------------------------------------
 
+#============19/12/2025===============================
+@app.route('/api/clubs', methods=['GET'])
+def get_clubs():
+    try:
+        clubs = simulator.get_clubs_list()
+        return jsonify(clubs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+#======================================================
+
 @app.route('/api/simulate', methods=['POST'])
 def run_simulation():
     try:

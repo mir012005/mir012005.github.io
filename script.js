@@ -155,3 +155,74 @@ function creerGraphique(canvasId, distribution, label, color) {
         }
     });
 }
+
+// =========== 19/12/2025 16:42 début MIR ===============================
+// 4. GESTION DES LOGOS ET DE LA GRILLE
+// ==========================================
+
+// Lancer le chargement dès que la page s'ouvre
+document.addEventListener('DOMContentLoaded', () => {
+    chargerListeClubs();
+    // Si vous aviez d'autres inits, gardez-les
+});
+
+async function chargerListeClubs() {
+    const grid = document.getElementById('clubsGrid');
+    
+    try {
+        const response = await fetch('/api/clubs');
+        const clubs = await response.json();
+        
+        // Si erreur
+        if (clubs.error) {
+            grid.innerHTML = `<p style="color:red">Erreur: ${clubs.error}</p>`;
+            return;
+        }
+
+        // On vide le "Chargement..."
+        grid.innerHTML = ''; 
+
+        clubs.forEach(club => {
+            // Création de la carte (div)
+            const card = document.createElement('div');
+            card.className = 'club-card';
+            
+            // Chemin de l'image : on suppose que c'est le nom exact + .png
+            // On ajoute un timestamp ?v=1 pour éviter les soucis de cache si vous changez l'image
+            const logoPath = `logos/${club}.png`; 
+            
+            // On construit le HTML de la carte
+            // onerror : si l'image n'existe pas, on met une image par défaut
+            card.innerHTML = `
+                <div class="club-logo-wrapper">
+                    <img src="${logoPath}" 
+                         alt="${club}" 
+                         onerror="this.onerror=null; this.src='logos/default.png';">
+                </div>
+                <span class="club-name">${club}</span>
+            `;
+
+            // RENDRE CLIQUABLE
+            // Quand on clique, ça remplit le champ caché et ça lance la simulation
+            card.onclick = () => {
+                // 1. Remplir l'input (même s'il est caché ou sur l'autre page)
+                const input = document.getElementById('club');
+                if(input) input.value = club;
+
+                // 2. Changer de page
+                showPage('simulate');
+
+                // 3. Lancer la fonction existante simulate()
+                simulate();
+            };
+
+            grid.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Erreur JS:", error);
+        grid.innerHTML = '<p>Impossible de charger les équipes.</p>';
+    }
+}
+// =========== 19/12/2025 16:42 fin MIR ===============================
+

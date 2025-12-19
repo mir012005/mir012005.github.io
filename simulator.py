@@ -58,6 +58,12 @@ clubs_en_ldc = sorted([
 ])
 
 elo_pre_ldc = elo[elo["Club"].isin(clubs_en_ldc)]
+
+#==========19/12/25=============
+def get_clubs_list():
+    # Retourne la liste des 36 clubs triée
+    return clubs_en_ldc
+#=================================
 """
 elo_J5 = pd.read_csv('C:\\Users\\Oscar\\OneDrive\\Documents\\2A\\Projet_IMI_ldc\\Données\\Classements elo\\Elo J5.csv')
 elo_ldc_J5 = elo_J5[elo_J5["Club"].isin(clubs_en_ldc)]
