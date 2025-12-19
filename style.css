@@ -214,7 +214,76 @@ form input {
 /* --- GRILLE DES CLUBS: 19/12/2025 16:42 fin MIR --- */
 
 
+/* --- SECTION DUEL: 19/12/2025 16:42 début MIR --- */
+.duel-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 40px 0;
+}
 
+.team-selector {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.team-selector select {
+    padding: 10px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 200px;
+}
+
+.vs-badge {
+    background: #002f5f;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+/* SCORE BOARD */
+.score-board {
+    background: #222;
+    color: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-family: 'Courier New', monospace; /* Style tableau d'affichage */
+    margin-top: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.score-digit {
+    font-size: 3rem;
+    color: #f1c40f; /* Jaune LED */
+    display: block;
+    font-weight: bold;
+}
+
+/* BARRE DE PROBAS */
+.proba-bar-container {
+    display: flex;
+    height: 30px;
+    margin-top: 20px;
+    border-radius: 15px;
+    overflow: hidden;
+    font-size: 0.8rem;
+    color: white;
+    line-height: 30px;
+    text-align: center;
+}
+
+.p-bar.win { background: #28a745; }
+.p-bar.draw { background: #6c757d; }
+.p-bar.loss { background: #dc3545; }
+
+/* --- SECTION DUEL: 19/12/2025 16:42 fin MIR --- */
 
 
 

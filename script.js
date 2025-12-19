@@ -226,3 +226,108 @@ async function chargerListeClubs() {
 }
 // =========== 19/12/2025 16:42 fin MIR ===============================
 
+// ==========================================
+// 5. GESTION DU DUEL (MATCH PREDICTOR)
+// ==========================================
+
+// A. AU CHARGEMENT DE LA PAGE
+// On écoute l'événement "DOMContentLoaded" (quand la page est prête)
+document.addEventListener('DOMContentLoaded', () => {
+    // On lance la fonction qui remplit les listes
+    remplirListesDuel();
+});
+
+// Fonction pour récupérer les clubs et remplir les <select>
+async function remplirListesDuel() {
+    try {
+        // 1. On demande la liste des clubs à Python
+        const res = await fetch('/api/clubs');
+        const clubs = await res.json();
+        
+        // 2. On cible les deux menus déroulants HTML par leur ID
+        const selHome = document.getElementById('selHome');
+        const selAway = document.getElementById('selAway');
+        
+        // 3. Pour chaque club, on crée une option
+        clubs.forEach(clubName => {
+            // new Option(texte_visible, valeur_interne)
+            selHome.add(new Option(clubName, clubName));
+            selAway.add(new Option(clubName, clubName));
+        });
+        
+        // Petite astuce : on sélectionne par défaut le 2ème club pour l'équipe extérieure
+        // pour ne pas avoir "Arsenal vs Arsenal" au début.
+        selAway.selectedIndex = 1; 
+
+    } catch (err) {
+        console.error("Erreur chargement liste duel:", err);
+    }
+}
+
+// B. QUAND ON CLIQUE SUR "SIMULER LE MATCH"
+async function lancerDuel() {
+    // 1. Récupérer les valeurs choisies par l'utilisateur
+    const homeTeam = document.getElementById('selHome').value;
+    const awayTeam = document.getElementById('selAway').value;
+    
+    // 2. Vérification de sécurité
+    if(homeTeam === awayTeam) {
+        alert("Une équipe ne peut pas jouer contre elle-même !");
+        return; // On arrête tout ici
+    }
+
+    // 3. On cache le résultat précédent (si existant) pour faire propre
+    const resultBox = document.getElementById('duelResult');
+    resultBox.style.display = 'none';
+
+    try {
+        // 4. On appelle le serveur Python (C'est le coup de téléphone)
+        const response = await fetch('/api/predict-match', {
+            method: 'POST', // On envoie des données
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ home: homeTeam, away: awayTeam })
+        });
+        
+        // 5. On récupère la réponse de Python (le dictionnaire JSON)
+        const data = await response.json();
+        
+        // Si Python renvoie une erreur, on l'affiche
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        // 6. MISE A JOUR DE L'INTERFACE (On remplit les trous du HTML)
+        
+        // Noms des équipes
+        document.getElementById('resHomeName').innerText = data.home_team;
+        document.getElementById('resAwayName').innerText = data.away_team;
+        
+        // Scores prédits (moyennes)
+        document.getElementById('resHomeScore').innerText = data.score_avg_home;
+        document.getElementById('resAwayScore').innerText = data.score_avg_away;
+
+        // Barres de probabilités (Largeur en % + Texte)
+        // Victoire Domicile
+        const bWin = document.getElementById('barWin');
+        bWin.style.width = data.proba_win + '%';
+        bWin.innerText = data.proba_win + '%';
+        
+        // Match Nul
+        const bDraw = document.getElementById('barDraw');
+        bDraw.style.width = data.proba_draw + '%';
+        bDraw.innerText = data.proba_draw + '%';
+        
+        // Victoire Extérieur
+        const bLoss = document.getElementById('barLoss');
+        bLoss.style.width = data.proba_loss + '%';
+        bLoss.innerText = data.proba_loss + '%';
+
+        // 7. Tout est prêt, on affiche la boite de résultat !
+        resultBox.style.display = 'block';
+
+    } catch (err) {
+        console.error("Erreur duel:", err);
+        alert("Erreur lors de la simulation du match.");
+    }
+}

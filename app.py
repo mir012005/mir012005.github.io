@@ -25,7 +25,7 @@ def static_files(path):
 # 2. ROUTES API
 # ------------------------------------------------------------------
 
-#============19/12/2025===============================
+#============ 16: 42 19/12/2025===============================
 @app.route('/api/clubs', methods=['GET'])
 def get_clubs():
     try:
@@ -81,6 +81,22 @@ def get_importance():
     except Exception as e:
         print(f"ERREUR : {e}")
         return jsonify({"error": str(e)}), 500
+
+#============ 17: 37 19/12/2025===============================
+@app.route('/api/predict-match', methods=['POST'])
+def predict_match():
+    try:
+        data = request.json
+        home = data.get('home')
+        away = data.get('away')
+        
+        # Appel de la fonction du simulateur
+        result = simulator.get_match_prediction(home, away)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+#===========================================================
 
 if __name__ == '__main__':
     print("Serveur lancé sur http://127.0.0.1:5000")

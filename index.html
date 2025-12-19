@@ -48,6 +48,51 @@
             </div>
         </section>
 
+        <!-- 19/12/2025 17:42 début MIR-->
+        <section id="duel" class="page" style="display:none;">
+            <h2>🔮 Prédicteur de Match</h2>
+            <p>Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.</p>
+
+            <div class="duel-container">
+                <div class="team-selector">
+                    <label>Domicile 🏠</label>
+                    <select id="selHome"></select>
+                </div>
+
+                <div class="vs-badge">VS</div>
+
+                <div class="team-selector">
+                    <label>Extérieur ✈️</label>
+                    <select id="selAway"></select>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top:20px;">
+                <button class="big-btn" onclick="lancerDuel()">Simuler le match</button>
+            </div>
+
+            <div id="duelResult" class="duel-result" style="display:none;">
+                <div class="score-board">
+                    <div class="team-score">
+                        <span id="resHomeName">Home</span>
+                        <span id="resHomeScore" class="score-digit">0</span>
+                    </div>
+                    <div class="divider">-</div>
+                    <div class="team-score">
+                        <span id="resAwayName">Away</span>
+                        <span id="resAwayScore" class="score-digit">0</span>
+                    </div>
+                </div>
+                
+                <div class="proba-bar-container">
+                    <div id="barWin" class="p-bar win">Win</div>
+                    <div id="barDraw" class="p-bar draw">Draw</div>
+                    <div id="barLoss" class="p-bar loss">Loss</div>
+                </div>
+            </div>
+        </section>
+        <!-- 19/12/2025 16:42 fin MIR-->
+
         <section id="results" class="page" style="display:none;">
             <h2>Résultats de la simulation</h2>
             <button onclick="showPage('simulate')" class="back-btn">← Nouvelle recherche</button>

@@ -1981,11 +1981,10 @@ def get_web_importance_matchs(nb_simulations=500):
 #  PONT API (A RAJOUTER A LA FIN DE SIMULATION.PY)
 # =============================================================================
 
+"""
 def get_web_simulation(club_cible, nb_simulations=1000):
-    """
-    Fonction optimisée pour le web.
-    Lance une simulation Monte Carlo rapide et renvoie du JSON.
-    """
+    #Fonction optimisée pour le web.
+    #Lance une simulation Monte Carlo rapide et renvoie du JSON.
     if club_cible not in clubs_en_ldc:
         return {"error": f"Club '{club_cible}' introuvable. Vérifiez l'orthographe."}
 
@@ -2024,4 +2023,86 @@ def get_web_simulation(club_cible, nb_simulations=1000):
         "proba_elimine": round(proba_elimine * 100, 1),
         "distribution": chart_data,
         "message": "Simulation basée sur l'état après J6"
+    }
+
+"""
+
+def get_web_simulation(club_cible):
+    """
+    Fonction appelée par le site web.
+    Renvoie un dictionnaire propre avec les stats et la distribution.
+    """
+    # 1. Vérifions si le club existe
+    if club_cible not in clubs_en_ldc:
+        return {"error": f"Le club '{club_cible}' n'est pas dans la liste."}
+
+    # 2. On définit l'état actuel (J6 dans votre cas)
+    # Assurez-vous que données_J6 existe bien dans votre code plus haut
+    etat_actuel = données_J6 
+    
+    # 3. On lance les simulations
+    nb_simulations = 1000
+    
+    # On récupère les distributions (points et rangs)
+    distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=7, fin=8)
+    distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=7, fin=8)
+
+    # 4. On isole les stats du club demandé
+    stats_points = distrib_points[club_cible]
+    stats_rank = distrib_rank[club_cible]
+
+    # 5. Calcul des moyennes et pourcentages
+    # Moyenne pondérée des points
+    pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
+    
+    # Probabilités de classement
+    proba_top8 = sum(stats_rank.get(r, 0) for r in range(1, 9))
+    proba_barrage = sum(stats_rank.get(r, 0) for r in range(9, 25))
+    proba_elimine = sum(stats_rank.get(r, 0) for r in range(25, 37))
+
+    # 6. RETOUR JSON POUR LE SITE
+    return {
+        "club": club_cible,
+        "points_moyen": round(pts_moyen, 2),
+        "top_8": round(proba_top8 * 100, 1),
+        "barrage": round(proba_barrage * 100, 1),
+        "elimine": round(proba_elimine * 100, 1),
+        "distribution": stats_points  # C'est ici que nous avons ajouté le graphique
+    }
+
+def get_match_prediction(home_team, away_team):
+    """
+    Simule un match spécifique et renvoie le score moyen (prédiction)
+    ainsi qu'une simulation de score typique.
+    """
+    # 1. Vérification des équipes
+    if home_team not in clubs_en_ldc or away_team not in clubs_en_ldc:
+        return {"error": "Une des équipes n'est pas reconnue."}
+    
+    if home_team == away_team:
+        return {"error": "Une équipe ne peut pas jouer contre elle-même !"}
+
+    # 2. Calcul du score moyen (Espérance mathématique)
+    # On utilise votre fonction score_moyen définie plus haut
+    avg_score = score_moyen(home_team, away_team, N=2000)
+    
+    # 3. On calcule aussi les probabilités de victoire (Win/Draw/Loss)
+    # On fait 2000 simulations rapides pour avoir des %
+    wins_h, draws, wins_a = 0, 0, 0
+    for _ in range(2000):
+        s = retourne_score(home_team, away_team)
+        if s[0] > s[1]: wins_h += 1
+        elif s[0] == s[1]: draws += 1
+        else: wins_a += 1
+        
+    total = 2000
+    
+    return {
+        "home_team": home_team,
+        "away_team": away_team,
+        "score_avg_home": avg_score[0], # Ex: 1.85
+        "score_avg_away": avg_score[1], # Ex: 0.92
+        "proba_win": round(wins_h / total * 100, 1),
+        "proba_draw": round(draws / total * 100, 1),
+        "proba_loss": round(wins_a / total * 100, 1)
     }
