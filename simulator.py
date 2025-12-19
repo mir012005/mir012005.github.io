@@ -11,9 +11,10 @@ from IPython.display import FileLink
 from pathlib import Path
 
 
-#base_dir = Path(__file__).parent
-#elo_rating = base_dir / "Elo_rating_pré_ldc.csv"
-elo_rating = elo_rating = "C:\\Users\\dell\\Downloads\\Elo_rating_pré_ldc.csv"
+base_dir = Path(__file__).parent
+elo_rating = base_dir / "Elo_rating_pré_ldc.csv"
+
+#elo_rating = elo_rating = "C:\\Users\\dell\\Downloads\\Elo_rating_pré_ldc.csv"
 
 elo = pd.read_csv(elo_rating)
 
