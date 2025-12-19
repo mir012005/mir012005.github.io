@@ -1,15 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>TDLOG Project: Champions league predictive study</title>
+    <meta charset="UTF-8">
+    <title>Simulation Ligue des Champions</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Participants:</h1>
-    <p>
-        Idris Rayane MJIDI.<br>
-        Ilyas ZERIOUEL<br>
-        Naïm EL OUASSAÏDI<br>
-        Houssam EHMIMED
-    </p>
+    <header>
+        <h1>⚽ Simulation LDC</h1>
+        <nav>
+            <button onclick="showPage('home')">Accueil</button>
+            <button onclick="showPage('simulate')">Simulateur Club</button>
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()">Analyses Globales</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="page">
+            <div class="hero">
+                <h2>Bienvenue sur le Simulateur LDC</h2>
+                <p>Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.</p>
+                <div class="actions">
+                    <button class="big-btn" onclick="showPage('simulate')">Simuler mon club</button>
+                    <button class="big-btn secondary" onclick="showPage('analyses'); chargerAnalysesGlobales()">Voir les tendances</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="simulate" class="page" style="display:none;">
+            <h2>Simulateur par Club</h2>
+            <div class="search-box">
+                <form id="simulationForm" onsubmit="event.preventDefault(); simulate();">
+                    <label for="club">Nom du club :</label>
+                    <input type="text" id="club" name="club" placeholder="Ex: Paris SG, Brest, Real Madrid...">
+                    <button type="submit">Lancer la simulation</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="results" class="page" style="display:none;">
+            <h2>Résultats de la simulation</h2>
+            <button onclick="showPage('simulate')" class="back-btn">← Nouvelle recherche</button>
+            
+            <div id="resultsContainer">
+                </div>
+        </section>
+
+        <section id="analyses" class="page" style="display:none;">
+            <h2>Analyses Globales (Monte Carlo)</h2>
+            
+            <div class="analysis-section">
+                <h3>1. Les Seuils de Qualification</h3>
+                <p>Combien de points faut-il pour se qualifier ?</p>
+                <div class="charts-row">
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 8 (Qualif Directe)</h4>
+                        <canvas id="chartTop8"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 24 (Barrages)</h4>
+                        <canvas id="chartBarrage"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h3>2. Matchs Décisifs (Prochaine Journée)</h3>
+                <p>Les rencontres qui auront le plus d'impact sur le classement général.</p>
+                <ul id="listeImportance" class="importance-list">
+                    <li>Chargement des données...</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>
