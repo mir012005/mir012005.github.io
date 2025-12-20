@@ -2312,3 +2312,34 @@ def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
         row['rank'] = i + 1
 
     return ranking_data
+
+# Acceder au données en temps réel (Scraping)
+import pandas as pd
+
+def get_wikipedia_standing():
+    url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026#Phase_de_championnat"
+    
+    
+    # Pandas va chercher tous les tableaux de la page
+    try:
+        tables = pd.read_html(url)
+        
+        # Le classement est souvent le tableau qui contient "Team", "Pld", "Pts"
+        standings_table = None
+        for t in tables:
+            if "Équipe" in t.columns and "Pts" in t.columns:
+                standings_table = t
+                break
+        
+        if standings_table is not None:
+            # Nettoyage des données (enlever les notes de bas de page ex: "Real Madrid[a]")
+            standings_table['Équipe'] = standings_table['Équipe'].str.replace(r'\[.*\]', '', regex=True)
+            return standings_table
+            
+    except Exception as e:
+        print(f"Erreur scraping: {e}")
+        return None
+
+df = get_wikipedia_standing()  
+print(df)
+
