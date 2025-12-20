@@ -285,23 +285,112 @@ form input {
 
 
 /* --- SECTION CLASSEMENT 19/12/2025 MIR --- */
-/* Barre de contrôle */
-.controls-bar { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 20px; border: 1px solid #ddd; }
-.control-group { display: flex; align-items: center; gap: 10px; font-weight: bold; }
-.action-btn { background-color: #002f5f; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; }
 
-/* Tableau */
-.table-container { overflow-x: auto; background: white; border-radius: 8px; }
-.ranking-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-.ranking-table th { background-color: #002f5f; color: white; padding: 12px 10px; text-align: center; white-space: nowrap; }
-.ranking-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
+/* La barre de choix J1 -> J8 */
+.controls-bar {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #dee2e6;
+}
 
-/* Cellules spéciales */
-.club-flex { display: flex; align-items: center; justify-content: flex-start; gap: 10px; }
-.secondary-stat { color: #777; background-color: #fcfcfc; font-size: 0.85rem; }
-.points-cell { font-weight: bold; color: #002f5f; background-color: #f0f8ff; font-size: 1.1rem; }
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    color: #333;
+}
 
-/* Couleurs des Zones (Lignes) */
+.control-group select {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+}
+
+.action-btn {
+    background-color: #002f5f; /* Bleu LDC */
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+.action-btn:hover {
+    background-color: #004a93;
+}
+
+
+
+/* Le Tableau */
+.table-container {
+    overflow-x: auto; /* Permet de scroller si l'écran est petit */
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.ranking-table th {
+    background-color: #002f5f;
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.ranking-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+
+/* Style spécifique pour les stats secondaires (Extérieur) pour qu'elles soient moins voyantes */
+.secondary-stat {
+    color: #777;
+    font-size: 0.85rem;
+    background-color: #fcfcfc;
+}
+
+.points-cell {
+    font-weight: bold;
+    color: #002f5f;
+    font-size: 1.1rem;
+    background-color: #f0f8ff;
+}
+
+.mini-logo {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* Zones de qualification */
 .zone-top8 { background-color: rgba(46, 204, 113, 0.1); border-left: 4px solid #2ecc71; }
 .zone-barrage { background-color: rgba(243, 156, 18, 0.1); border-left: 4px solid #f39c12; }
 .zone-elim { background-color: rgba(231, 76, 60, 0.05); border-left: 4px solid #e74c3c; }
+
+/* Badges (Étiquettes colorées) */
+.badge {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.badge.zone-top8 { background: #d4edda; color: #155724; }
+.badge.zone-barrage { background: #fff3cd; color: #856404; }
+.badge.zone-elim { background: #f8d7da; color: #721c24; }
