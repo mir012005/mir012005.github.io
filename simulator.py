@@ -2172,9 +2172,7 @@ def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
     Lance n_simulations de la journée 'start_day' à 'end_day'.
     Utilise vos fonctions existantes pour gérer la logique.
     """
-
     # 1. CHOIX DE L'ÉTAT INITIAL
-    # --------------------------
     if start_day <= 1:
         # Si on commence J1, on envoie un dictionnaire avec des None.
         # Votre fonction simulation_ligue mettra tout à 0 automatiquement.

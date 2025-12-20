@@ -114,6 +114,7 @@ def get_ranking():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 #===============================================================================================
 
 if __name__ == '__main__':

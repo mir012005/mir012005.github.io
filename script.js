@@ -342,84 +342,59 @@ async function chargerClassement() {
     const tbody = document.getElementById('rankingBody');
     const startSelect = document.getElementById('startDay');
     const endSelect = document.getElementById('endDay');
-
-    // 1. Récupération des valeurs (ou valeurs par défaut)
+    
     const startVal = startSelect ? startSelect.value : 1;
     const endVal = endSelect ? endSelect.value : 8;
 
-    // Petite sécurité
     if (parseInt(startVal) > parseInt(endVal)) {
-        alert("La journée de début doit être inférieure ou égale à la fin !");
-        return;
+        alert("La journée de début doit être <= à la fin !"); return;
     }
 
-    // Affichage du chargement
-    tbody.innerHTML = '<tr><td colspan="9" class="loading-cell">Calcul des simulations en cours...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">Calcul en cours...</td></tr>';
 
     try {
-        // 2. Appel au serveur (POST)
         const response = await fetch('/api/ranking', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ start: startVal, end: endVal })
         });
-
         const data = await response.json();
 
-        // Gestion d'erreur renvoyée par Python
         if (data.error) {
-            tbody.innerHTML = `<tr><td colspan="9" style="color:red">Erreur: ${data.error}</td></tr>`;
-            return;
+            tbody.innerHTML = `<tr><td colspan="8" style="color:red">Erreur: ${data.error}</td></tr>`; return;
         }
 
-        // 3. Construction du tableau
-        tbody.innerHTML = ''; // On vide le tableau
+        tbody.innerHTML = ''; 
 
         data.forEach(row => {
             const tr = document.createElement('tr');
             
-            // Gestion des couleurs (Top 8 / Barrage / Eliminé)
+            // Définition de la couleur de la ligne (Zone)
             let rowClass = '';
-            let zoneText = '';
-            if (row.rank <= 8) {
-                rowClass = 'zone-top8';
-                zoneText = 'Direct';
-            } else if (row.rank <= 24) {
-                rowClass = 'zone-barrage';
-                zoneText = 'Barrage';
-            } else {
-                rowClass = 'zone-elim';
-                zoneText = 'Eliminé';
-            }
+            if (row.rank <= 8) rowClass = 'zone-top8';
+            else if (row.rank <= 24) rowClass = 'zone-barrage';
+            else rowClass = 'zone-elim';
 
-            // Création de la ligne HTML avec toutes les colonnes
             tr.className = rowClass;
+            
+            // Injection des 8 colonnes (Pas de colonne Zone texte, pas d'Elo)
             tr.innerHTML = `
                 <td class="rank-cell"><b>${row.rank}</b></td>
                 <td class="club-cell" style="text-align:left;">
-                    <img src="logos/${row.club}.png" onerror="this.src='logos/default.png'" class="mini-logo">
-                    ${row.club}
+                    <div class="club-flex">
+                        <img src="logos/${row.club}.png" onerror="this.src='logos/default.png'" class="mini-logo">
+                        <span>${row.club}</span>
+                    </div>
                 </td>
                 <td class="points-cell"><b>${row.points}</b></td>
-                
                 <td>${row.diff > 0 ? '+' : ''}${row.diff}</td>
-                
                 <td>${row.buts}</td>
-                
                 <td class="secondary-stat">${row.buts_ext}</td>
-                
                 <td>${row.victoires}</td>
-                
                 <td class="secondary-stat">${row.victoires_ext}</td>
-                
-                <td><span class="badge ${rowClass}">${zoneText}</span></td>
             `;
-            
             tbody.appendChild(tr);
         });
-
     } catch (error) {
-        console.error("Erreur JS:", error);
-        tbody.innerHTML = '<tr><td colspan="9">Erreur de connexion au serveur.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">Erreur connexion.</td></tr>';
     }
 }
