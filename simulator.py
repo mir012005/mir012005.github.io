@@ -714,7 +714,7 @@ def afficher_distribution_classement_club(club,distribution_probas,fin=8):
     plt.tight_layout()
     plt.show()
 
-afficher_distribution_classement_club("Paris SG",distribution_probas_classement)
+#afficher_distribution_classement_club("Paris SG",distribution_probas_classement)
 
 # On peut faire la même chose pour le nombre de points attendus pour chaque club
 
