@@ -10,6 +10,8 @@ function showPage(pageId) {
 // ==========================================
 // 1. SIMULATION INDIVIDUELLE
 // ==========================================
+/*
+//je step un peu sur houssam
 async function simulate() {
     const clubInput = document.getElementById('club');
     const club = clubInput.value.trim();
@@ -75,6 +77,100 @@ async function simulate() {
     } catch (error) {
         console.error(error);
         resultsContainer.innerHTML = `<div class="error-msg">❌ Impossible de contacter le serveur Python. Vérifiez qu'il est lancé.</div>`;
+    }
+}
+
+*/
+// ==========================================
+// 1. SIMULATION INDIVIDUELLE (MISE A JOUR)
+// ==========================================
+// ==========================================
+// 1. SIMULATION INDIVIDUELLE (MISE A JOUR)
+// ==========================================
+async function simulate() {
+    const clubInput = document.getElementById('club');
+    const club = clubInput.value.trim();
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    if (club === "") {
+        alert("Veuillez entrer un nom de club !");
+        return;
+    }
+
+    showPage('results');
+    resultsContainer.innerHTML = `
+        <div class="loading-container">
+            <div class="loader"></div>
+            <p>Simulation de 1000 saisons pour ${club}...</p>
+        </div>`;
+
+    try {
+        // Appel API
+        const response = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club: club })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="error-msg">❌ Erreur : ${data.error}</div>`;
+            return;
+        }
+
+        // Construction de l'affichage
+        // Notez la nouvelle div "charts-column" pour empiler les graphes
+        resultsContainer.innerHTML = `
+            <div class="club-header">
+                <h3>${data.club}</h3>
+                <span class="avg-points">Points moyens estimés : <strong>${data.points_moyens}</strong></span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box green">
+                    <h4>Top 8 (Direct)</h4>
+                    <span class="percentage">${data.proba_top_8}%</span>
+                </div>
+                <div class="stat-box yellow">
+                    <h4>Barrages</h4>
+                    <span class="percentage">${data.proba_barrage}%</span>
+                </div>
+                <div class="stat-box red">
+                    <h4>Éliminé</h4>
+                    <span class="percentage">${data.proba_elimine}%</span>
+                </div>
+            </div>
+
+            <div class="charts-column">
+                
+                <div class="chart-box">
+                    <h4>📊 Distribution des Points Finaux</h4>
+                    <div class="chart-area">
+                        <canvas id="pointsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <h4>🏆 Distribution du Classement Final</h4>
+                    <div class="chart-area">
+                        <canvas id="rankChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        `;
+
+        // Génération des graphiques
+        // Graphe Points (Bleu)
+        creerGraphique('pointsChart', data.distribution_points, 'Probabilité (%)', '#0066cc');
+        
+        // Graphe Classement (Violet pour différencier)
+        creerGraphique('rankChart', data.distribution_rangs, 'Probabilité (%)', '#9b59b6');
+
+    } catch (error) {
+        console.error(error);
+        resultsContainer.innerHTML = `<div class="error-msg">❌ Erreur de communication avec le serveur.</div>`;
     }
 }
 

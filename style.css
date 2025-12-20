@@ -394,3 +394,39 @@ form input {
 .badge.zone-top8 { background: #d4edda; color: #155724; }
 .badge.zone-barrage { background: #fff3cd; color: #856404; }
 .badge.zone-elim { background: #f8d7da; color: #721c24; }
+
+
+/* --- GRAPHIQUES SIMULATION CLUB (VERTICAL & AÉRÉ) --- */
+
+.charts-column {
+    display: flex;
+    flex-direction: column; /* Empile les éléments verticalement */
+    gap: 50px; /* Grand espace entre les deux graphiques */
+    margin-top: 40px;
+}
+
+.chart-box {
+    background: white;
+    padding: 25px;       /* Espace interne confortable */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Ombre douce */
+    border: 1px solid #eee;
+    width: 100%;         /* Prend toute la largeur */
+    box-sizing: border-box; /* Empêche de dépasser */
+}
+
+.chart-box h4 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #002f5f;
+    font-size: 1.2rem;
+    text-align: center;
+    border-bottom: 2px solid #f4f7f6;
+    padding-bottom: 10px;
+}
+
+.chart-area {
+    position: relative;
+    height: 350px; /* Hauteur fixe confortable pour éviter l'écrasement */
+    width: 100%;
+}

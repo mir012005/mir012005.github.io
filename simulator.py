@@ -2027,11 +2027,9 @@ def get_web_simulation(club_cible, nb_simulations=1000):
 
 """
 
+"""
+#je step un peu sur Houssam
 def get_web_simulation(club_cible):
-    """
-    Fonction appelée par le site web.
-    Renvoie un dictionnaire propre avec les stats et la distribution.
-    """
     # 1. Vérifions si le club existe
     if club_cible not in clubs_en_ldc:
         return {"error": f"Le club '{club_cible}' n'est pas dans la liste."}
@@ -2068,6 +2066,59 @@ def get_web_simulation(club_cible):
         "barrage": round(proba_barrage * 100, 1),
         "elimine": round(proba_elimine * 100, 1),
         "distribution": stats_points  # C'est ici que nous avons ajouté le graphique
+    }
+
+"""
+def get_web_simulation(club_cible):
+    """
+    Fonction optimisée pour le web.
+    Renvoie les stats et les DEUX distributions (Points et Rangs).
+    """
+    # 1. Vérifions si le club existe
+    if club_cible not in clubs_en_ldc:
+        return {"error": f"Le club '{club_cible}' n'est pas dans la liste."}
+
+    # 2. On utilise l'état actuel (J6)
+    # Assurez-vous d'avoir exécuté le bloc d'initialisation des données manquantes en haut du fichier
+    etat_actuel = données_J6 
+    
+    # 3. On lance les simulations (N=1000)
+    nb_simulations = 1000
+    
+    # On récupère les distributions (points et rangs)
+    # debut=7 car on simule la fin de saison
+    distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=7, fin=8)
+    distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=7, fin=8)
+
+    # 4. On isole les stats du club demandé
+    stats_points = distrib_points[club_cible]
+    stats_rank = distrib_rank[club_cible]
+
+    # 5. Calcul des moyennes et pourcentages
+    # Moyenne pondérée des points
+    pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
+    
+    # Probabilités de classement
+    # Top 8 = Rangs 1 à 8
+    proba_top8 = sum(stats_rank.get(r, 0) for r in range(1, 9))
+    # Barrage = Rangs 9 à 24
+    proba_barrage = sum(stats_rank.get(r, 0) for r in range(9, 25))
+    # Eliminé = Rangs 25 à 36
+    proba_elimine = sum(stats_rank.get(r, 0) for r in range(25, 37))
+
+    # Nettoyage (on enlève les probas minuscules pour alléger le JSON)
+    clean_points = {k: v for k, v in stats_points.items() if v > 0.001}
+    clean_ranks = {k: v for k, v in stats_rank.items() if v > 0.001}
+
+    # 6. RETOUR JSON (ATTENTION AUX NOMS DES CLES POUR LE JS)
+    return {
+        "club": club_cible,
+        "points_moyens": round(pts_moyen, 2),        # JS attend ça
+        "proba_top_8": round(proba_top8 * 100, 1),   # JS attend ça
+        "proba_barrage": round(proba_barrage * 100, 1),
+        "proba_elimine": round(proba_elimine * 100, 1),
+        "distribution_points": clean_points,         # Pour le graphe 1
+        "distribution_rangs": clean_ranks            # Pour le graphe 2
     }
 
 def get_match_prediction(home_team, away_team):
