@@ -14,6 +14,7 @@
             <button onclick="showPage('simulate')">Simulateur Club</button>
             <button onclick="showPage('analyses'); chargerAnalysesGlobales()">Analyses Globales</button>
             <button onclick="showPage('duel')">⚔️ Duel</button>
+            <button onclick="showPage('ranking'); chargerClassement()">🏆 Classement</button>
         </nav>
     </header>
 
@@ -92,7 +93,72 @@
                 </div>
             </div>
         </section>
-        <!-- 19/12/2025 16:42 fin MIR-->
+        
+        <!-- 20/12/2025  MIR-->
+
+        <section id="ranking" class="page" style="display:none;">
+            <h2>🏆 Classement Projeté</h2>
+            <p>Simulation moyenne sur 1000 saisons selon vos paramètres.</p>
+
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label>De :</label>
+                    <select id="startDay">
+                        <option value="1" selected>J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6</option>
+                        <option value="7">J7</option>
+                        <option value="8">J8</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>À :</label>
+                    <select id="endDay">
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6</option>
+                        <option value="7">J7</option>
+                        <option value="8" selected>J8</option>
+                    </select>
+                </div>
+
+                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
+            </div>
+
+            <div class="table-container">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align:left;">Club</th>
+                            <th title="Points Moyens">Pts</th>
+                            <th title="Différence de buts">Diff</th>
+                            <th title="Buts Pour">BP</th>
+                            <th title="Buts Pour à l'Extérieur" class="secondary-stat">BP Ext</th>
+                            <th title="Victoires">V</th>
+                            <th title="Victoires à l'Extérieur" class="secondary-stat">V Ext</th>
+                            <th>Zone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <tr><td colspan="9">Cliquez sur "Calculer" pour lancer la simulation.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="legend">
+                <span class="dot green"></span> Qualif (1-8)
+                <span class="dot orange"></span> Barrage (9-24)
+                <span class="dot red"></span> Éliminé (25-36)
+            </div>
+        </section>
 
         <section id="results" class="page" style="display:none;">
             <h2>Résultats de la simulation</h2>

@@ -82,7 +82,7 @@ def get_importance():
         print(f"ERREUR : {e}")
         return jsonify({"error": str(e)}), 500
 
-#============ 17: 37 19/12/2025===============================
+#============ 19/12/2025===============================
 @app.route('/api/predict-match', methods=['POST'])
 def predict_match():
     try:
@@ -96,7 +96,25 @@ def predict_match():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-#===========================================================
+
+#============ 20/12/2025===============================
+@app.route('/api/ranking', methods=['POST'])
+def get_ranking():
+    try:
+        # Récupération des données JSON envoyées par le site
+        data = request.json
+        
+        # Par défaut : Simulation complète (J1 à J8) si rien n'est précisé
+        start = int(data.get('start', 1))
+        end = int(data.get('end', 8))
+
+        # Appel de la nouvelle fonction wrapper
+        result = simulator.get_simulation_flexible(n_simulations=500, start_day=start, end_day=end)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+#===============================================================================================
 
 if __name__ == '__main__':
     print("Serveur lancé sur http://127.0.0.1:5000")

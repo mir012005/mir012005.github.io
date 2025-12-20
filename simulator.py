@@ -2106,3 +2106,160 @@ def get_match_prediction(home_team, away_team):
         "proba_draw": round(draws / total * 100, 1),
         "proba_loss": round(wins_a / total * 100, 1)
     }
+
+
+def get_global_ranking_detailed(n_simulations=1000, start_day=7, end_day=8):
+    """
+    Simule la saison entre start_day et end_day.
+    """
+    # Sécurité : Si l'utilisateur inverse (ex: début 8, fin 2), on remet dans l'ordre
+    if start_day > end_day:
+        start_day, end_day = end_day, start_day
+
+    # 1. Choix de l'état initial
+    # Si on commence après la J6, on prend les données réelles de la J6
+    # Sinon, on repart de zéro (ou d'un état antérieur si vous l'avez)
+    if start_day >= 7:
+        etat_actuel = données_J6
+    else:
+        # Si on veut simuler depuis le début (J1), on part de zéro
+        etat_actuel = {
+            "classement": None, "points": None, "diff_buts": None, 
+            "buts": None, "buts_ext": None, "nb_victoires": None, 
+            "nb_victoires_ext": None
+        }
+
+    total_stats = {
+        club: {"points": 0, "diff_buts": 0, "buts": 0, "nb_victoires": 0} 
+        for club in clubs_en_ldc
+    }
+
+    # 2. Boucle de simulation
+    for _ in range(n_simulations):
+        # On passe les paramètres dynamiques ici !
+        resultats_simu = simulation_ligue(données=etat_actuel, debut=start_day, fin=end_day)
+        
+        for club in clubs_en_ldc:
+            total_stats[club]["points"] += resultats_simu["points"][club]
+            total_stats[club]["diff_buts"] += resultats_simu["diff_buts"][club]
+            total_stats[club]["buts"] += resultats_simu["buts"][club]
+            total_stats[club]["nb_victoires"] += resultats_simu["nb_victoires"][club]
+
+    # 3. Calcul des moyennes (Le reste ne change pas)
+    ranking_data = []
+    for club, stats in total_stats.items():
+        ranking_data.append({
+            "club": club,
+            "points": round(stats["points"] / n_simulations, 1),
+            "diff": round(stats["diff_buts"] / n_simulations, 1),
+            "buts": round(stats["buts"] / n_simulations, 1),
+            "victoires": round(stats["nb_victoires"] / n_simulations, 1),
+            "elo": round(elo_of(club))
+        })
+
+    ranking_data.sort(key=lambda x: (x['points'], x['diff']), reverse=True)
+
+    for i, row in enumerate(ranking_data):
+        row['rank'] = i + 1
+
+    return ranking_data
+
+
+# --- 20/12/2025 début MIR ---
+
+def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
+    """
+    Lance n_simulations de la journée 'start_day' à 'end_day'.
+    Utilise vos fonctions existantes pour gérer la logique.
+    """
+
+    # 1. CHOIX DE L'ÉTAT INITIAL
+    # --------------------------
+    if start_day <= 1:
+        # Si on commence J1, on envoie un dictionnaire avec des None.
+        # Votre fonction simulation_ligue mettra tout à 0 automatiquement.
+        etat_initial = {
+            "classement": None, "points": None, "diff_buts": None, 
+            "buts": None, "buts_ext": None, "nb_victoires": None, 
+            "nb_victoires_ext": None
+        }
+    else:
+        # Si on commence J_k (ex: J3), on charge les données de J_(k-1) (ex: J2)
+        # On suppose que ces variables (données_J1...) sont définies plus haut dans votre fichier
+        map_historique = {
+            1: données_J1,
+            2: données_J2,
+            3: données_J3,
+            4: données_J4,
+            5: données_J5,
+            6: données_J6, # Actuel
+            7: données_J7
+        }
+        # On récupère l'historique, ou le vide par sécurité
+        etat_initial = map_historique.get(start_day - 1, {
+             "classement": None, "points": None, "diff_buts": None, 
+             "buts": None, "buts_ext": None, "nb_victoires": None, 
+             "nb_victoires_ext": None
+        })
+
+    # 2. INITIALISATION DES COMPTEURS (Moyenne)
+    # -----------------------------------------
+    total_stats = {
+        club: {
+            "points": 0, "diff_buts": 0, "buts": 0, 
+            "buts_ext": 0, "nb_victoires": 0, "nb_victoires_ext": 0
+        } 
+        for club in clubs_en_ldc
+    }
+
+    # 3. BOUCLE DE SIMULATION
+    # -----------------------
+    for _ in range(n_simulations):
+        
+        # Appel de VOTRE fonction
+        resultats_simu = simulation_ligue(
+            données=etat_initial, 
+            debut=start_day, 
+            fin=end_day
+        )
+        
+        # Cumul des résultats pour la moyenne
+        for club in clubs_en_ldc:
+            total_stats[club]["points"] += resultats_simu["points"][club]
+            total_stats[club]["diff_buts"] += resultats_simu["diff_buts"][club]
+            total_stats[club]["buts"] += resultats_simu["buts"][club]
+            total_stats[club]["buts_ext"] += resultats_simu["buts_ext"][club]
+            total_stats[club]["nb_victoires"] += resultats_simu["nb_victoires"][club]
+            total_stats[club]["nb_victoires_ext"] += resultats_simu["nb_victoires_ext"][club]
+
+    # 4. CALCUL DES MOYENNES ET FORMATAGE
+    # -----------------------------------
+    ranking_data = []
+    
+    for club, stats in total_stats.items():
+        ranking_data.append({
+            "club": club,
+            "points": round(stats["points"] / n_simulations, 1),
+            "diff": round(stats["diff_buts"] / n_simulations, 1),
+            "buts": round(stats["buts"] / n_simulations, 1),
+            "buts_ext": round(stats["buts_ext"] / n_simulations, 1),
+            "victoires": round(stats["nb_victoires"] / n_simulations, 1),
+            "victoires_ext": round(stats["nb_victoires_ext"] / n_simulations, 1),
+        })
+
+    # 5. TRI (Tie-Breakers UEFA complets)
+    # Points > Diff > Buts > Buts Ext > Victoires > Victoires Ext
+    ranking_data.sort(key=lambda x: (
+        x['points'], 
+        x['diff'], 
+        x['buts'], 
+        x['buts_ext'], 
+        x['victoires'], 
+        x['victoires_ext']
+    ), reverse=True)
+
+    # Ajout du rang
+    for i, row in enumerate(ranking_data):
+        row['rank'] = i + 1
+
+    return ranking_data
