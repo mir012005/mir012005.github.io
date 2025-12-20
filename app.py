@@ -109,7 +109,7 @@ def get_ranking():
         end = int(data.get('end', 8))
 
         # Appel de la nouvelle fonction wrapper
-        result = simulator.get_simulation_flexible(n_simulations=500, start_day=start, end_day=end)
+        result = simulator.get_simulation_flexible(n_simulations=1000, start_day=start, end_day=end)
         
         return jsonify(result)
     except Exception as e:
