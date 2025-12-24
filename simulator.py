@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages as pdf
 from IPython.display import FileLink
 
+from elo_manager import get_current_elos_with_cache
+
 # On récupère d'abord les données concernant les clubs participant à la ligue des champions, à la veille du début de la compétition.
 
 from pathlib import Path
@@ -60,7 +62,7 @@ clubs_en_ldc = sorted([
 
 elo_pre_ldc = elo[elo["Club"].isin(clubs_en_ldc)]
 
-#==========19/12/25=============
+#==========19/12/25=============???? pq faire
 def get_clubs_list():
     # Retourne la liste des 36 clubs triée
     return clubs_en_ldc
@@ -2317,8 +2319,7 @@ def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
 import pandas as pd
 
 def get_wikipedia_standing():
-    url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026#Phase_de_championnat"
-    
+    url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026#Phase_de_championnat"    
     
     # Pandas va chercher tous les tableaux de la page
     try:
@@ -2342,4 +2343,3 @@ def get_wikipedia_standing():
 
 df = get_wikipedia_standing()  
 print(df)
-
