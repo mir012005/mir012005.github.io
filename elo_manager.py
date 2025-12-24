@@ -59,5 +59,5 @@ if __name__ == "__main__":
 
     # Test 2 : Cache Live pour le site
     print("\n--- TEST CACHE LIVE ---")
-    current = get_current_elos_with_cache()
+    current = get_current_elos()
     print(f"Elo actuel Real Madrid : {current.get('Real Madrid')}")

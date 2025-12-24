@@ -1,47 +1,38 @@
 import random as rd
 import math
+import copy
 
 # On importe la fonction de chargement qu'on a créée juste avant
 from elo_manager import get_current_elos
+from scraper import calendrier, clubs_en_ldc
 
-clubs_en_ldc = sorted([
-    "Paris SG",           # Paris Saint‑Germain
-    "Real Madrid",        # Real Madrid
-    "Man City",           # Manchester City
-    "Bayern",            # Bayern München
-    "Liverpool",         # Liverpool
-    "Inter",             # Inter Milan
-    "Chelsea",           # Chelsea
-    "Dortmund",          # Borussia Dortmund
-    "Barcelona",         # Barcelona
-    "Arsenal",           # Arsenal
-    "Leverkusen",        # Bayer Leverkusen
-    "Atletico",          # Atlético Madrid
-    "Benfica",           # Benfica
-    "Atalanta",          # Atalanta
-    "Villarreal",        # Villarreal
-    "Juventus",          # Juventus
-    "Frankfurt",         # Eintracht Frankfurt
-    "Brugge",            # Club Brugge
-    "Tottenham",         # Tottenham Hotspur
-    "PSV",               # PSV Eindhoven
-    "Ajax",              # Ajax
-    "Napoli",            # Napoli
-    "Sporting",          # Sporting CP
-    "Olympiakos",        # Olympiacos
-    "Slavia Praha",      # Slavia Praha
-    "Bodoe Glimt",       # Bodø/Glimt
-    "Marseille",         # Marseille
-    "FC Kobenhavn",      # Copenhagen
-    "Monaco",            # Monaco
-    "Galatasaray",       # Galatasaray
-    "St Gillis",         # Union Saint‑Gilloise
-    "Karabakh Agdam",    # Qarabağ
-    "Bilbao",            # Athletic Club
-    "Newcastle",         # Newcastle United
-    "Paphos",            # Pafos
-    "Kairat"             # Kairat Almaty
-])
+# Petites vérifications que le calendrier est ok :
+def match(j,club):
+    # retourne le match dans lequel est impliqué club lors de la journée j, et s'il joue à domicile ou à l'extérieur
+    s = "Journée " + str(j)
+    L = calendrier[s]
+    for (club1,club2) in L:
+        if club == club1:
+            return (club1,club2) , 'H'
+        elif club == club2:
+            return (club1,club2) , 'A'
+    print(club , "n'existe pas sur la journée", j)
+
+for club in clubs_en_ldc:
+    eq = 0
+    for j in range(1,9):
+        if match(j,club)[1] == 'H':
+            eq += 1
+        else:
+            eq -= 1
+    
+    if eq != 0:
+        print(club, "home-away difference:", eq)   
+    #assert(eq == 0)
+
+def dico_de_données(classement,points,diff_buts,buts,buts_ext,nb_victoires,nb_victoires_ext):
+    return {"classement" : classement , "points" : points , "diff_buts" : diff_buts , "buts" : buts ,
+            "buts_ext" : buts_ext , "nb_victoires" : nb_victoires , "nb_victoires_ext" : nb_victoires_ext}
 
 class ChampionsLeagueSimulator:
     # On ajoute un argument optionnel 'custom_elos'
@@ -56,6 +47,8 @@ class ChampionsLeagueSimulator:
             # Sinon, on prend le direct par défaut
             self.elos = get_current_elos()
             print("-> Chargement des données LIVE.")
+        
+        self.probas_par_matchs = {}
 
     def elo_of(self, team_name):
         """Récupère l'Elo d'une équipe (avec sécurité si inconnue)."""
@@ -88,7 +81,7 @@ class ChampionsLeagueSimulator:
         param = self.coeff_poisson(club1,club2,s)
         return (param**k)*math.exp(-param)/math.factorial(k)
     
-    def dico_de_proba(N=3):  # N représente le nombre de proba par buts que l'on stocke pour chaque match (on commence par N=3 
+    def dico_de_proba(self, N=3):  # N représente le nombre de proba par buts que l'on stocke pour chaque match (on commence par N=3 
         # car on est à peu près sûrs que les probas de marquer 0,1 ou 2 buts seront utiles quels que soient le match et l'équipe)
         # retourne un dictionnaire ayant pour clés les matchs possibles et comme valeurs associées deux listes correspondant
         # aux probas pour l'équipe à domicile, et pour celle à l'extérieur
@@ -96,20 +89,22 @@ class ChampionsLeagueSimulator:
         for club1 in clubs_en_ldc:
             for club2 in clubs_en_ldc:
                 if club2 != club1:
-                    d[(club1,club2)] = [[proba_par_but(k,club1,club2,'H') for k in range(N)]
-                                        ,[proba_par_but(k,club1,club2,'A') for k in range(N)]]
+                    d[(club1,club2)] = [[self.proba_par_but(k,club1,club2,'H') for k in range(N)]
+                                        ,[self.proba_par_but(k,club1,club2,'A') for k in range(N)]]
+                    
+        self.probas_par_matchs = d
         return d
             
-    probas_par_matchs = dico_de_proba()
+    
 
-    def simule_nb_buts(club1,club2,s):
+    def simule_nb_buts(self, club1,club2,s):
         # retourne un tirage du nb de buts marqués par club1 si s='H' - par club2 si s='A' - le match se jouant chez club1
         assert(s == 'H' or s == 'A')
         if s == 'H':
             b = 0
         else:
             b = 1
-        probas = probas_par_matchs[(club1,club2)][b]
+        probas = self.probas_par_matchs[(club1,club2)][b]
         u = rd.random()
         k = 0 ; t = probas[0]
         while t < u:
@@ -117,82 +112,89 @@ class ChampionsLeagueSimulator:
             if k < len(probas):
                 t += probas[k]
             else:
-                p = proba_par_but(k,club1,club2,s)
+                p = self.proba_par_but(k,club1,club2,s)
                 t += p
                 probas = probas + [p]
-                probas_par_matchs[(club1,club2)][b] = probas
+                self.probas_par_matchs[(club1,club2)][b] = probas
                 # On ajoute la valeur au dictionnaire si on en a eu besoin
         return k
 
-    def generate_score(self, proba_home):
-        """
-        Génère un score réaliste basé sur la probabilité.
-        (On peut remplacer ça par une Loi de Poisson plus tard pour plus de précision)
-        """
-        # Logique simplifiée pour l'exemple
-        rand = random.random()
-        
-        # Définition des seuils
-        seuil_win = proba_home - 0.12 # Marge pour le nul
-        seuil_draw = proba_home + 0.12
-        
-        if rand < seuil_win:
-            # Victoire Domicile
-            buts_dom = random.randint(1, 4)
-            buts_ext = random.randint(0, buts_dom - 1)
-            resultat_reel = 1.0 # 1 point pour Elo (Gagné)
-        elif rand > seuil_draw:
-            # Victoire Extérieur
-            buts_ext = random.randint(1, 4)
-            buts_dom = random.randint(0, buts_ext - 1)
-            resultat_reel = 0.0 # 0 point pour Elo (Perdu)
+    def retourne_score(self, club1,club2):
+        # retourne une simulation du score du match entre club1 et club2, club1 jouant à domicile
+        return (self.simule_nb_buts(club1,club2,'H'), self.simule_nb_buts(club1,club2,'A'))
+
+    def simuler_match(self, club1,club2,points,diff_buts,buts,buts_exterieur,nb_victoires,nb_victoires_ext,resultats):
+        (i,j) = self.retourne_score(club1,club2)
+        diff_buts[club1] += i-j
+        diff_buts[club2] += j-i
+        buts[club1] += i
+        buts[club2] += j
+        buts_exterieur[club2] += j
+        if i > j:
+            points[club1] += 3
+            nb_victoires[club1] += 1
+        elif i < j:
+            points[club2] += 3
+            nb_victoires[club2] += 1
+            nb_victoires_ext[club2] += 1
         else:
-            # Match Nul
-            buts_dom = random.randint(0, 2)
-            buts_ext = buts_dom
-            resultat_reel = 0.5 # 0.5 point pour Elo (Nul)
-            
-        return [buts_dom, buts_ext], resultat_reel
+            points[club1] += 1 ; points[club2] += 1
+        resultats[(club1,club2)] = (i,j)
 
-    def play_match(self, home_team, away_team):
-        """
-        JOUE LE MATCH ET MET À JOUR LES ELOS.
-        C'est la fonction principale.
-        """
-        # 1. Calcul Proba Avant Match
-        proba_home = self.calculate_win_proba(home_team, away_team)
-        
-        # 2. Simulation du Score
-        score, resultat_reel = self.generate_score(proba_home)
-        
-        # 3. MISE À JOUR DES ELOS (La partie dynamique)
-        elo_home_old = self.get_elo(home_team)
-        elo_away_old = self.get_elo(away_team)
-        
-        # Formule de mise à jour Elo : Nouveau = Ancien + K * (Réel - Attendu)
-        delta = self.k_factor * (resultat_reel - proba_home)
-        
-        self.elos[home_team] = elo_home_old + delta
-        self.elos[away_team] = elo_away_old - delta
-        
-        return {
-            "match": f"{home_team} - {away_team}",
-            "score": score,
-            "proba_init": round(proba_home * 100, 1),
-            "elo_evo": round(delta, 1) # De combien l'elo a changé
-        }
+    def simulation_ligue(self, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None, "buts_ext" : None,
+                              "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1, fin=8, demi=False):
+        # Réalise une simulation de la phase de ligue, par défaut à partir de la Journée 1, mais on peut aussi commencer
+        # à partir d'un certain classement et d'une certaine journée
+        if données["classement"] is None:
+            classement = clubs_en_ldc
+        else:
+            classement = copy.deepcopy(données["classement"])
 
-    def simuler_journee(self, liste_matchs):
-        """Prend une liste de matchs [[Dom, Ext], ...] et simule tout."""
-        resultats_journee = []
-        for match in liste_matchs:
-            # On gère le format [Dom, Ext] ou [Dom, Ext, [Score...]]
-            dom, ext = match[0], match[1]
-            
-            res = self.play_match(dom, ext)
-            resultats_journee.append(res)
-            
-        return resultats_journee
+        if données["points"] is None:
+            points = dict([(club, 0) for club in clubs_en_ldc])
+        else:
+            points = copy.deepcopy(données["points"])
+
+        if données["diff_buts"] is None:
+            diff_buts = dict([(club, 0) for club in clubs_en_ldc])
+        else:
+            diff_buts = copy.deepcopy(données["diff_buts"])
+
+        if données["buts"] is None:
+            buts = dict([(club, 0) for club in clubs_en_ldc])
+        else:
+            buts = copy.deepcopy(données["buts"])
+
+        if données["buts_ext"] is None:
+            buts_exterieur = dict([(club, 0) for club in clubs_en_ldc])
+        else:
+            buts_exterieur = copy.deepcopy(données["buts_ext"])
+
+        if données["nb_victoires"] is None:
+            nb_victoires = dict([(club, 0) for club in clubs_en_ldc])
+        else:
+            nb_victoires = copy.deepcopy(données["nb_victoires"])
+
+        if données["nb_victoires_ext"] is None:
+            nb_victoires_ext = dict([(club, 0) for club in clubs_en_ldc])
+        else:
+            nb_victoires_ext = copy.deepcopy(données["nb_victoires_ext"])
+        
+        resultats = {}
+        for j in range(debut,fin+1):
+            matchs = calendrier["Journée " + str(j)]
+            if j == debut and demi:
+                ind = len(matchs)//2
+            else:
+                ind = 0
+            for i in range(ind,len(matchs)):
+                self.simuler_match(matchs[i][0],matchs[i][1],points,diff_buts,buts,buts_exterieur,nb_victoires,nb_victoires_ext,resultats)
+        
+        nclassement = sorted(classement, key = lambda x: (points[x],diff_buts[x],buts[x],buts_exterieur[x],nb_victoires[x],nb_victoires_ext[x]),
+                            reverse=True)
+
+        d = dico_de_données(nclassement, points , diff_buts , buts , buts_exterieur , nb_victoires , nb_victoires_ext)
+        return d | {"résultats" : resultats}
 
 # ==========================================
 # EXEMPLE D'UTILISATION (MAIN)

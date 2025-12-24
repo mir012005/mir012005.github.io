@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages as pdf
 from IPython.display import FileLink
 
-from elo_manager import get_current_elos_with_cache
+from elo_manager import get_current_elos
 
 # On récupère d'abord les données concernant les clubs participant à la ligue des champions, à la veille du début de la compétition.
 

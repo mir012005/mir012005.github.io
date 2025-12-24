@@ -18,6 +18,208 @@ calendrier_ldc = {
     8: "2026-01-28"
 }
 
+clubs_en_ldc = sorted([
+    "Paris SG",           # Paris Saint‑Germain
+    "Real Madrid",        # Real Madrid
+    "Man City",           # Manchester City
+    "Bayern",            # Bayern München
+    "Liverpool",         # Liverpool
+    "Inter",             # Inter Milan
+    "Chelsea",           # Chelsea
+    "Dortmund",          # Borussia Dortmund
+    "Barcelona",         # Barcelona
+    "Arsenal",           # Arsenal
+    "Leverkusen",        # Bayer Leverkusen
+    "Atletico",          # Atlético Madrid
+    "Benfica",           # Benfica
+    "Atalanta",          # Atalanta
+    "Villarreal",        # Villarreal
+    "Juventus",          # Juventus
+    "Frankfurt",         # Eintracht Frankfurt
+    "Brugge",            # Club Brugge
+    "Tottenham",         # Tottenham Hotspur
+    "PSV",               # PSV Eindhoven
+    "Ajax",              # Ajax
+    "Napoli",            # Napoli
+    "Sporting",          # Sporting CP
+    "Olympiakos",        # Olympiacos
+    "Slavia Praha",      # Slavia Praha
+    "Bodoe Glimt",       # Bodø/Glimt
+    "Marseille",         # Marseille
+    "FC Kobenhavn",      # Copenhagen
+    "Monaco",            # Monaco
+    "Galatasaray",       # Galatasaray
+    "St Gillis",         # Union Saint‑Gilloise
+    "Karabakh Agdam",    # Qarabağ
+    "Bilbao",            # Athletic Club
+    "Newcastle",         # Newcastle United
+    "Paphos",            # Pafos
+    "Kairat"             # Kairat Almaty
+])
+
+calendrier = {
+    "Journée 1": [
+        ("Bilbao", "Arsenal"),
+        ("PSV", "St Gillis"),
+        ("Juventus", "Dortmund"),
+        ("Real Madrid", "Marseille"),
+        ("Benfica", "Karabakh Agdam"),
+        ("Tottenham", "Villarreal"),
+        ("Olympiakos", "Paphos"),
+        ("Slavia Praha", "Bodoe Glimt"),
+        ("Ajax", "Inter"),
+        ("Bayern", "Chelsea"),
+        ("Liverpool", "Atletico"),
+        ("Paris SG", "Atalanta"),
+        ("Brugge", "Monaco"),
+        ("FC Kobenhavn", "Leverkusen"),
+        ("Frankfurt", "Galatasaray"),
+        ("Man City", "Napoli"),
+        ("Newcastle", "Barcelona"),
+        ("Sporting", "Kairat"),
+    ],
+    "Journée 2": [
+        ("Atalanta", "Brugge"),
+        ("Kairat", "Real Madrid"),
+        ("Atletico", "Frankfurt"),
+        ("Chelsea", "Benfica"),
+        ("Inter", "Slavia Praha"),
+        ("Bodoe Glimt", "Tottenham"),
+        ("Galatasaray", "Liverpool"),
+        ("Marseille", "Ajax"),
+        ("Paphos", "Bayern"),
+        ("Karabakh Agdam", "FC Kobenhavn"),
+        ("St Gillis", "Newcastle"),
+        ("Arsenal", "Olympiakos"),
+        ("Monaco", "Man City"),
+        ("Leverkusen", "PSV"),
+        ("Dortmund", "Bilbao"),
+        ("Barcelona", "Paris SG"),
+        ("Napoli", "Sporting"),
+        ("Villarreal", "Juventus"),
+    ],
+    "Journée 3": [
+        ("Barcelona", "Olympiakos"),
+        ("Kairat", "Paphos"),
+        ("Arsenal", "Atletico"),
+        ("Leverkusen", "Paris SG"),
+        ("FC Kobenhavn", "Dortmund"),
+        ("Newcastle", "Benfica"),
+        ("PSV", "Napoli"),
+        ("St Gillis", "Inter"),
+        ("Villarreal", "Man City"),
+        ("Bilbao", "Karabakh Agdam"),
+        ("Galatasaray", "Bodoe Glimt"),
+        ("Monaco", "Tottenham"),
+        ("Atalanta", "Slavia Praha"),
+        ("Chelsea", "Ajax"),
+        ("Frankfurt", "Liverpool"),
+        ("Bayern", "Brugge"),
+        ("Real Madrid", "Juventus"),
+        ("Sporting", "Marseille"),
+    ],
+    "Journée 4": [
+        ("Slavia Praha", "Arsenal"),
+        ("Napoli", "Frankfurt"),
+        ("Atletico", "St Gillis"),
+        ("Bodoe Glimt", "Monaco"),
+        ("Juventus", "Sporting"),
+        ("Liverpool", "Real Madrid"),
+        ("Olympiakos", "PSV"),
+        ("Paris SG", "Bayern"),
+        ("Tottenham", "FC Kobenhavn"),
+        ("Paphos", "Villarreal"),
+        ("Karabakh Agdam", "Chelsea"),
+        ("Ajax", "Galatasaray"),
+        ("Brugge", "Barcelona"),
+        ("Inter", "Kairat"),
+        ("Man City", "Dortmund"),
+        ("Newcastle", "Bilbao"),
+        ("Marseille", "Atalanta"),
+        ("Benfica", "Leverkusen"),
+    ],
+    "Journée 5": [
+        ("Ajax", "Benfica"),
+        ("Galatasaray", "St Gillis"),
+        ("Dortmund", "Villarreal"),
+        ("Chelsea", "Barcelona"),
+        ("Bodoe Glimt", "Juventus"),
+        ("Man City", "Leverkusen"),
+        ("Marseille", "Newcastle"),
+        ("Slavia Praha", "Bilbao"),
+        ("Napoli", "Karabakh Agdam"),
+        ("FC Kobenhavn", "Kairat"),
+        ("Paphos", "Monaco"),
+        ("Arsenal", "Bayern"),
+        ("Atletico", "Inter"),
+        ("Frankfurt", "Atalanta"),
+        ("Liverpool", "PSV"),
+        ("Olympiakos", "Real Madrid"),
+        ("Paris SG", "Tottenham"),
+        ("Sporting", "Brugge"),
+    ],
+    "Journée 6": [
+        ("Kairat", "Olympiakos"),
+        ("Bayern", "Sporting"),
+        ("Monaco", "Galatasaray"),
+        ("Atalanta", "Chelsea"),
+        ("Barcelona", "Frankfurt"),
+        ("Inter", "Liverpool"),
+        ("PSV", "Atletico"),
+        ("St Gillis", "Marseille"),
+        ("Tottenham", "Slavia Praha"),
+        ("Karabakh Agdam", "Ajax"),
+        ("Villarreal", "FC Kobenhavn"),
+        ("Bilbao", "Paris SG"),
+        ("Leverkusen", "Newcastle"),
+        ("Dortmund", "Bodoe Glimt"),
+        ("Brugge", "Arsenal"),
+        ("Juventus", "Paphos"),
+        ("Real Madrid", "Man City"),
+        ("Benfica", "Napoli"),
+    ],
+    "Journée 7": [
+        ("Kairat", "Brugge"),
+        ("Bodoe Glimt", "Man City"),
+        ("FC Kobenhavn", "Napoli"),
+        ("Inter", "Arsenal"),
+        ("Olympiakos", "Leverkusen"),
+        ("Real Madrid", "Monaco"),
+        ("Sporting", "Paris SG"),
+        ("Tottenham", "Dortmund"),
+        ("Villarreal", "Ajax"),
+        ("Galatasaray", "Atletico"),
+        ("Karabakh Agdam", "Frankfurt"),
+        ("Atalanta", "Bilbao"),
+        ("Chelsea", "Paphos"),
+        ("Bayern", "St Gillis"),
+        ("Juventus", "Benfica"),
+        ("Newcastle", "PSV"),
+        ("Marseille", "Liverpool"),
+        ("Slavia Praha", "Barcelona"),
+    ],
+    "Journée 8": [
+        ("Ajax", "Olympiakos"),
+        ("Arsenal", "Kairat"),
+        ("Monaco", "Juventus"),
+        ("Bilbao", "Sporting"),
+        ("Atletico", "Bodoe Glimt"),
+        ("Leverkusen", "Villarreal"),
+        ("Dortmund", "Inter"),
+        ("Brugge", "Marseille"),
+        ("Frankfurt", "Tottenham"),
+        ("Barcelona", "FC Kobenhavn"),
+        ("Liverpool", "Karabakh Agdam"),
+        ("Man City", "Galatasaray"),
+        ("Paphos", "Slavia Praha"),
+        ("Paris SG", "Newcastle"),
+        ("PSV", "Bayern"),
+        ("St Gillis", "Atalanta"),
+        ("Benfica", "Real Madrid"),
+        ("Napoli", "Chelsea"),
+    ],
+}
+
 # 1. CONSTANTES ET LISTES
 # -----------------------
 CLUBS_SIMULATOR = [
