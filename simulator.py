@@ -2071,57 +2071,112 @@ def get_web_simulation(club_cible):
     }
 
 """
-def get_web_simulation(club_cible):
+
+def get_web_simulation(club_cible, nb_simulations = 1000, journee_depart=1):
     """
     Fonction optimisée pour le web.
-    Renvoie les stats et les DEUX distributions (Points et Rangs).
+    Accepte maintenant 'journee_depart' pour choisir les données sources.
     """
-    # 1. Vérifions si le club existe
     if club_cible not in clubs_en_ldc:
         return {"error": f"Le club '{club_cible}' n'est pas dans la liste."}
 
-    # 2. On utilise l'état actuel (J6)
-    # Assurez-vous d'avoir exécuté le bloc d'initialisation des données manquantes en haut du fichier
-    etat_actuel = données_J6 
-    
-    # 3. On lance les simulations (N=1000)
-    nb_simulations = 1000
-    
-    # On récupère les distributions (points et rangs)
-    # debut=7 car on simule la fin de saison
-    distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=7, fin=8)
-    distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=7, fin=8)
+    # 1. MAPPING DES DONNÉES
+    # On crée un dictionnaire pour choisir facilement
+    # Assurez-vous que données_J5, J6, J7 sont bien définies plus haut dans votre fichier !
+    historique_donnees = {
+        5: données_J5,
+        6: données_J6,
+        7: données_J7
+        # Ajoutez 8: données_J8 quand vous l'aurez
+    }
 
-    # 4. On isole les stats du club demandé
+    # On récupère les données demandées, ou J6 par défaut si introuvable
+    etat_actuel = historique_donnees.get(journee_depart, données_J6)
+    
+    # Si on part de la J5, on simule la fin (donc on commence à simuler J6)
+    # Si on part de la J6, on commence à simuler J7
+    debut_simulation = journee_depart + 1
+
+    
+    # On passe 'debut=debut_simulation'
+    distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=8)
+    distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=8)
+
+    # 3. Extraction des stats (Le reste ne change pas)
     stats_points = distrib_points[club_cible]
     stats_rank = distrib_rank[club_cible]
-
-    # 5. Calcul des moyennes et pourcentages
-    # Moyenne pondérée des points
-    pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
     
-    # Probabilités de classement
-    # Top 8 = Rangs 1 à 8
-    proba_top8 = sum(stats_rank.get(r, 0) for r in range(1, 9))
-    # Barrage = Rangs 9 à 24
-    proba_barrage = sum(stats_rank.get(r, 0) for r in range(9, 25))
-    # Eliminé = Rangs 25 à 36
-    proba_elimine = sum(stats_rank.get(r, 0) for r in range(25, 37))
+    # Calcul des probas via les fonctions globales (pour cohérence)
+    p_top8 = proba_top_8(club_cible, distrib_rank)
+    p_qualif = proba_qualification(club_cible, distrib_rank)
+    p_barrage = p_qualif - p_top8
+    p_elimine = 1 - p_qualif
+    
+    pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
 
-    # Nettoyage (on enlève les probas minuscules pour alléger le JSON)
     clean_points = {k: v for k, v in stats_points.items() if v > 0.001}
     clean_ranks = {k: v for k, v in stats_rank.items() if v > 0.001}
 
-    # 6. RETOUR JSON (ATTENTION AUX NOMS DES CLES POUR LE JS)
     return {
         "club": club_cible,
-        "points_moyens": round(pts_moyen, 2),        # JS attend ça
-        "proba_top_8": round(proba_top8 * 100, 1),   # JS attend ça
-        "proba_barrage": round(proba_barrage * 100, 1),
-        "proba_elimine": round(proba_elimine * 100, 1),
-        "distribution_points": clean_points,         # Pour le graphe 1
-        "distribution_rangs": clean_ranks            # Pour le graphe 2
+        "day_used": journee_depart, # On renvoie l'info pour confirmer
+        "points_moyens": round(pts_moyen, 2),
+        "proba_top_8": round(p_top8 * 100, 1),
+        "proba_barrage": round(p_barrage * 100, 1),
+        "proba_elimine": round(p_elimine * 100, 1),
+        "distribution_points": clean_points,
+        "distribution_rangs": clean_ranks
     }
+
+
+"""
+A supprimer plus tard
+
+def get_probas_top8_qualif(nb_simulations=1000, journee_depart=6):
+    # 1. MAPPING TEMPOREL (Comme pour la simulation club)
+    historique_donnees = {
+        5: données_J5,
+        6: données_J6,
+        7: données_J7
+        # Ajoutez 8: données_J8 si disponible
+    }
+    
+    # On récupère les données correspondantes (par défaut J6)
+    etat = historique_donnees.get(journee_depart, données_J6)
+    
+    # Si on part de la J5, on doit simuler à partir de la J6 (donc debut=6)
+    # ATTENTION : Dans votre code, debut est inclusif.
+    debut_simu = journee_depart + 1
+    
+    # 2. Simulation
+    # Si on est déjà à la fin (ex: départ J8), la simulation ne fait rien, ce qui est logique.
+    distrib_clubs = distribution_position_par_club(N=nb_simulations, données=etat, debut=debut_simu, fin=8)
+    
+    # 3. Préparation des listes
+    liste_qualif = []
+    liste_top8 = []
+    
+    for club in clubs_en_ldc:
+        p_qualif = proba_qualification(club, distrib_clubs)
+        p_top8 = proba_top_8(club, distrib_clubs)
+        
+        if p_qualif > 0.001:
+            liste_qualif.append({"club": club, "proba": round(p_qualif * 100, 1)})
+            
+        if p_top8 > 0.001:
+            liste_top8.append({"club": club, "proba": round(p_top8 * 100, 1)})
+            
+    # 4. Tri décroissant
+    liste_qualif.sort(key=lambda x: x["proba"], reverse=True)
+    liste_top8.sort(key=lambda x: x["proba"], reverse=True)
+    
+    return {
+        "day_used": journee_depart,
+        "ranking_qualif": liste_qualif,
+        "ranking_top8": liste_top8
+    }
+
+"""
 
 def get_match_prediction(home_team, away_team):
     """
@@ -2160,11 +2215,8 @@ def get_match_prediction(home_team, away_team):
         "proba_loss": round(wins_a / total * 100, 1)
     }
 
-
+"""
 def get_global_ranking_detailed(n_simulations=1000, start_day=7, end_day=8):
-    """
-    Simule la saison entre start_day et end_day.
-    """
     # Sécurité : Si l'utilisateur inverse (ex: début 8, fin 2), on remet dans l'ordre
     if start_day > end_day:
         start_day, end_day = end_day, start_day
@@ -2216,18 +2268,46 @@ def get_global_ranking_detailed(n_simulations=1000, start_day=7, end_day=8):
         row['rank'] = i + 1
 
     return ranking_data
+"""
 
+"""
+# Acceder au données en temps réel (Scraping)
+import pandas as pd
+
+def get_wikipedia_standing():
+    url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026#Phase_de_championnat"    
+    
+    # Pandas va chercher tous les tableaux de la page
+    try:
+        tables = pd.read_html(url)
+        
+        # Le classement est souvent le tableau qui contient "Team", "Pld", "Pts"
+        standings_table = None
+        for t in tables:
+            if "Équipe" in t.columns and "Pts" in t.columns:
+                standings_table = t
+                break
+        
+        if standings_table is not None:
+            # Nettoyage des données (enlever les notes de bas de page ex: "Real Madrid[a]")
+            standings_table['Équipe'] = standings_table['Équipe'].str.replace(r'\[.*\]', '', regex=True)
+            return standings_table
+            
+    except Exception as e:
+        print(f"Erreur scraping: {e}")
+        return None
+"""
 
 # --- 20/12/2025 début MIR ---
 
-def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
+def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
     """
     Lance n_simulations de la journée 'start_day' à 'end_day'.
     Utilise vos fonctions existantes pour gérer la logique.
     """
     # 1. CHOIX DE L'ÉTAT INITIAL
-    if start_day <= 1:
-        # Si on commence J1, on envoie un dictionnaire avec des None.
+    if start_day == 0:
+        # Si on commence J0, on envoie un dictionnaire avec des None.
         # Votre fonction simulation_ligue mettra tout à 0 automatiquement.
         etat_initial = {
             "classement": None, "points": None, "diff_buts": None, 
@@ -2243,11 +2323,12 @@ def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
             3: données_J3,
             4: données_J4,
             5: données_J5,
-            6: données_J6, # Actuel
-            7: données_J7
+            6: données_J6, 
+            7: données_J7,
+            8: données_J8
         }
         # On récupère l'historique, ou le vide par sécurité
-        etat_initial = map_historique.get(start_day - 1, {
+        etat_initial = map_historique.get(start_day, {
              "classement": None, "points": None, "diff_buts": None, 
              "buts": None, "buts_ext": None, "nb_victoires": None, 
              "nb_victoires_ext": None
@@ -2270,7 +2351,7 @@ def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
         # Appel de VOTRE fonction
         resultats_simu = simulation_ligue(
             données=etat_initial, 
-            debut=start_day, 
+            debut=start_day + 1, 
             fin=end_day
         )
         
@@ -2315,31 +2396,90 @@ def get_simulation_flexible(n_simulations=1000, start_day=1, end_day=8):
 
     return ranking_data
 
-# Acceder au données en temps réel (Scraping)
-import pandas as pd
 
-def get_wikipedia_standing():
-    url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026#Phase_de_championnat"    
+
+
+def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
+    """
+    Génère les tableaux de PROBABILITÉS (Top 8 et Top 24) en fonction de la journée de départ.
+    Logique similaire à get_simulation_flexible.
+    """
+    # 1. CHOIX DE L'ÉTAT INITIAL
+    if journee_depart == 0:
+        # Si on commence J1, on envoie un dictionnaire avec des None.
+        # Votre fonction simulation_ligue mettra tout à 0 automatiquement.
+        etat_initial = {
+            "classement": None, "points": None, "diff_buts": None, 
+            "buts": None, "buts_ext": None, "nb_victoires": None, 
+            "nb_victoires_ext": None
+        }
+    else:
+        # On suppose que ces variables (données_J1...) sont définies plus haut dans votre fichier
+        map_historique = {
+            1: données_J1,
+            2: données_J2,
+            3: données_J3,
+            4: données_J4,
+            5: données_J5,
+            6: données_J6, 
+            7: données_J7,
+            8: données_J8
+        }
+        # On récupère l'historique, ou le vide par sécurité
+        etat_initial = map_historique.get(journee_depart, {
+             "classement": None, "points": None, "diff_buts": None, 
+             "buts": None, "buts_ext": None, "nb_victoires": None, 
+             "nb_victoires_ext": None
+        })
+
+
+    # 2. DÉFINITION DE LA PLAGE DE SIMULATION
+    # ---------------------------------------
+    # Si on a chargé les données de la J6, les prochains matchs sont ceux de la J7.
+    debut_simu = journee_depart + 1
     
-    # Pandas va chercher tous les tableaux de la page
-    try:
-        tables = pd.read_html(url)
-        
-        # Le classement est souvent le tableau qui contient "Team", "Pld", "Pts"
-        standings_table = None
-        for t in tables:
-            if "Équipe" in t.columns and "Pts" in t.columns:
-                standings_table = t
-                break
-        
-        if standings_table is not None:
-            # Nettoyage des données (enlever les notes de bas de page ex: "Real Madrid[a]")
-            standings_table['Équipe'] = standings_table['Équipe'].str.replace(r'\[.*\]', '', regex=True)
-            return standings_table
-            
-    except Exception as e:
-        print(f"Erreur scraping: {e}")
-        return None
+    # Si on est déjà à la fin (J8), debut_simu sera 9. La boucle ne tournera pas, 
+    # ce qui est logique (les probas sont figées à 100% ou 0%).
 
-df = get_wikipedia_standing()  
-print(df)
+    # 3. LANCEMENT DE LA DISTRIBUTION (Monte Carlo)
+    # ---------------------------------------------
+    distrib_clubs = distribution_position_par_club(
+        N=nb_simulations, 
+        données=etat_initial, 
+        debut=debut_simu, 
+        fin=8
+    )
+    
+    # 4. CALCUL DES PROBABILITÉS ET FORMATAGE
+    # ---------------------------------------
+    liste_qualif = []
+    liste_top8 = []
+    
+    for club in clubs_en_ldc:
+        # Calcul via vos fonctions utilitaires
+        p_qualif = proba_qualification(club, distrib_clubs)
+        p_top8 = proba_top_8(club, distrib_clubs)
+        
+        # On ne garde que les valeurs pertinentes (> 0.1%) pour alléger le tableau
+        if p_qualif > 0.001:
+            liste_qualif.append({
+                "club": club, 
+                "proba": round(p_qualif * 100, 1)
+            })
+            
+        if p_top8 > 0.001:
+            liste_top8.append({
+                "club": club, 
+                "proba": round(p_top8 * 100, 1)
+            })
+            
+    # 5. TRI DÉCROISSANT (Le plus de chances en premier)
+    # --------------------------------------------------
+    liste_qualif.sort(key=lambda x: x["proba"], reverse=True)
+    liste_top8.sort(key=lambda x: x["proba"], reverse=True)
+    
+    return {
+        "day_used": journee_depart,
+        "ranking_qualif": liste_qualif,
+        "ranking_top8": liste_top8
+    }

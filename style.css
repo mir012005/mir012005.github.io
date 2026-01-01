@@ -430,3 +430,56 @@ form input {
     height: 350px; /* Hauteur fixe confortable pour éviter l'écrasement */
     width: 100%;
 }
+
+/* =========================================
+   BARRE DE CONTRÔLE (Date Selector)
+   ========================================= */
+.controls-bar {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap; /* Pour mobile */
+}
+
+.controls-bar label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.controls-bar select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.controls-bar .action-btn {
+    padding: 8px 15px;
+    background-color: #007bff; /* Bleu */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.controls-bar .action-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Petit style pour le chargement dans le tableau */
+.loading {
+    text-align: center;
+    font-style: italic;
+    color: #666;
+    padding: 20px;
+}

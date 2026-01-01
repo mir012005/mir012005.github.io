@@ -34,7 +34,7 @@ def get_clubs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 #======================================================
-
+"""
 @app.route('/api/simulate', methods=['POST'])
 def run_simulation():
     try:
@@ -56,6 +56,81 @@ def run_simulation():
         
     except Exception as e:
         print(f"ERREUR : {e}")
+        return jsonify({"error": str(e)}), 500
+
+"""
+"""
+<section id="ranking" class="page" style="display:none;">
+            <h2>🏆 Classement Projeté (Moyenne)</h2>
+            
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label>De :</label>
+                    <select id="startDay">
+                        <option value="1" selected>J0</option><option value="1">J1</option><option value="2">J2</option>
+                        <option value="3">J3</option><option value="4">J4</option>
+                        <option value="5">J5</option><option value="6">J6</option>
+                        <option value="7">J7</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>À :</label>
+                    <select id="endDay">
+                        <option value="1">J1</option><option value="2">J2</option>
+                        <option value="3">J3</option><option value="4">J4</option>
+                        <option value="5">J5</option><option value="6">J6</option>
+                        <option value="7">J7</option><option value="8" selected>J8</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
+            </div>
+
+            <div class="table-container">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align:left;">Club</th>
+                            <th>Points</th>
+                            <th>Diff. Buts</th>
+                            <th>Buts</th>
+                            <th class="secondary-stat">Buts Ext.</th>
+                            <th>Victoires</th>
+                            <th class="secondary-stat">Vict. Ext.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <tr><td colspan="8">Cliquez sur Calculer...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="legend">
+                <span class="dot green"></span> Qualif Directe (1-8)
+                <span class="dot orange"></span> Barrages (9-24)
+                <span class="dot red"></span> Éliminé (25-36)
+            </div>
+        </section>
+"""
+    
+@app.route('/api/simulate', methods=['POST'])
+def run_simulation():
+    try:
+        data = request.json or {}
+        club = data.get('club')
+        day = int(data.get('day', 6)) # On récupère le jour
+        
+        if not club:
+            return jsonify({"error": "Club manquant"}), 400
+
+        # Appel de la fonction web simulation
+        resultats = simulator.get_web_simulation(club, journee_depart=day)
+        
+        if "error" in resultats:
+            return jsonify(resultats), 404
+            
+        return jsonify(resultats)
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
@@ -98,6 +173,7 @@ def predict_match():
         return jsonify({"error": str(e)}), 500
 
 #============ 20/12/2025===============================
+"""
 @app.route('/api/ranking', methods=['POST'])
 def get_ranking():
     try:
@@ -114,7 +190,43 @@ def get_ranking():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+"""
+@app.route('/api/rankings', methods=['POST']) # Changé en POST
+def get_rankings():
+    try:
+        # On récupère le jour choisi (par défaut 6)
+        data = request.json or {}
+        day = int(data.get('day', 6))
+        
+        print(f"--> Calcul Classement (Base J{day})...")
+        
+        # Appel de la NOUVELLE fonction flexible
+        # start_day = jour choisie, end_day = 8 (fin de saison)
+        results = simulator.get_simulation_flexible(n_simulations=1000, start_day=day, end_day=8)
+        
+        return jsonify(results)
+    except Exception as e:
+        print(f"ERREUR RANKING: {e}")
+        return jsonify({"error": str(e)}), 500
 
+# -----------------------------------------------------
+# 2. Route pour les PROBABILITÉS (Top 8 / Qualif)
+# -----------------------------------------------------
+@app.route('/api/rankings_top8_qualif', methods=['POST']) # Changé en POST
+def get_probas_api():
+    try:
+        data = request.json or {}
+        day = int(data.get('day', 6))
+        
+        print(f"--> Calcul Probas (Base J{day})...")
+        
+        # Appel de la fonction probas
+        results = simulator.get_probas_top8_qualif(nb_simulations=1000, journee_depart=day)
+        
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 #===============================================================================================
 
 if __name__ == '__main__':

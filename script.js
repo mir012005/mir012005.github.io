@@ -433,7 +433,7 @@ async function lancerDuel() {
 // ==========================================
 // 6. CLASSEMENT
 // ==========================================
-
+/*
 async function chargerClassement() {
     const tbody = document.getElementById('rankingBody');
     const startSelect = document.getElementById('startDay');
@@ -492,5 +492,52 @@ async function chargerClassement() {
         });
     } catch (error) {
         tbody.innerHTML = '<tr><td colspan="8">Erreur connexion.</td></tr>';
+    }
+}
+*/
+async function chargerClassement() {
+    const tbody = document.getElementById('rankingBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="loading">Calcul des projections...</td></tr>';
+
+    try {
+        // 1. Récupérer la valeur du dropdown (J6 par défaut)
+        const daySelect = document.getElementById('rankingDay');
+        const dayValue = daySelect ? daySelect.value : 6;
+
+        // 2. Appel API en POST
+        const response = await fetch('/api/rankings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: parseInt(dayValue) }) 
+        });
+
+        const data = await response.json();
+        tbody.innerHTML = '';
+
+        // 3. Affichage
+        data.forEach(row => {
+            // Logique de couleur (Top 8 / Top 24)
+            let rowClass = "";
+            if (row.rank <= 8) rowClass = "qualif-direct";
+            else if (row.rank <= 24) rowClass = "barrage";
+            else rowClass = "elimine";
+
+            tbody.innerHTML += `
+                <tr class="${rowClass}">
+                    <td>${row.rank}</td>
+                    <td class="club-cell">
+                        <img src="logos/${row.club}.png" onerror="this.src='logos/default.png'" alt="${row.club}">
+                        ${row.club}
+                    </td>
+                    <td><strong>${row.points}</strong></td>
+                    <td>${row.diff}</td>
+                    <td>${row.buts}</td>
+                    <td>${row.victoires}</td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        tbody.innerHTML = '<tr><td colspan="6" style="color:red">Erreur chargement. Vérifiez le serveur.</td></tr>';
     }
 }

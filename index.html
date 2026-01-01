@@ -95,58 +95,44 @@
         </section>
         
         <!-- 20/12/2025  MIR-->
+        <section id="ranking" class="page">
+            <h2>Classement Projeté</h2>
+            <p>Simulation moyenne sur 1000 saisons.</p>
 
-        <section id="ranking" class="page" style="display:none;">
-            <h2>🏆 Classement Projeté (Moyenne)</h2>
-            
             <div class="controls-bar">
-                <div class="control-group">
-                    <label>De :</label>
-                    <select id="startDay">
-                        <option value="1" selected>J1</option><option value="2">J2</option>
-                        <option value="3">J3</option><option value="4">J4</option>
-                        <option value="5">J5</option><option value="6">J6</option>
-                        <option value="7">J7</option><option value="8">J8</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>À :</label>
-                    <select id="endDay">
-                        <option value="1">J1</option><option value="2">J2</option>
-                        <option value="3">J3</option><option value="4">J4</option>
-                        <option value="5">J5</option><option value="6">J6</option>
-                        <option value="7">J7</option><option value="8" selected>J8</option>
-                    </select>
-                </div>
-                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
+                <label for="rankingDay">Basé sur les résultats après la :</label>
+                <select id="rankingDay" onchange="chargerClassement()">
+                    <option value="0">Début de saison (J0)</option>
+                    <option value="1">Journée 1</option>
+                    <option value="2">Journée 2</option>
+                    <option value="3">Journée 3</option>
+                    <option value="4">Journée 4</option>
+                    <option value="5">Journée 5</option>
+                    <option value="6" selected>Journée 6 (Actuel)</option>
+                    <option value="7">Journée 7</option>
+                    <option value="8">Journée 8 (Fin)</option>
+                </select>
+                <button class="action-btn" onclick="chargerClassement()">Actualiser</button>
             </div>
 
             <div class="table-container">
-                <table class="ranking-table">
+                <table>
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th style="text-align:left;">Club</th>
-                            <th>Points</th>
-                            <th>Diff. Buts</th>
+                            <th>Club</th>
+                            <th>Pts (Moy)</th>
+                            <th>Diff</th>
                             <th>Buts</th>
-                            <th class="secondary-stat">Buts Ext.</th>
-                            <th>Victoires</th>
-                            <th class="secondary-stat">Vict. Ext.</th>
+                            <th>Vic.</th>
                         </tr>
                     </thead>
                     <tbody id="rankingBody">
-                        <tr><td colspan="8">Cliquez sur Calculer...</td></tr>
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
-            
-            <div class="legend">
-                <span class="dot green"></span> Qualif Directe (1-8)
-                <span class="dot orange"></span> Barrages (9-24)
-                <span class="dot red"></span> Éliminé (25-36)
-            </div>
         </section>
+        
 
         <section id="results" class="page" style="display:none;">
             <h2>Résultats de la simulation</h2>
