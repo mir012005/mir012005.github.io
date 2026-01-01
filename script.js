@@ -590,7 +590,7 @@ async function analyserImpactMatch() {
         return;
     }
     
-    container.innerHTML = <div class="loading-container"><div class="loader"></div><p>Analyse en cours...</p></div>;
+    container.innerHTML = '<div class="loading-container"><div class="loader"></div><p>Analyse en cours...</p></div>';
     
     try {
         const response = await fetch('/api/match-impact', {
@@ -602,7 +602,7 @@ async function analyserImpactMatch() {
         const data = await response.json();
         
         if (data.error) {
-            container.innerHTML = <div class="error-msg">❌ ${data.error}</div>;
+            container.innerHTML = '<div class="error-msg">❌ ${data.error}</div>';
             return;
         }
         
@@ -673,14 +673,14 @@ async function analyserImpactMatch() {
         `;
         
     } catch (error) {
-        container.innerHTML = <div class="error-msg">❌ Erreur serveur</div>;
+        container.innerHTML = '<div class="error-msg">❌ Erreur serveur</div>';
     }
 }
 
 async function chargerMatchsImportants() {
     const container = document.getElementById('importantMatchesTable');
     
-    container.innerHTML = <div class="loading-container"><div class="loader"></div><p>Calcul en cours (peut prendre ~30s)...</p></div>;
+    container.innerHTML = '<div class="loading-container"><div class="loader"></div><p>Calcul en cours (peut prendre ~30s)...</p></div>';
     
     try {
         const response = await fetch('/api/all-matches-impact', {
@@ -692,7 +692,7 @@ async function chargerMatchsImportants() {
         const data = await response.json();
         
         if (data.error) {
-            container.innerHTML = <div class="error-msg">❌ ${data.error}</div>;
+            container.innerHTML = '<div class="error-msg">❌ ${data.error}</div>';
             return;
         }
         
@@ -726,6 +726,6 @@ async function chargerMatchsImportants() {
         container.innerHTML = html;
         
     } catch (error) {
-        container.innerHTML = <div class="error-msg">❌ Erreur serveur</div>;
+        container.innerHTML = '<div class="error-msg">❌ Erreur serveur</div>';
     }
 }
