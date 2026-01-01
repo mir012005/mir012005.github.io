@@ -16,6 +16,7 @@
             <button onclick="showPage('duel')">⚔️ Duel</button>
             <button onclick="showPage('ranking'); chargerClassement()">🏆 Classement</button>
             <button onclick="showPage('match-impact')">⚡ Impact Matchs</button>
+            <button onclick="showPage('probas-zone')">📊 Probabilités</button>
         </nav>
     </header>
 
@@ -192,6 +193,68 @@
                 <ul id="listeImportance" class="importance-list">
                     <li>Chargement des données...</li>
                 </ul>
+            </div>
+        </section>
+
+        <section id="probas-zone" class="page" style="display:none;">
+            <h2>📊 Probabilités de Qualification</h2>
+            <p>Estimation des chances de chaque club selon la journée de départ (Simulé 1000 fois).</p>
+
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label>Situation après la :</label>
+                    <select id="probaStartDay">
+                        <option value="0" selected>J0 (Début Saison)</option>
+                        <option value="1">Journée 1</option>
+                        <option value="2">Journée 2</option>
+                        <option value="3">Journée 3</option>
+                        <option value="4">Journée 4</option>
+                        <option value="5">Journée 5</option>
+                        <option value="6">Journée 6 (Actuel)</option>
+                        <option value="7">Journée 7</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="chargerProbas()">Calculer les chances</button>
+            </div>
+
+            <div class="probas-container">
+                
+                <div class="proba-column">
+                    <h3 class="green-text">🏆 Favoris Top 8 (Qualif Directe)</h3>
+                    <div class="table-wrapper">
+                        <table class="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th style="text-align:left;">Club</th>
+                                    <th>% Chance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyTop8">
+                                <tr><td colspan="3">Cliquez sur Calculer...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="proba-column">
+                    <h3 class="orange-text">🎟️ Favoris Top 24 (Barrages + Top8)</h3>
+                    <div class="table-wrapper">
+                        <table class="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th style="text-align:left;">Club</th>
+                                    <th>% Chance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyQualif">
+                                <tr><td colspan="3">Cliquez sur Calculer...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </section>
 

@@ -606,7 +606,7 @@ async function analyserImpactMatch() {
         const data = await response.json();
         
         if (data.error) {
-            container.innerHTML = '<div class="error-msg">❌ ${data.error}</div>';
+            container.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
             return;
         }
         
@@ -698,7 +698,7 @@ async function chargerMatchsImportants(type) {
         const data = await response.json();
         
         if (data.error) {
-            container.innerHTML = '<div class="error-msg">❌ ${data.error}</div>';
+            container.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
             return;
         }
         
@@ -738,6 +738,63 @@ async function chargerMatchsImportants(type) {
         
     } catch (error) {
         container.innerHTML = '<div class="error-msg">❌ Erreur serveur</div>';
+    }
+}
+
+// --- FONCTION POUR CHARGER LES PROBAS ---
+async function chargerProbas() {
+    const day = document.getElementById('probaStartDay').value;
+    const tbodyTop8 = document.getElementById('tbodyTop8');
+    const tbodyQualif = document.getElementById('tbodyQualif');
+
+    // Afficher le chargement
+    const loadingRow = '<tr><td colspan="3" style="text-align:center;"><div class="loader"></div> Calcul...</td></tr>';
+    tbodyTop8.innerHTML = loadingRow;
+    tbodyQualif.innerHTML = loadingRow;
+
+    try {
+        const response = await fetch('/api/probas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: parseInt(day) })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            tbodyTop8.innerHTML = `<tr><td colspan="3" style="color:red">${data.error}</td></tr>`;
+            tbodyQualif.innerHTML = `<tr><td colspan="3" style="color:red">${data.error}</td></tr>`;
+            return;
+        }
+
+        // Fonction utilitaire pour générer les lignes
+        const generateRows = (list, colorClass) => {
+            if (list.length === 0) return '<tr><td colspan="3">Aucune donnée</td></tr>';
+            
+            return list.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td style="text-align:left; display:flex; align-items:center; gap:10px;">
+                        <img src="logos/${item.club}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                        ${item.club}
+                    </td>
+                    <td>
+                        <span class="score-badge ${colorClass}" style="width:50px; display:inline-block;">
+                            ${item.proba}%
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        // Remplissage des tableaux
+        tbodyTop8.innerHTML = generateRows(data.ranking_top8, 'green-bg');
+        tbodyQualif.innerHTML = generateRows(data.ranking_qualif, 'orange-bg');
+
+    } catch (error) {
+        console.error(error);
+        tbodyTop8.innerHTML = '<tr><td colspan="3">Erreur serveur</td></tr>';
+        tbodyQualif.innerHTML = '<tr><td colspan="3">Erreur serveur</td></tr>';
     }
 }
 

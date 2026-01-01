@@ -230,6 +230,21 @@ def get_probas_api():
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/probas', methods=['POST'])
+def get_probas():
+    try:
+        data = request.json or {}
+        # On récupère la journée demandée (par défaut 0 ou 6 selon votre préférence)
+        day = int(data.get('day', 6))
+        
+        # Appel de votre fonction
+        results = simulator.get_probas_top8_qualif(nb_simulations=1000, journee_depart=day)
+        
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur Probas: {e}")
+        return jsonify({"error": str(e)}), 500
     
 # ------------------------------------------------------------------
 # ROUTES POUR L'ANALYSE D'IMPACT DES MATCHS

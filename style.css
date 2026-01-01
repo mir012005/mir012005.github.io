@@ -677,6 +677,44 @@ tr.elimine { border-left: 5px solid #dc3545; background: rgba(220, 53, 69, 0.05)
     color: #0066cc;
 }
 
+/* --- PROBAS SECTION --- */
+.probas-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.proba-column {
+    flex: 1;
+    min-width: 300px; /* Pour mobile */
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.proba-column h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.green-text { color: #28a745; }
+.orange-text { color: #fd7e14; }
+
+/* Badges de pourcentage */
+.score-badge.green-bg { background-color: #28a745; color: white; }
+.score-badge.orange-bg { background-color: #fd7e14; color: white; }
+
+/* Scroll si la liste est longue */
+.table-wrapper {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
 /* --- SCENARIO DASHBOARD --- */
 .scenario-dashboard { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .stat-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; width: 30%; min-width: 150px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
