@@ -562,3 +562,170 @@ async function chargerClassement() {
         tbody.innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Erreur serveur</td></tr>';
     }
 }
+
+// ==========================================
+// ANALYSE D'IMPACT DES MATCHS
+// ==========================================
+
+function switchImpactTab(tabName) {
+    document.querySelectorAll('.impact-tab-content').forEach(tab => tab.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    if (tabName === 'specific') {
+        document.getElementById('impact-specific').style.display = 'block';
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    } else {
+        document.getElementById('impact-ranking').style.display = 'block';
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    }
+}
+
+async function analyserImpactMatch() {
+    const club = document.getElementById('impactClub').value.trim();
+    const journee = parseInt(document.getElementById('impactJournee').value);
+    const container = document.getElementById('impactResults');
+    
+    if (!club) {
+        alert('Entrez un nom de club');
+        return;
+    }
+    
+    container.innerHTML = <div class="loading-container"><div class="loader"></div><p>Analyse en cours...</p></div>;
+    
+    try {
+        const response = await fetch('/api/match-impact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club, journee, journee_donnees: 6 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            container.innerHTML = <div class="error-msg">❌ ${data.error}</div>;
+            return;
+        }
+        
+        const domicileText = data.domicile ? '🏠 Domicile' : '✈️ Extérieur';
+        
+        container.innerHTML = `
+            <div class="impact-card">
+                <h3>${club} vs ${data.adversaire}</h3>
+                <p class="match-info">${domicileText} - Journée ${journee}</p>
+                
+                <div class="scenarios-grid">
+                    <div class="scenario-box victoire">
+                        <h4>✅ Victoire</h4>
+                        <div class="stat-line">
+                            <span>Qualification :</span>
+                            <strong>${data.impact_victoire.proba_qualif}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Top 8 :</span>
+                            <strong>${data.impact_victoire.proba_top8}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Classement moyen :</span>
+                            <strong>${data.impact_victoire.classement_moyen}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-box nul">
+                        <h4>⚖️ Match Nul</h4>
+                        <div class="stat-line">
+                            <span>Qualification :</span>
+                            <strong>${data.impact_nul.proba_qualif}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Top 8 :</span>
+                            <strong>${data.impact_nul.proba_top8}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Classement moyen :</span>
+                            <strong>${data.impact_nul.classement_moyen}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-box defaite">
+                        <h4>❌ Défaite</h4>
+                        <div class="stat-line">
+                            <span>Qualification :</span>
+                            <strong>${data.impact_defaite.proba_qualif}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Top 8 :</span>
+                            <strong>${data.impact_defaite.proba_top8}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Classement moyen :</span>
+                            <strong>${data.impact_defaite.classement_moyen}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="gains-box">
+                    <h4>📊 Enjeux</h4>
+                    <p><strong>Victoire vs Nul :</strong> +${data.gain_victoire_vs_nul.qualif}% qualif, +${data.gain_victoire_vs_nul.top8}% top8</p>
+                    <p><strong>Nul vs Défaite :</strong> +${data.gain_nul_vs_defaite.qualif}% qualif, +${data.gain_nul_vs_defaite.top8}% top8</p>
+                    <p><strong>Places gagnées (victoire) :</strong> ${data.gain_victoire_vs_nul.classement} places en moyenne</p>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        container.innerHTML = <div class="error-msg">❌ Erreur serveur</div>;
+    }
+}
+
+async function chargerMatchsImportants() {
+    const container = document.getElementById('importantMatchesTable');
+    
+    container.innerHTML = <div class="loading-container"><div class="loader"></div><p>Calcul en cours (peut prendre ~30s)...</p></div>;
+    
+    try {
+        const response = await fetch('/api/all-matches-impact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ journee: 7, journee_donnees: 6 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            container.innerHTML = <div class="error-msg">❌ ${data.error}</div>;
+            return;
+        }
+        
+        let html = `
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Match</th>
+                        <th>Impact Global</th>
+                        <th>Club le + Impacté</th>
+                        <th>Impact Max</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        data.forEach((match, idx) => {
+            html += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td style="text-align:left;">${match.match}</td>
+                    <td>${match.importance_globale}</td>
+                    <td>${match.club_le_plus_impacte}</td>
+                    <td>${match.impact_max}</td>
+                </tr>
+            `;
+        });
+        
+        html += "</tbody></table>";
+        container.innerHTML = html;
+        
+    } catch (error) {
+        container.innerHTML = <div class="error-msg">❌ Erreur serveur</div>;
+    }
+}

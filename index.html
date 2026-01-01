@@ -15,6 +15,7 @@
             <button onclick="showPage('analyses'); chargerAnalysesGlobales()">Analyses Globales</button>
             <button onclick="showPage('duel')">⚔️ Duel</button>
             <button onclick="showPage('ranking'); chargerClassement()">🏆 Classement</button>
+            <button onclick="showPage('match-impact')">⚡ Impact Matchs</button>
         </nav>
     </header>
 
@@ -193,6 +194,38 @@
                 </ul>
             </div>
         </section>
+
+        <!-- Nouvelle section : Impact des matchs -->
+        <section id="match-impact" class="page" style="display:none;">
+            <h2>⚡ Impact des Matchs</h2>
+            
+            <div class="impact-tabs">
+                <button class="tab-btn active" onclick="switchImpactTab('specific')">Match Spécifique</button>
+                <button class="tab-btn" onclick="switchImpactTab('ranking')">Matchs Importants J7</button>
+            </div>
+
+            <!-- TAB 1 : Analyse d'un match spécifique -->
+            <div id="impact-specific" class="impact-tab-content">
+                <div class="controls-bar">
+                    <input type="text" id="impactClub" placeholder="Ex: Arsenal" list="clubsList">
+                    <datalist id="clubsList"></datalist>
+                    <select id="impactJournee">
+                        <option value="7" selected>Journée 7</option>
+                        <option value="8">Journée 8</option>
+                    </select>
+                    <button class="action-btn" onclick="analyserImpactMatch()">🔍 Analyser</button>
+                </div>
+                
+                <div id="impactResults"></div>
+            </div>
+
+            <!-- TAB 2 : Classement des matchs importants -->
+            <div id="impact-ranking" class="impact-tab-content" style="display:none;">
+                <button class="action-btn" onclick="chargerMatchsImportants()">🔄 Charger les matchs J7</button>
+                <div id="importantMatchesTable"></div>
+            </div>
+        </section>
+        
     </main>
 
     <script src="script.js"></script>

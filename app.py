@@ -230,6 +230,65 @@ def get_probas_api():
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# ------------------------------------------------------------------
+# ROUTES POUR L'ANALYSE D'IMPACT DES MATCHS
+# ------------------------------------------------------------------
+
+@app.route('/api/match-impact', methods=['POST'])
+def get_match_impact():
+    try:
+        data = request.json or {}
+        club = data.get('club')
+        journee = int(data.get('journee', 7))
+        journee_donnees = int(data.get('journee_donnees', 6))
+        
+        if not club:
+            return jsonify({"error": "Club manquant"}), 400
+        
+        result = simulator.get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=journee_donnees)
+        
+        if "error" in result:
+            return jsonify(result), 404
+            
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/all-matches-impact', methods=['POST'])
+def get_all_matches_impact():
+    try:
+        data = request.json or {}
+        journee = int(data.get('journee', 7))
+        journee_donnees = int(data.get('journee_donnees', 6))
+        
+        result = simulator.get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=journee_donnees)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/next-match-scenarios', methods=['POST'])
+def get_next_match_scenarios():
+    try:
+        data = request.json or {}
+        club = data.get('club')
+        journee_donnees = int(data.get('journee_donnees', 6))
+        
+        if not club:
+            return jsonify({"error": "Club manquant"}), 400
+        
+        result = simulator.get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees=journee_donnees)
+        
+        if "error" in result:
+            return jsonify(result), 404
+            
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 #===============================================================================================
 
 if __name__ == '__main__':
@@ -237,4 +296,3 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 
-z = "hello world"
