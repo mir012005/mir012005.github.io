@@ -192,20 +192,23 @@ def get_ranking():
         return jsonify({"error": str(e)}), 500
     
 """
-@app.route('/api/rankings', methods=['POST']) # Changé en POST
+@app.route('/api/rankings', methods=['POST'])
 def get_rankings():
     try:
-        # On récupère le jour choisi (par défaut 6)
         data = request.json or {}
-        day = int(data.get('day', 6))
         
-        print(f"--> Calcul Classement (Base J{day})...")
+        # On récupère le début et la fin demandés
+        # Par défaut : du début (0) à la fin (8)
+        start = int(data.get('start', 0))
+        end = int(data.get('end', 8))
         
-        # Appel de la NOUVELLE fonction flexible
-        # start_day = jour choisie, end_day = 8 (fin de saison)
-        results = simulator.get_simulation_flexible(n_simulations=1000, start_day=day, end_day=8)
+        print(f"--> Simulation de J{start} jusqu'à J{end}...")
+        
+        # Appel de la fonction flexible avec les deux bornes
+        results = simulator.get_simulation_flexible(n_simulations=1000, start_day=start, end_day=end)
         
         return jsonify(results)
+        
     except Exception as e:
         print(f"ERREUR RANKING: {e}")
         return jsonify({"error": str(e)}), 500

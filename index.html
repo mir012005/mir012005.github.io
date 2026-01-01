@@ -95,41 +95,66 @@
         </section>
         
         <!-- 20/12/2025  MIR-->
-        <section id="ranking" class="page">
-            <h2>Classement Projeté</h2>
-            <p>Simulation moyenne sur 1000 saisons.</p>
-
+        <section id="ranking" class="page" style="display:none;">
+            <h2>🏆 Classement Projeté (Moyenne)</h2>
+            <p>Simulez le classement sur une période précise.</p>
+            
             <div class="controls-bar">
-                <label for="rankingDay">Basé sur les résultats après la :</label>
-                <select id="rankingDay" onchange="chargerClassement()">
-                    <option value="0">Début de saison (J0)</option>
-                    <option value="1">Journée 1</option>
-                    <option value="2">Journée 2</option>
-                    <option value="3">Journée 3</option>
-                    <option value="4">Journée 4</option>
-                    <option value="5">Journée 5</option>
-                    <option value="6" selected>Journée 6 (Actuel)</option>
-                    <option value="7">Journée 7</option>
-                    <option value="8">Journée 8 (Fin)</option>
-                </select>
-                <button class="action-btn" onclick="chargerClassement()">Actualiser</button>
+                <div class="control-group">
+                    <label for="startDay">Situation de départ (Après) :</label>
+                    <select id="startDay">
+                        <option value="0" selected>J0 (Début)</option>
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6 (Actuel)</option>
+                        <option value="7">J7</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="endDay">Simuler jusqu'à la :</label>
+                    <select id="endDay">
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6</option>
+                        <option value="7">J7</option>
+                        <option value="8" selected>J8 (Fin)</option>
+                    </select>
+                </div>
+                
+                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
             </div>
 
             <div class="table-container">
-                <table>
+                <table class="ranking-table">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Club</th>
-                            <th>Pts (Moy)</th>
-                            <th>Diff</th>
+                            <th style="text-align:left;">Club</th>
+                            <th>Pts</th>
+                            <th>Diff.</th>
                             <th>Buts</th>
+                            <th class="secondary-stat">Buts Ext.</th>
                             <th>Vic.</th>
+                            <th class="secondary-stat">Vict. Ext.</th>
                         </tr>
                     </thead>
                     <tbody id="rankingBody">
-                        </tbody>
+                        <tr><td colspan="8" style="text-align:center;">Cliquez sur Calculer...</td></tr>
+                    </tbody>
                 </table>
+            </div>
+            
+            <div class="legend">
+                <span class="dot green"></span> Qualif Directe (1-8)
+                <span class="dot orange"></span> Barrages (9-24)
+                <span class="dot red"></span> Éliminé (25-36)
             </div>
         </section>
         

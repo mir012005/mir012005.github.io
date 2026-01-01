@@ -483,3 +483,75 @@ form input {
     color: #666;
     padding: 20px;
 }
+
+/* --- BARRE DE CONTRÔLES (Double Select) --- */
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.controls-bar {
+    display: flex;
+    flex-wrap: wrap; /* Passe à la ligne sur mobile */
+    gap: 20px;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* --- TABLEAU --- */
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.ranking-table th {
+    background: #343a40;
+    color: white;
+    padding: 12px;
+    text-align: center;
+}
+.ranking-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+/* Aligner le nom du club à gauche */
+.ranking-table td.club-cell {
+    text-align: left;
+}
+
+/* --- COULEURS DE RANG --- */
+tr.qualif-direct { border-left: 5px solid #28a745; background: rgba(40, 167, 69, 0.05); }
+tr.barrage { border-left: 5px solid #ffc107; background: rgba(255, 193, 7, 0.05); }
+tr.elimine { border-left: 5px solid #dc3545; background: rgba(220, 53, 69, 0.05); }
+
+/* --- LÉGENDE --- */
+.legend {
+    margin-top: 15px;
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    justify-content: center;
+}
+.dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.dot.green { background: #28a745; }
+.dot.orange { background: #ffc107; }
+.dot.red { background: #dc3545; }
+
+/* --- RESPONSIVE : Cacher les stats secondaires sur mobile --- */
+@media (max-width: 768px) {
+    .secondary-stat {
+        display: none;
+    }
+}

@@ -497,26 +497,43 @@ async function chargerClassement() {
 */
 async function chargerClassement() {
     const tbody = document.getElementById('rankingBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="loading">Calcul des projections...</td></tr>';
+    
+    // 1. Récupération des valeurs
+    const startSelect = document.getElementById('startDay');
+    const endSelect = document.getElementById('endDay');
+    
+    const startVal = parseInt(startSelect.value);
+    const endVal = parseInt(endSelect.value);
+
+    // 2. Sécurité : Vérifier l'ordre chronologique
+    if (startVal >= endVal) {
+        alert(`Impossible de simuler : La journée de fin (J${endVal}) doit être après le départ (J${startVal}).`);
+        return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="loader small"></div> Calcul en cours...</td></tr>';
 
     try {
-        // 1. Récupérer la valeur du dropdown (J6 par défaut)
-        const daySelect = document.getElementById('rankingDay');
-        const dayValue = daySelect ? daySelect.value : 6;
-
-        // 2. Appel API en POST
+        // 3. Appel API avec les DEUX paramètres
         const response = await fetch('/api/rankings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ day: parseInt(dayValue) }) 
+            body: JSON.stringify({ 
+                start: startVal, 
+                end: endVal 
+            }) 
         });
 
         const data = await response.json();
         tbody.innerHTML = '';
 
-        // 3. Affichage
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8">Aucune donnée disponible.</td></tr>';
+            return;
+        }
+
+        // 4. Affichage du tableau
         data.forEach(row => {
-            // Logique de couleur (Top 8 / Top 24)
             let rowClass = "";
             if (row.rank <= 8) rowClass = "qualif-direct";
             else if (row.rank <= 24) rowClass = "barrage";
@@ -526,18 +543,22 @@ async function chargerClassement() {
                 <tr class="${rowClass}">
                     <td>${row.rank}</td>
                     <td class="club-cell">
-                        <img src="logos/${row.club}.png" onerror="this.src='logos/default.png'" alt="${row.club}">
-                        ${row.club}
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="logos/${row.club}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                            <strong>${row.club}</strong>
+                        </div>
                     </td>
                     <td><strong>${row.points}</strong></td>
                     <td>${row.diff}</td>
                     <td>${row.buts}</td>
+                    <td class="secondary-stat">${row.buts_ext}</td>
                     <td>${row.victoires}</td>
+                    <td class="secondary-stat">${row.victoires_ext}</td>
                 </tr>
             `;
         });
     } catch (error) {
         console.error('Erreur:', error);
-        tbody.innerHTML = '<tr><td colspan="6" style="color:red">Erreur chargement. Vérifiez le serveur.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Erreur serveur</td></tr>';
     }
 }

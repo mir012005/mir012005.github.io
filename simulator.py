@@ -2300,6 +2300,29 @@ def get_wikipedia_standing():
 
 # --- 20/12/2025 début MIR ---
 
+# 1. Définition d'un état "neutre" (Tout le monde à 0 point)
+etat_zero = {
+    "points": {c: 0 for c in clubs_en_ldc},
+    "diff_buts": {c: 0 for c in clubs_en_ldc},
+    "buts": {c: 0 for c in clubs_en_ldc},
+    "buts_ext": {c: 0 for c in clubs_en_ldc},
+    "nb_victoires": {c: 0 for c in clubs_en_ldc},
+    "nb_victoires_ext": {c: 0 for c in clubs_en_ldc}
+}
+
+# 2. Initialisation de sécurité des variables manquantes
+# Si une variable n'existe pas, on lui donne l'état zéro pour éviter le crash "NameError"
+if 'données_J1' not in globals(): données_J1 = etat_zero
+if 'données_J2' not in globals(): données_J2 = etat_zero
+if 'données_J3' not in globals(): données_J3 = etat_zero
+if 'données_J4' not in globals(): données_J4 = etat_zero
+# J5 et J6 existent sûrement déjà, mais on peut sécuriser aussi :
+if 'données_J5' not in globals(): données_J5 = etat_zero
+if 'données_J6' not in globals(): données_J6 = etat_zero
+# Celles qui vous manquent pour l'instant :
+if 'données_J7' not in globals(): données_J7 = etat_zero
+if 'données_J8' not in globals(): données_J8 = etat_zero
+
 def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
     """
     Lance n_simulations de la journée 'start_day' à 'end_day'.
