@@ -289,6 +289,45 @@ def get_next_match_scenarios():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#moi
+# Route pour le Tableau de Bord Scénario
+@app.route('/api/scenario', methods=['POST'])
+def run_scenario():
+    try:
+        data = request.json
+        # Paramètres envoyés par le JS
+        club = data.get('club')
+        result = data.get('result') # V, N ou D
+        target_day = int(data.get('day', 7))      # Journée du match
+        start_day = int(data.get('start_day', 6)) # Journée de départ de la simu
+        
+        if not club or not result: return jsonify({"error": "Données incomplètes"}), 400
+
+        # Appel du wrapper
+        analysis = simulator.get_scenario_analysis(
+            club_cible=club, journee_cible=target_day, resultat_fixe=result, 
+            journee_depart=start_day, n_simulations=500
+        )
+        return jsonify(analysis)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route pour la Liste d'Importance
+@app.route('/api/importance', methods=['POST'])
+def get_importance_route():
+    try:
+        data = request.json
+        target = int(data.get('target', 7))
+        start = int(data.get('start', 6))
+        
+        # Appel du wrapper
+        results = simulator.get_web_importance(
+            journee_cible=target, journee_depart=start, n_simulations=300
+        )
+        if isinstance(results, dict) and "error" in results: return jsonify(results), 400
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 #===============================================================================================
 
 if __name__ == '__main__':

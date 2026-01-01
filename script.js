@@ -743,90 +743,81 @@ async function chargerMatchsImportants(type) {
 
 //c'est moi ca
 // --- FONCTION SCENARIO (DASHBOARD) ---
-async function lancerScenario() {
-    const club = document.getElementById('scenarioClub').value;
-    const startDay = parseInt(document.getElementById('scenarioStartDay').value);
-    const targetDay = parseInt(document.getElementById('scenarioTargetDay').value);
-    const result = document.getElementById('scenarioResult').value;
-    const resBox = document.getElementById('scenarioResultBox');
+// GESTION DES ONGLETS
+function switchImpactTab(tabName) {
+    document.getElementById('impact-specific').style.display = 'none';
+    document.getElementById('impact-ranking').style.display = 'none';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-    if (!club) { alert("Nom du club ?"); return; }
-    if (startDay >= targetDay) { alert("Le match doit être dans le futur par rapport au départ."); return; }
-
-    resBox.style.display = 'block';
-    document.getElementById('scenarioVerdict').innerText = "Calcul en cours...";
-
-    try {
-        const response = await fetch('/api/scenario', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ club: club, start_day: startDay, day: targetDay, result: result })
-        });
-        const data = await response.json();
-        if (data.error) { alert(data.error); return; }
-
-        let resText = result === 'V' ? "Victoire" : (result === 'D' ? "Défaite" : "Nul");
-        document.getElementById('scenarioTitle').innerHTML = `Si <strong>${data.club}</strong> fait <strong>${resText}</strong> (J${data.journee})`;
-
-        // Mise à jour chiffres
-        document.getElementById('dispTop8').innerText = data.proba_top8 + "%";
-        document.getElementById('dispQualif').innerText = data.proba_qualif + "%";
-        document.getElementById('dispElim').innerText = data.proba_elim + "%";
-        
-        // Mise à jour barres
-        document.getElementById('barTop8').style.width = data.proba_top8 + "%";
-        document.getElementById('barQualif').style.width = data.proba_qualif + "%";
-        document.getElementById('barElim').style.width = data.proba_elim + "%";
-
-        // Verdict
-        let verdict = "❌ Élimination probable.";
-        let color = "#dc3545";
-        if (data.proba_qualif >= 99) { verdict = "✅ Qualif assurée !"; color = "#28a745"; }
-        else if (data.proba_qualif >= 70) { verdict = "🌟 Très bien parti."; color = "#28a745"; }
-        else if (data.proba_qualif >= 40) { verdict = "⚖️ Tout est possible."; color = "#fd7e14"; }
-        
-        const vbox = document.getElementById('scenarioVerdict');
-        vbox.innerText = verdict;
-        vbox.style.borderLeftColor = color;
-
-    } catch (e) { console.error(e); alert("Erreur serveur"); }
+    if (tabName === 'specific') {
+        document.getElementById('impact-specific').style.display = 'block';
+        document.querySelector("button[onclick*='specific']").classList.add('active');
+    } else {
+        document.getElementById('impact-ranking').style.display = 'block';
+        document.querySelector("button[onclick*='ranking']").classList.add('active');
+    }
 }
 
-// --- FONCTION IMPORTANCE (HYPE) ---
-async function chargerImportance() {
-    const container = document.getElementById('importanceList');
-    const start = parseInt(document.getElementById('impStartDay').value);
-    const target = parseInt(document.getElementById('impTargetDay').value);
+// FONCTION SCENARIO
+async function lancerScenario() {
+    const club = document.getElementById('scenarioClub').value;
+    const start = document.getElementById('scenarioStartDay').value;
+    const target = document.getElementById('scenarioTargetDay').value;
+    const res = document.getElementById('scenarioResult').value;
+    const box = document.getElementById('scenarioResultBox');
 
-    if (start >= target) { alert("Erreur de dates."); return; }
-    container.innerHTML = '<div class="loader"></div><p style="text-align:center">Analyse...</p>';
+    if(!club) return alert("Club?");
+    box.style.display = 'block';
+    document.getElementById('scenarioVerdict').innerText = "Simulation...";
 
     try {
-        const response = await fetch('/api/importance', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ start: start, target: target })
+        const rep = await fetch('/api/scenario', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({club:club, start_day:start, day:target, result:res})
         });
-        const data = await response.json();
-        if (data.error) { container.innerHTML = data.error; return; }
+        const data = await rep.json();
+        if(data.error) return alert(data.error);
 
-        container.innerHTML = '';
+        // Mise à jour UI
+        document.getElementById('scenarioTitle').innerHTML = `Si <strong>${data.club}</strong> fait <strong>${res}</strong>`;
+        document.getElementById('dispTop8').innerText = data.proba_top8+"%";
+        document.getElementById('barTop8').style.width = data.proba_top8+"%";
+        document.getElementById('dispQualif').innerText = data.proba_qualif+"%";
+        document.getElementById('barQualif').style.width = data.proba_qualif+"%";
+        
+        let v = "❌ Éliminé"; let c = "red";
+        if(data.proba_qualif > 99) { v="✅ Qualifié"; c="green"; }
+        else if(data.proba_qualif > 50) { v="⚖️ Incertain"; c="orange"; }
+        
+        const vb = document.getElementById('scenarioVerdict');
+        vb.innerText = v; vb.style.borderLeftColor = c;
+
+    } catch(e) { alert(e); }
+}
+
+// FONCTION IMPORTANCE
+async function chargerImportance() {
+    const start = document.getElementById('impStartDay').value;
+    const target = document.getElementById('impTargetDay').value;
+    const list = document.getElementById('importanceList');
+    
+    list.innerHTML = "Calcul...";
+    try {
+        const rep = await fetch('/api/importance', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({start:start, target:target})
+        });
+        const data = await rep.json();
+        list.innerHTML = "";
+        
         data.forEach((m, i) => {
-            let cls = 'low';
-            if (m.score > 50) cls = 'high'; else if (m.score > 25) cls = 'medium';
-            
-            container.innerHTML += `
+            let cls = m.score > 50 ? 'high' : (m.score > 20 ? 'medium' : 'low');
+            list.innerHTML += `
                 <div class="match-card">
-                    <div class="match-info">
-                        <span class="rank">#${i+1}</span>
-                        <div class="teams">
-                            <img src="logos/${m.dom}.png" class="mini-logo" onerror="this.src='logos/default.png'"> ${m.dom} 
-                            vs ${m.ext} <img src="logos/${m.ext}.png" class="mini-logo" onerror="this.src='logos/default.png'">
-                        </div>
-                        <div class="score-badge ${cls}">${m.score}</div>
-                    </div>
-                    <div class="hype-bar-bg"><div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score, 100)}%"></div></div>
-                    <div class="match-details-text">Impact: ${m.dom} (${m.details.dom_val}) / ${m.ext} (${m.details.ext_val})</div>
+                    <div class="match-info"><strong>#${i+1}</strong> ${m.match} <span class="score-badge ${cls}">${m.score}</span></div>
+                    <div class="hype-bar-bg"><div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score,100)}%"></div></div>
                 </div>`;
         });
-    } catch (e) { container.innerHTML = "Erreur serveur"; }
+    } catch(e) { list.innerHTML = "Erreur"; }
 }
 

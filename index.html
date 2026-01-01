@@ -242,80 +242,76 @@
         </section>
     
     
-        <section id="scenario" class="page" style="display:none;">
-            <h2>🔮 Simulateur de Scénario</h2>
-            <p>Simulez un résultat (Victoire/Défaite) et voyez l'impact immédiat.</p>
+        <section id="impact-zone" class="page" style="display:none;">
+            <h2>💥 Analyse d'Impact & Enjeux</h2>
+            <p>Utilisez les fonctions de simulation avancées pour prédire l'avenir.</p>
 
-            <div class="search-box">
-                <div class="control-group">
-                    <label>1. Partir de :</label>
-                    <select id="scenarioStartDay">
-                        <option value="5">Après J5</option>
-                        <option value="6" selected>Après J6 (Actuel)</option>
-                        <option value="7">Après J7</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>2. Match en :</label>
-                    <select id="scenarioTargetDay">
-                        <option value="6">J6</option>
-                        <option value="7" selected>J7</option>
-                        <option value="8">J8</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>3. Club & Résultat :</label>
-                    <input type="text" id="scenarioClub" placeholder="Ex: Paris SG" style="width:120px;">
-                    <select id="scenarioResult">
-                        <option value="V">Gagne (V)</option>
-                        <option value="N">Nul (N)</option>
-                        <option value="D">Perd (D)</option>
-                    </select>
-                </div>
-                <button class="action-btn" onclick="lancerScenario()">Simuler</button>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchImpactTab('specific')">🔮 Scénario (What-If)</button>
+                <button class="tab-btn" onclick="switchImpactTab('ranking')">🔥 Hype-o-mètre</button>
             </div>
 
-            <div id="scenarioResultBox" style="margin-top:20px; display:none;">
-                <h3 id="scenarioTitle" style="text-align:center;">Résultat</h3>
-                <div class="scenario-dashboard">
-                    <div class="stat-card">
-                        <div class="stat-icon">🏆</div><div class="stat-label">Top 8</div>
-                        <div class="stat-big-number green-text" id="dispTop8">0%</div>
-                        <div class="progress-bg"><div id="barTop8" class="progress-bar green" style="width:0%"></div></div>
+            <div id="impact-specific" class="impact-tab-content">
+                <div class="search-box">
+                    <div class="control-group">
+                        <label>Départ (Historique) :</label>
+                        <select id="scenarioStartDay">
+                            <option value="6" selected>Après J6</option>
+                            <option value="7">Après J7</option>
+                        </select>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🎟️</div><div class="stat-label">Qualif</div>
-                        <div class="stat-big-number orange-text" id="dispQualif">0%</div>
-                        <div class="progress-bg"><div id="barQualif" class="progress-bar orange" style="width:0%"></div></div>
+                    <div class="control-group">
+                        <label>Match en :</label>
+                        <select id="scenarioTargetDay">
+                            <option value="7" selected>Journée 7</option>
+                            <option value="8">Journée 8</option>
+                        </select>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">💀</div><div class="stat-label">Éliminé</div>
-                        <div class="stat-big-number red-text" id="dispElim">0%</div>
-                        <div class="progress-bg"><div id="barElim" class="progress-bar red" style="width:0%"></div></div>
+                    <div class="control-group">
+                        <label>Club & Résultat :</label>
+                        <input type="text" id="scenarioClub" placeholder="Ex: Monaco">
+                        <select id="scenarioResult">
+                            <option value="V">Victoire</option>
+                            <option value="N">Nul</option>
+                            <option value="D">Défaite</option>
+                        </select>
                     </div>
+                    <button class="action-btn" onclick="lancerScenario()">Simuler</button>
                 </div>
-                <div id="scenarioVerdict" class="verdict-box">...</div>
+
+                <div id="scenarioResultBox" style="margin-top:20px; display:none;">
+                    <h3 id="scenarioTitle" style="text-align:center;">Résultat</h3>
+                    <div class="scenario-dashboard">
+                        <div class="stat-card">
+                            <div class="stat-icon">🏆</div><div class="stat-label">Top 8</div>
+                            <div class="stat-big-number green-text" id="dispTop8">0%</div>
+                            <div class="progress-bg"><div id="barTop8" class="progress-bar green" style="width:0%"></div></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎟️</div><div class="stat-label">Qualif</div>
+                            <div class="stat-big-number orange-text" id="dispQualif">0%</div>
+                            <div class="progress-bg"><div id="barQualif" class="progress-bar orange" style="width:0%"></div></div>
+                        </div>
+                    </div>
+                    <div id="scenarioVerdict" class="verdict-box">...</div>
+                </div>
             </div>
-        </section>
 
-        <section id="importance" class="page" style="display:none;">
-            <h2>🔥 Importance des Matchs</h2>
-            <p>Quels matchs bouleversent le plus le classement ?</p>
-
-            <div class="controls-bar">
-                <div class="control-group">
-                    <label>Contexte :</label>
-                    <select id="impStartDay"><option value="6" selected>Après J6</option><option value="7">Après J7</option></select>
+            <div id="impact-ranking" class="impact-tab-content" style="display:none;">
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <label>Départ :</label>
+                        <select id="impStartDay"><option value="6" selected>Après J6</option><option value="7">Après J7</option></select>
+                    </div>
+                    <div class="control-group">
+                        <label>Analyser :</label>
+                        <select id="impTargetDay"><option value="7" selected>Journée 7</option><option value="8">Journée 8</option></select>
+                    </div>
+                    <button class="action-btn" onclick="chargerImportance()">Calculer Hype</button>
                 </div>
-                <div class="control-group">
-                    <label>Analyser :</label>
-                    <select id="impTargetDay"><option value="7" selected>Journée 7</option><option value="8">Journée 8</option></select>
+                <div id="importanceList" class="matches-list">
+                    <div class="placeholder-text">Cliquez sur calculer...</div>
                 </div>
-                <button class="action-btn" onclick="chargerImportance()">Calculer</button>
-            </div>
-
-            <div id="importanceList" class="matches-list">
-                <div class="placeholder-text">Cliquez sur calculer...</div>
             </div>
         </section>
         
