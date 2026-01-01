@@ -235,3 +235,6 @@ def get_probas_api():
 if __name__ == '__main__':
     print("Serveur lancé sur http://127.0.0.1:5000")
     app.run(debug=True)
+
+
+z = "hello world"

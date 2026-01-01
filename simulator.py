@@ -2297,29 +2297,19 @@ def get_wikipedia_standing():
         print(f"Erreur scraping: {e}")
         return None
 """
-
+from CODE_A_COPIER import données_J1, données_J2, données_J3, données_J4
 # --- 20/12/2025 début MIR ---
 
 # 1. Définition d'un état "neutre" (Tout le monde à 0 point)
 etat_zero = {
-    "points": {c: 0 for c in clubs_en_ldc},
-    "diff_buts": {c: 0 for c in clubs_en_ldc},
-    "buts": {c: 0 for c in clubs_en_ldc},
-    "buts_ext": {c: 0 for c in clubs_en_ldc},
-    "nb_victoires": {c: 0 for c in clubs_en_ldc},
-    "nb_victoires_ext": {c: 0 for c in clubs_en_ldc}
-}
+            "classement": None, "points": None, "diff_buts": None, 
+            "buts": None, "buts_ext": None, "nb_victoires": None, 
+            "nb_victoires_ext": None
+    }
+
 
 # 2. Initialisation de sécurité des variables manquantes
 # Si une variable n'existe pas, on lui donne l'état zéro pour éviter le crash "NameError"
-if 'données_J1' not in globals(): données_J1 = etat_zero
-if 'données_J2' not in globals(): données_J2 = etat_zero
-if 'données_J3' not in globals(): données_J3 = etat_zero
-if 'données_J4' not in globals(): données_J4 = etat_zero
-# J5 et J6 existent sûrement déjà, mais on peut sécuriser aussi :
-if 'données_J5' not in globals(): données_J5 = etat_zero
-if 'données_J6' not in globals(): données_J6 = etat_zero
-# Celles qui vous manquent pour l'instant :
 if 'données_J7' not in globals(): données_J7 = etat_zero
 if 'données_J8' not in globals(): données_J8 = etat_zero
 
@@ -2506,3 +2496,71 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
         "ranking_qualif": liste_qualif,
         "ranking_top8": liste_top8
     }
+
+
+
+"""
+from scraper import scraper_matchs_wikipedia, organiser_par_journee, CLUBS_SIMULATOR
+from simulator import ajouter_matchs_donnés
+import copy
+
+def creer_etat_initial():
+    return {
+        "classement": sorted(CLUBS_SIMULATOR),
+        "points": {club: 0 for club in CLUBS_SIMULATOR},
+        "diff_buts": {club: 0 for club in CLUBS_SIMULATOR},
+        "buts": {club: 0 for club in CLUBS_SIMULATOR},
+        "buts_ext": {club: 0 for club in CLUBS_SIMULATOR},
+        "nb_victoires": {club: 0 for club in CLUBS_SIMULATOR},
+        "nb_victoires_ext": {club: 0 for club in CLUBS_SIMULATOR},
+    }
+
+url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026"
+tous_les_matchs = scraper_matchs_wikipedia(url)
+matchs_par_journee = organiser_par_journee(tous_les_matchs)
+données_J0 = creer_etat_initial()
+états = {0: données_J0}
+
+for j in range(1, 5):
+    matchs_j = matchs_par_journee.get(j, [])
+    if matchs_j:
+        états[j] = ajouter_matchs_donnés(états[j-1], matchs_j)
+
+with open('CODE_A_COPIER.py', 'w', encoding='utf-8') as f:
+    for j in range(1, 5):
+        if j in matchs_par_journee and matchs_par_journee[j]:
+            f.write(f"matchs_J{j} = [\n")
+            for m in matchs_par_journee[j]:
+                f.write(f"    {m},\n")
+            f.write("]\n\n")
+    for j in range(1, 5):
+        if j in états:
+            d = états[j]
+            f.write(f"données_J{j} = {{\n")
+            f.write(f"    'classement': {d['classement']},\n")
+            f.write(f"    'points': {{\n")
+            for club in sorted(d['points'].keys()):
+                f.write(f"        '{club}': {d['points'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'diff_buts': {{\n")
+            for club in sorted(d['diff_buts'].keys()):
+                f.write(f"        '{club}': {d['diff_buts'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'buts': {{\n")
+            for club in sorted(d['buts'].keys()):
+                f.write(f"        '{club}': {d['buts'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'buts_ext': {{\n")
+            for club in sorted(d['buts_ext'].keys()):
+                f.write(f"        '{club}': {d['buts_ext'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'nb_victoires': {{\n")
+            for club in sorted(d['nb_victoires'].keys()):
+                f.write(f"        '{club}': {d['nb_victoires'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'nb_victoires_ext': {{\n")
+            for club in sorted(d['nb_victoires_ext'].keys()):
+                f.write(f"        '{club}': {d['nb_victoires_ext'][club]},\n")
+            f.write(f"    }},\n")
+            f.write("}\n\n")
+"""
