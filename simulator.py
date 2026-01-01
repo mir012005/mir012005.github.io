@@ -2627,36 +2627,6 @@ with open('CODE_A_COPIER.py', 'w', encoding='utf-8') as f:
 
 
 def get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=6):
-    """
-    Analyse l'impact d'un match sur les probabilités d'un club.
-    Répond à la question : "Comment une victoire/nul/défaite affecte mes chances ?"
-    
-    Args:
-        club: Le club à analyser
-        journee: La journée du match à analyser (ex: 7 pour analyser J7)
-        nb_simulations: Nombre de simulations Monte Carlo
-        journee_donnees: État des données à utiliser (6 = après J6, etc.)
-    
-    Returns:
-        {
-            "club": "Arsenal",
-            "journee": 7,
-            "adversaire": "Inter",
-            "domicile": true,
-            "impact_victoire": {
-                "proba_qualif": 95.2,  # Probabilité de qualification SI victoire
-                "proba_top8": 68.5,    # Probabilité de top 8 SI victoire
-                "classement_moyen": 6.2
-            },
-            "impact_nul": { ... },
-            "impact_defaite": { ... },
-            "gain_victoire_vs_nul": {
-                "qualif": +2.3,  # Points de % gagnés en cas de victoire vs nul
-                "top8": +8.7
-            },
-            "gain_nul_vs_defaite": { ... }
-        }
-    """
     # Vérifications
     if club not in clubs_en_ldc:
         return {"error": f"Club '{club}' introuvable"}
@@ -2749,22 +2719,7 @@ def get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=6):
 
 def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
     """
-    Analyse l'importance de TOUS les matchs d'une journée.
-    Permet de créer un "classement des matchs les plus importants".
-    
-    ATTENTION : N réduit à 500 car cette fonction est TRÈS gourmande !
-    (Elle fait nb_simulations × 36 clubs × 18 matchs = beaucoup de calculs)
-    
-    Returns:
-        [
-            {
-                "match": "Arsenal vs Inter",
-                "importance_globale": 45.2,  # Somme des impacts sur tous les clubs
-                "club_le_plus_impacte": "Arsenal",
-                "impact_max": 12.3
-            },
-            ...
-        ]
+    Retourne DEUX classements : un pour qualif, un pour top8
     """
     map_historique = {
         1: données_J1, 2: données_J2, 3: données_J3, 4: données_J4,
@@ -2773,7 +2728,6 @@ def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
     
     etat_depart = map_historique.get(journee_donnees, données_J6)
     
-    # Utilisation de la fonction optimisée simulation_pour_enjeux
     enjeux = simulation_pour_enjeux(
         journee=journee, 
         données=etat_depart, 
@@ -2786,14 +2740,16 @@ def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
     resultats = []
     
     for match in matchs_journee:
-        importance_totale = 0
-        club_max = None
-        impact_max = 0
+        impact_qualif_total = 0
+        impact_top8_total = 0
+        impact_qualif_max = 0
+        impact_top8_max = 0
+        club_max_qualif = None
+        club_max_top8 = None
         
-        # Pour chaque club, on calcule combien ce match l'impacte
         for club in clubs_en_ldc:
             if match in enjeux[club]:
-                # Calcul de l'impact = différence entre meilleure et pire issue
+                # Probas pour QUALIFICATION
                 proba_qualif_best = max(
                     enjeux[club][match]["domicile"]["proba_qualif"],
                     enjeux[club][match]["nul"]["proba_qualif"],
@@ -2805,6 +2761,7 @@ def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
                     enjeux[club][match]["exterieur"]["proba_qualif"]
                 )
                 
+                # Probas pour TOP 8
                 proba_top8_best = max(
                     enjeux[club][match]["domicile"]["proba_top8"],
                     enjeux[club][match]["nul"]["proba_top8"],
@@ -2816,52 +2773,42 @@ def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
                     enjeux[club][match]["exterieur"]["proba_top8"]
                 )
                 
-                impact_club = (proba_qualif_best - proba_qualif_worst) + (proba_top8_best - proba_top8_worst)
-                importance_totale += impact_club
+                impact_qualif_club = proba_qualif_best - proba_qualif_worst
+                impact_top8_club = proba_top8_best - proba_top8_worst
                 
-                if impact_club > impact_max:
-                    impact_max = impact_club
-                    club_max = club
+                impact_qualif_total += impact_qualif_club
+                impact_top8_total += impact_top8_club
+                
+                if impact_qualif_club > impact_qualif_max:
+                    impact_qualif_max = impact_qualif_club
+                    club_max_qualif = club
+                    
+                if impact_top8_club > impact_top8_max:
+                    impact_top8_max = impact_top8_club
+                    club_max_top8 = club
         
         resultats.append({
             "match": f"{match[0]} vs {match[1]}",
-            "importance_globale": round(importance_totale * 100, 1),
-            "club_le_plus_impacte": club_max,
-            "impact_max": round(impact_max * 100, 1)
+            "impact_qualif": {
+                "global": round(impact_qualif_total * 100, 1),
+                "max": round(impact_qualif_max * 100, 1),
+                "club_max": club_max_qualif
+            },
+            "impact_top8": {
+                "global": round(impact_top8_total * 100, 1),
+                "max": round(impact_top8_max * 100, 1),
+                "club_max": club_max_top8
+            }
         })
     
-    # Tri par importance décroissante
-    resultats.sort(key=lambda x: x["importance_globale"], reverse=True)
-    
-    return resultats
+    # On retourne DEUX classements
+    return {
+        "par_qualif": sorted(resultats, key=lambda x: x['impact_qualif']['global'], reverse=True),
+        "par_top8": sorted(resultats, key=lambda x: x['impact_top8']['global'], reverse=True)
+    }
 
 
 def get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees=6):
-    """
-    Analyse simplifiée : "Quel est mon prochain match et que se passe-t-il selon le résultat ?"
-    
-    Plus simple que get_web_match_impact, orientée UX pour affichage rapide.
-    
-    Returns:
-        {
-            "club": "Arsenal",
-            "next_match": {
-                "journee": 7,
-                "adversaire": "Inter",
-                "domicile": true
-            },
-            "scenarios": {
-                "victoire": {
-                    "proba_qualif": 95.2,
-                    "proba_top8": 68.5,
-                    "message": "Quasi-certain de se qualifier"
-                },
-                "nul": { ... },
-                "defaite": { ... }
-            },
-            "enjeu": "HIGH"  # LOW, MEDIUM, HIGH selon l'écart victoire-défaite
-        }
-    """
     # Trouver le prochain match non joué
     journee_prochaine = None
     
@@ -2949,4 +2896,77 @@ def get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees
             "qualif": impact["gain_victoire_vs_nul"]["qualif"],
             "top8": impact["gain_victoire_vs_nul"]["top8"]
         }
+    }
+
+
+def get_web_importance(journee_cible, journee_depart=6, n_simulations=300):
+    """
+    Wrapper pour l'onglet 'Importance'. Utilise la fonction 'enjeux'.
+    """
+    map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
+                      4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
+    etat_initial = map_historique.get(journee_depart, etat_zero)
+    debut_simu = journee_depart + 1
+
+    if journee_cible < debut_simu: return {"error": "La journée cible est passée"}
+    
+    matchs = calendrier.get(f"Journée {journee_cible}", [])
+    resultats = []
+
+    print(f"Calcul Importance J{journee_cible} (Base J{journee_depart})...")
+
+    for dom, ext in matchs:
+        try:
+            # On appelle VOTRE fonction enjeux avec un N réduit pour le web
+            # res = ((gain_qualif, gain_top8), diff_class_v, diff_class_n)
+            res_dom = enjeux(dom, journee_cible, données=etat_initial, debut=debut_simu, N=n_simulations)
+            res_ext = enjeux(ext, journee_cible, données=etat_initial, debut=debut_simu, N=n_simulations)
+
+            # Score Hype = Somme des impacts absolus sur la qualif et le top 8
+            # res_dom[0][0] est le gain de qualif, res_dom[0][1] est le gain de top 8
+            impact_dom = abs(res_dom[0][0]) + abs(res_dom[0][1])
+            impact_ext = abs(res_ext[0][0]) + abs(res_ext[0][1])
+            
+            total_score = (impact_dom + impact_ext) * 100
+
+            resultats.append({
+                "match": f"{dom} - {ext}", "dom": dom, "ext": ext,
+                "score": round(total_score, 1),
+                "details": {"dom_val": round(impact_dom * 100, 1), "ext_val": round(impact_ext * 100, 1)}
+            })
+        except Exception as e:
+            print(f"Erreur {dom}-{ext}: {e}")
+
+    resultats.sort(key=lambda x: x['score'], reverse=True)
+    return resultats
+
+def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depart=6, n_simulations=500):
+    """
+    Wrapper pour l'onglet 'Scénario'. Utilise 'distribution_position_par_club_match_fixe'.
+    """
+    map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
+                      4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
+    etat_initial = map_historique.get(journee_depart, etat_zero)
+    debut_simu = journee_depart + 1
+
+    if debut_simu > journee_cible: debut_simu = journee_cible
+
+    # Appel de VOTRE fonction de distribution
+    distrib = distribution_position_par_club_match_fixe(
+        N=n_simulations, club_fixed=club_cible, journee=journee_cible,
+        result_fixed=resultat_fixe, données=etat_initial, debut=debut_simu, fin=8
+    )
+
+    stats = distrib.get(club_cible, {})
+    
+    # Agrégation des pourcentages
+    p_top8 = sum(stats.get(r, 0) for r in range(1, 9))
+    p_qualif = sum(stats.get(r, 0) for r in range(1, 25))
+    p_elim = 1.0 - p_qualif
+
+    return {
+        "club": club_cible, "scenario": resultat_fixe, "journee": journee_cible,
+        "proba_top8": round(p_top8 * 100, 1),
+        "proba_qualif": round(p_qualif * 100, 1),
+        "proba_elim": round(p_elim * 100, 1)
     }

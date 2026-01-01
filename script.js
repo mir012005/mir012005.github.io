@@ -568,18 +568,22 @@ async function chargerClassement() {
 // ==========================================
 
 function switchImpactTab(tabName) {
+    // Cacher tous les onglets
     document.querySelectorAll('.impact-tab-content').forEach(tab => tab.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     
+    // Afficher le bon onglet
     if (tabName === 'specific') {
         document.getElementById('impact-specific').style.display = 'block';
         document.querySelectorAll('.tab-btn')[0].classList.add('active');
-    } else {
-        document.getElementById('impact-ranking').style.display = 'block';
+    } else if (tabName === 'qualif') {
+        document.getElementById('impact-qualif').style.display = 'block';
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    } else if (tabName === 'top8') {
+        document.getElementById('impact-top8').style.display = 'block';
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
     }
 }
-
 async function analyserImpactMatch() {
     const club = document.getElementById('impactClub').value.trim();
     const journee = parseInt(document.getElementById('impactJournee').value);
@@ -677,10 +681,12 @@ async function analyserImpactMatch() {
     }
 }
 
-async function chargerMatchsImportants() {
-    const container = document.getElementById('importantMatchesTable');
+async function chargerMatchsImportants(type) {
+    const container = type === 'qualif' 
+        ? document.getElementById('tableQualif') 
+        : document.getElementById('tableTop8');
     
-    container.innerHTML = '<div class="loading-container"><div class="loader"></div><p>Calcul en cours (peut prendre ~30s)...</p></div>';
+    container.innerHTML = '<div class="loading-container"><div class="loader"></div><p>Calcul en cours...</p></div>';
     
     try {
         const response = await fetch('/api/all-matches-impact', {
@@ -696,13 +702,18 @@ async function chargerMatchsImportants() {
             return;
         }
         
+        // Choisir le bon classement
+        const matchs = type === 'qualif' ? data.par_qualif : data.par_top8;
+        const metrique = type === 'qualif' ? 'impact_qualif' : 'impact_top8';
+        const titre = type === 'qualif' ? 'Qualification' : 'Top 8';
+        
         let html = `
             <table class="ranking-table">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Match</th>
-                        <th>Impact Global</th>
+                        <th>Impact Global ${titre}</th>
                         <th>Club le + Impacté</th>
                         <th>Impact Max</th>
                     </tr>
@@ -710,22 +721,112 @@ async function chargerMatchsImportants() {
                 <tbody>
         `;
         
-        data.forEach((match, idx) => {
+        matchs.forEach((match, idx) => {
             html += `
                 <tr>
                     <td>${idx + 1}</td>
                     <td style="text-align:left;">${match.match}</td>
-                    <td>${match.importance_globale}</td>
-                    <td>${match.club_le_plus_impacte}</td>
-                    <td>${match.impact_max}</td>
+                    <td>${match[metrique].global}</td>
+                    <td>${match[metrique].club_max}</td>
+                    <td>${match[metrique].max}</td>
                 </tr>
             `;
         });
         
-        html += "</tbody></table>";
+        html += '</tbody></table>';
         container.innerHTML = html;
         
     } catch (error) {
         container.innerHTML = '<div class="error-msg">❌ Erreur serveur</div>';
     }
 }
+
+//c'est moi ca
+// --- FONCTION SCENARIO (DASHBOARD) ---
+async function lancerScenario() {
+    const club = document.getElementById('scenarioClub').value;
+    const startDay = parseInt(document.getElementById('scenarioStartDay').value);
+    const targetDay = parseInt(document.getElementById('scenarioTargetDay').value);
+    const result = document.getElementById('scenarioResult').value;
+    const resBox = document.getElementById('scenarioResultBox');
+
+    if (!club) { alert("Nom du club ?"); return; }
+    if (startDay >= targetDay) { alert("Le match doit être dans le futur par rapport au départ."); return; }
+
+    resBox.style.display = 'block';
+    document.getElementById('scenarioVerdict').innerText = "Calcul en cours...";
+
+    try {
+        const response = await fetch('/api/scenario', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ club: club, start_day: startDay, day: targetDay, result: result })
+        });
+        const data = await response.json();
+        if (data.error) { alert(data.error); return; }
+
+        let resText = result === 'V' ? "Victoire" : (result === 'D' ? "Défaite" : "Nul");
+        document.getElementById('scenarioTitle').innerHTML = `Si <strong>${data.club}</strong> fait <strong>${resText}</strong> (J${data.journee})`;
+
+        // Mise à jour chiffres
+        document.getElementById('dispTop8').innerText = data.proba_top8 + "%";
+        document.getElementById('dispQualif').innerText = data.proba_qualif + "%";
+        document.getElementById('dispElim').innerText = data.proba_elim + "%";
+        
+        // Mise à jour barres
+        document.getElementById('barTop8').style.width = data.proba_top8 + "%";
+        document.getElementById('barQualif').style.width = data.proba_qualif + "%";
+        document.getElementById('barElim').style.width = data.proba_elim + "%";
+
+        // Verdict
+        let verdict = "❌ Élimination probable.";
+        let color = "#dc3545";
+        if (data.proba_qualif >= 99) { verdict = "✅ Qualif assurée !"; color = "#28a745"; }
+        else if (data.proba_qualif >= 70) { verdict = "🌟 Très bien parti."; color = "#28a745"; }
+        else if (data.proba_qualif >= 40) { verdict = "⚖️ Tout est possible."; color = "#fd7e14"; }
+        
+        const vbox = document.getElementById('scenarioVerdict');
+        vbox.innerText = verdict;
+        vbox.style.borderLeftColor = color;
+
+    } catch (e) { console.error(e); alert("Erreur serveur"); }
+}
+
+// --- FONCTION IMPORTANCE (HYPE) ---
+async function chargerImportance() {
+    const container = document.getElementById('importanceList');
+    const start = parseInt(document.getElementById('impStartDay').value);
+    const target = parseInt(document.getElementById('impTargetDay').value);
+
+    if (start >= target) { alert("Erreur de dates."); return; }
+    container.innerHTML = '<div class="loader"></div><p style="text-align:center">Analyse...</p>';
+
+    try {
+        const response = await fetch('/api/importance', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ start: start, target: target })
+        });
+        const data = await response.json();
+        if (data.error) { container.innerHTML = data.error; return; }
+
+        container.innerHTML = '';
+        data.forEach((m, i) => {
+            let cls = 'low';
+            if (m.score > 50) cls = 'high'; else if (m.score > 25) cls = 'medium';
+            
+            container.innerHTML += `
+                <div class="match-card">
+                    <div class="match-info">
+                        <span class="rank">#${i+1}</span>
+                        <div class="teams">
+                            <img src="logos/${m.dom}.png" class="mini-logo" onerror="this.src='logos/default.png'"> ${m.dom} 
+                            vs ${m.ext} <img src="logos/${m.ext}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                        </div>
+                        <div class="score-badge ${cls}">${m.score}</div>
+                    </div>
+                    <div class="hype-bar-bg"><div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score, 100)}%"></div></div>
+                    <div class="match-details-text">Impact: ${m.dom} (${m.details.dom_val}) / ${m.ext} (${m.details.ext_val})</div>
+                </div>`;
+        });
+    } catch (e) { container.innerHTML = "Erreur serveur"; }
+}
+
