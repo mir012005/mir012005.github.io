@@ -584,6 +584,23 @@ function switchImpactTab(tabName) {
         document.querySelectorAll('.tab-btn')[2].classList.add('active');
     }
 }
+
+function switchScenarioTab(tabName) {
+    // Cacher tous les onglets de la section impact-zone
+    document.querySelectorAll('#impact-zone .impact-tab-content').forEach(tab => tab.style.display = 'none');
+    document.querySelectorAll('#impact-zone .tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Afficher le bon onglet
+    if (tabName === 'scenario') {
+        document.getElementById('scenario-tab').style.display = 'block';
+        document.querySelectorAll('#impact-zone .tab-btn')[0].classList.add('active');
+    } else if (tabName === 'hype') {
+        document.getElementById('hype-tab').style.display = 'block';
+        document.querySelectorAll('#impact-zone .tab-btn')[1].classList.add('active');
+    }
+}
+
+
 async function analyserImpactMatch() {
     const club = document.getElementById('impactClub').value.trim();
     const journee = parseInt(document.getElementById('impactJournee').value);

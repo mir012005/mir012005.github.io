@@ -310,11 +310,11 @@
             <p>Utilisez les fonctions de simulation avancées pour prédire l'avenir.</p>
 
             <div class="tabs-container">
-                <button class="tab-btn active" onclick="switchImpactTab('specific')">🔮 Scénario (What-If)</button>
-                <button class="tab-btn" onclick="switchImpactTab('ranking')">🔥 Hype-o-mètre</button>
+                <button class="tab-btn active" onclick="switchScenarioTab('scenario')">🔮 Scénario (What-If)</button>
+                <button class="tab-btn" onclick="switchScenarioTab('hype')">🔥 Hype-o-mètre</button>
             </div>
 
-            <div id="impact-specific" class="impact-tab-content">
+            <div id="scenario-tab" class="impact-tab-content">
                 <div class="search-box">
                     <div class="control-group">
                         <label>Départ (Historique) :</label>
@@ -360,7 +360,7 @@
                 </div>
             </div>
 
-            <div id="impact-ranking" class="impact-tab-content" style="display:none;">
+            <div id="hype-tab" class="impact-tab-content" style="display:none;">
                 <div class="controls-bar">
                     <div class="control-group">
                         <label>Départ :</label>
