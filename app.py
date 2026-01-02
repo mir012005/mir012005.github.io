@@ -145,31 +145,6 @@ def get_seuils():
         print(f"ERREUR : {e}")
         return jsonify({"error": str(e)}), 500
 
-
-# --- Dans app.py ---
-
-@app.route('/api/importance', methods=['POST'])
-def get_importance_route():
-    try:
-        data = request.json
-        target = int(data.get('target', 7))
-        start = int(data.get('start', 6))
-        
-        # Vérifiez que simulator a bien cette fonction
-        results = simulator.get_web_importance(
-            journee_cible=target, 
-            journee_depart=start, 
-            n_simulations=300
-        )
-        
-        if isinstance(results, dict) and "error" in results: 
-            return jsonify(results), 400
-
-        return jsonify(results)
-    except Exception as e:
-        print(f"ERREUR IMPORTANCE : {e}") # Regardez votre terminal si ça plante !
-        return jsonify({"error": str(e)}), 500
-
 #============ 19/12/2025===============================
 @app.route('/api/predict-match', methods=['POST'])
 def predict_match():
