@@ -568,20 +568,20 @@ async function chargerClassement() {
 // ==========================================
 
 function switchImpactTab(tabName) {
-    // Cacher tous les onglets
-    document.querySelectorAll('.impact-tab-content').forEach(tab => tab.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    // Cacher tous les onglets DE LA SECTION match-impact UNIQUEMENT
+    document.querySelectorAll('#match-impact .impact-tab-content').forEach(tab => tab.style.display = 'none');
+    document.querySelectorAll('#match-impact .tab-btn').forEach(btn => btn.classList.remove('active'));
     
     // Afficher le bon onglet
     if (tabName === 'specific') {
         document.getElementById('impact-specific').style.display = 'block';
-        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.querySelectorAll('#match-impact .tab-btn')[0].classList.add('active');
     } else if (tabName === 'qualif') {
         document.getElementById('impact-qualif').style.display = 'block';
-        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.querySelectorAll('#match-impact .tab-btn')[1].classList.add('active');
     } else if (tabName === 'top8') {
         document.getElementById('impact-top8').style.display = 'block';
-        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        document.querySelectorAll('#match-impact .tab-btn')[2].classList.add('active');
     }
 }
 
@@ -870,28 +870,89 @@ async function lancerScenario() {
 }
 
 // FONCTION IMPORTANCE
+// --- FONCTION IMPORTANCE (HYPE) CORRIGÉE ---
 async function chargerImportance() {
-    const start = document.getElementById('impStartDay').value;
-    const target = document.getElementById('impTargetDay').value;
+    // 1. Récupération des éléments par ID
+    const startSelect = document.getElementById('impStartDay');
+    const targetSelect = document.getElementById('impTargetDay');
     const list = document.getElementById('importanceList');
-    
-    list.innerHTML = "Calcul...";
+
+    // 2. Sécurité : Si les éléments n'existent pas dans le HTML, on arrête
+    if (!startSelect || !targetSelect || !list) {
+        console.error("Erreur : Impossible de trouver les éléments HTML (impStartDay, impTargetDay ou importanceList).");
+        return;
+    }
+
+    const start = parseInt(startSelect.value);
+    const target = parseInt(targetSelect.value);
+
+    // 3. Vérification logique
+    if (start >= target) {
+        alert("La journée à analyser (Cible) doit être après le point de départ (Contexte).");
+        return;
+    }
+
+    // 4. Affichage du chargement
+    list.innerHTML = '<div class="loader"></div><p style="text-align:center">Calcul de l\'importance de tous les matchs...</p>';
+
     try {
-        const rep = await fetch('/api/importance', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({start:start, target:target})
+        // 5. Appel au serveur
+        const response = await fetch('/api/importance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: start, target: target })
         });
-        const data = await rep.json();
-        list.innerHTML = "";
+
+        const data = await response.json();
         
+        // 6. Gestion d'erreur renvoyée par Python
+        if (data.error) {
+            list.innerHTML = `<div style="color:red; text-align:center; padding:20px;">❌ Erreur : ${data.error}</div>`;
+            return;
+        }
+
+        // 7. Affichage des résultats
+        list.innerHTML = ""; // On vide le chargement
+        
+        if (data.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:20px;">Aucun match trouvé pour cette journée.</div>`;
+            return;
+        }
+
         data.forEach((m, i) => {
-            let cls = m.score > 50 ? 'high' : (m.score > 20 ? 'medium' : 'low');
+            // Calcul couleur (Rouge = Important, Gris = Pas important)
+            let cls = 'low';
+            if (m.score > 50) cls = 'high';
+            else if (m.score > 20) cls = 'medium';
+            
+            // HTML de la carte
             list.innerHTML += `
                 <div class="match-card">
-                    <div class="match-info"><strong>#${i+1}</strong> ${m.match} <span class="score-badge ${cls}">${m.score}</span></div>
-                    <div class="hype-bar-bg"><div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score,100)}%"></div></div>
+                    <div class="match-info">
+                        <span class="rank">#${i+1}</span>
+                        <div class="teams">
+                            <img src="logos/${m.dom}.png" class="mini-logo" onerror="this.src='logos/default.png'"> 
+                            ${m.dom} 
+                            <span class="vs">vs</span> 
+                            ${m.ext} 
+                            <img src="logos/${m.ext}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                        </div>
+                        <div class="score-badge ${cls}">${m.score}</div>
+                    </div>
+                    
+                    <div class="hype-bar-bg">
+                        <div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score, 100)}%"></div>
+                    </div>
+                    
+                    <div class="match-details-text">
+                        Enjeu ${m.dom}: <strong>${m.details.dom_val}</strong> | 
+                        Enjeu ${m.ext}: <strong>${m.details.ext_val}</strong>
+                    </div>
                 </div>`;
         });
-    } catch(e) { list.innerHTML = "Erreur"; }
-}
 
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = `<div style="color:red; text-align:center;">❌ Erreur technique (Voir console F12)</div>`;
+    }
+}

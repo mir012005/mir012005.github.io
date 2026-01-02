@@ -146,15 +146,28 @@ def get_seuils():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/importance', methods=['GET'])
-def get_importance():
+# --- Dans app.py ---
+
+@app.route('/api/importance', methods=['POST'])
+def get_importance_route():
     try:
-        print("--> Analyse de l'importance des matchs...")
-        # Appel avec "simulator."
-        data = simulator.get_web_importance_matchs(nb_simulations=500)
-        return jsonify(data)
+        data = request.json
+        target = int(data.get('target', 7))
+        start = int(data.get('start', 6))
+        
+        # Vérifiez que simulator a bien cette fonction
+        results = simulator.get_web_importance(
+            journee_cible=target, 
+            journee_depart=start, 
+            n_simulations=300
+        )
+        
+        if isinstance(results, dict) and "error" in results: 
+            return jsonify(results), 400
+
+        return jsonify(results)
     except Exception as e:
-        print(f"ERREUR : {e}")
+        print(f"ERREUR IMPORTANCE : {e}") # Regardez votre terminal si ça plante !
         return jsonify({"error": str(e)}), 500
 
 #============ 19/12/2025===============================
