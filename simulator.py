@@ -55,6 +55,10 @@ clubs_en_ldc = sorted([
     "Kairat"             # Kairat Almaty
 ])
 
+def get_clubs_list():
+    # Retourne la liste des 36 clubs triée
+    return clubs_en_ldc
+
 elo_ldc = elo[elo["Club"].isin(clubs_en_ldc)]
 
 def elo_of(club):
