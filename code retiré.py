@@ -3238,3 +3238,1013 @@ tr.elimine { border-left: 5px solid #dc3545; background: rgba(220, 53, 69, 0.05)
 .hype-bar-fill.medium { background: #17a2b8; } .hype-bar-fill.low { background: #adb5bd; }
 .match-details-text { font-size: 0.8rem; color: #777; text-align: right; }
 """
+
+
+
+#======================================================================================
+# script.js version 1 apres nettoyage
+
+"""
+// =============================================================================
+// 1. GESTION GLOBALE & NAVIGATION
+// =============================================================================
+
+// Stockage des instances de graphiques pour pouvoir les détruire avant redessin
+let charts = {};
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    chargerListeClubs();      // Remplit la grille d'accueil
+    remplirListesDuel();      // Remplit les sélecteurs du Duel
+    remplirDataListClubs();   // Remplit l'autocomplétion pour la recherche de match
+});
+
+// Navigation entre les pages (Sections)
+function showPage(pageId) {
+    // Masquer toutes les sections
+    document.querySelectorAll('.page').forEach(page => page.style.display = 'none');
+    // Afficher la section demandée
+    const target = document.getElementById(pageId);
+    if (target) target.style.display = 'block';
+}
+
+// =============================================================================
+// 2. ACCUEIL & DONNÉES CLUBS
+// =============================================================================
+
+async function chargerListeClubs() {
+    const grid = document.getElementById('clubsGrid');
+    try {
+        const response = await fetch('/api/clubs');
+        const clubs = await response.json();
+        
+        grid.innerHTML = ''; // Nettoyer le loader
+        clubs.forEach(club => {
+            const card = document.createElement('div');
+            card.className = 'club-card';
+            card.innerHTML = `
+                <div class="club-logo-wrapper">
+                    <img src="logos/${club}.png" onerror="this.src='logos/default.png'">
+                </div>
+                <span class="club-name">${club}</span>
+            `;
+            // Clic sur une carte -> Lance le simulateur pour ce club
+            card.onclick = () => {
+                const input = document.getElementById('club');
+                if (input) input.value = club;
+                showPage('simulate');
+                simulate();
+            };
+            grid.appendChild(card);
+        });
+    } catch (e) {
+        grid.innerHTML = '<div class="error-msg">Erreur de chargement des clubs.</div>';
+    }
+}
+
+// Remplit la datalist pour l'input de recherche de match (Ancien onglet impact)
+async function remplirDataListClubs() {
+    try {
+        const res = await fetch('/api/clubs');
+        const clubs = await res.json();
+        const dl = document.getElementById('clubsList');
+        if(dl) {
+            dl.innerHTML = clubs.map(c => `<option value="${c}">`).join('');
+        }
+    } catch(e) {}
+}
+
+// =============================================================================
+// 3. SIMULATEUR INDIVIDUEL (MONTE CARLO)
+// =============================================================================
+
+async function simulate() {
+    const club = document.getElementById('club').value.trim();
+    const container = document.getElementById('resultsContainer');
+    
+    if (!club) return alert("Veuillez entrer un nom de club.");
+    
+    showPage('results');
+    container.innerHTML = '<div class="loader"></div><p style="text-align:center">Simulation de 1000 saisons...</p>';
+    
+    try {
+        const response = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club: club, day: 6 }) // Par défaut départ J6
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            container.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="club-header">
+                <img src="logos/${data.club}.png" class="medium-logo" onerror="this.src='logos/default.png'">
+                <div>
+                    <h3>${data.club}</h3>
+                    <p>Points Moyens prédits : <strong>${data.points_moyens}</strong></p>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box green">
+                    <h4>Top 8</h4>
+                    <span class="percentage">${data.proba_top_8}%</span>
+                    <span class="sub-label">Qualif Directe</span>
+                </div>
+                <div class="stat-box yellow">
+                    <h4>Barrage</h4>
+                    <span class="percentage">${data.proba_barrage}%</span>
+                    <span class="sub-label">9ème - 24ème</span>
+                </div>
+                <div class="stat-box red">
+                    <h4>Éliminé</h4>
+                    <span class="percentage">${data.proba_elimine}%</span>
+                    <span class="sub-label">> 24ème</span>
+                </div>
+            </div>
+
+            <div class="charts-column">
+                <div class="chart-box">
+                    <h4>Distribution des Points</h4>
+                    <div class="chart-area"><canvas id="pointsChart"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <h4>Distribution du Classement Final</h4>
+                    <div class="chart-area"><canvas id="rankChart"></canvas></div>
+                </div>
+            </div>
+        `;
+        
+        creerGraphique('pointsChart', data.distribution_points, 'Probabilité', '#007bff');
+        creerGraphique('rankChart', data.distribution_rangs, 'Probabilité', '#6f42c1');
+
+    } catch (e) {
+        container.innerHTML = `<div class="error-msg">❌ Erreur serveur</div>`;
+    }
+}
+
+// =============================================================================
+// 4. DUEL (PRÉDICTEUR MATCH UNIQUE)
+// =============================================================================
+
+async function remplirListesDuel() {
+    try {
+        const res = await fetch('/api/clubs');
+        const clubs = await res.json();
+        const h = document.getElementById('selHome');
+        const a = document.getElementById('selAway');
+        if (h && a) {
+            clubs.forEach(c => {
+                h.add(new Option(c, c));
+                a.add(new Option(c, c));
+            });
+            a.selectedIndex = 1; // Sélectionner un club différent par défaut
+        }
+    } catch (e) {}
+}
+
+async function lancerDuel() {
+    const h = document.getElementById('selHome').value;
+    const a = document.getElementById('selAway').value;
+    
+    if (h === a) return alert("Veuillez sélectionner deux équipes différentes.");
+    
+    const resBox = document.getElementById('duelResult');
+    resBox.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/predict-match', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ home: h, away: a })
+        });
+        const data = await response.json();
+
+        // Mise à jour Score Moyen
+        document.getElementById('resHomeName').innerText = data.home_team;
+        document.getElementById('resAwayName').innerText = data.away_team;
+        document.getElementById('resHomeScore').innerText = data.score_avg_home;
+        document.getElementById('resAwayScore').innerText = data.score_avg_away;
+
+        // Mise à jour Barres de Proba
+        const barWin = document.getElementById('barWin');
+        const barDraw = document.getElementById('barDraw');
+        const barLoss = document.getElementById('barLoss');
+
+        barWin.style.width = data.proba_win + '%';
+        barWin.innerText = data.proba_win > 10 ? data.proba_win + '%' : '';
+        
+        barDraw.style.width = data.proba_draw + '%';
+        barDraw.innerText = data.proba_draw > 10 ? data.proba_draw + '%' : '';
+        
+        barLoss.style.width = data.proba_loss + '%';
+        barLoss.innerText = data.proba_loss > 10 ? data.proba_loss + '%' : '';
+
+        resBox.style.display = 'block';
+    } catch (e) {
+        alert("Erreur lors de la simulation du duel.");
+    }
+}
+
+// =============================================================================
+// 5. CLASSEMENT PROJETÉ
+// =============================================================================
+
+async function chargerClassement() {
+    const tbody = document.getElementById('rankingBody');
+    const start = document.getElementById('startDay').value;
+    const end = document.getElementById('endDay').value;
+    
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center"><div class="loader"></div> Calcul...</td></tr>';
+    
+    try {
+        const response = await fetch('/api/rankings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: start, end: end })
+        });
+        const data = await response.json();
+        
+        tbody.innerHTML = '';
+        data.forEach(r => {
+            let cssClass = '';
+            if (r.rank <= 8) cssClass = 'qualif-direct';
+            else if (r.rank <= 24) cssClass = 'barrage';
+            else cssClass = 'elimine';
+            
+            tbody.innerHTML += `
+                <tr class="${cssClass}">
+                    <td><strong>${r.rank}</strong></td>
+                    <td style="text-align:left">
+                        <img src="logos/${r.club}.png" class="mini-logo" onerror="this.src='logos/default.png'"> 
+                        ${r.club}
+                    </td>
+                    <td><strong>${r.points}</strong></td>
+                    <td>${r.diff > 0 ? '+'+r.diff : r.diff}</td>
+                    <td>${r.buts}</td>
+                    <td class="secondary-stat">${r.buts_ext}</td>
+                    <td>${r.victoires}</td>
+                    <td class="secondary-stat">${r.victoires_ext}</td>
+                </tr>`;
+        });
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="8">Erreur serveur</td></tr>';
+    }
+}
+
+// =============================================================================
+// 6. ANALYSES GLOBALES & PROBABILITÉS
+// =============================================================================
+
+async function chargerAnalysesGlobales() {
+    try {
+        const res = await fetch('/api/seuils');
+        const data = await res.json();
+        creerGraphique('chartTop8', data.seuil_top8, 'Points nécessaires (8ème)', '#28a745');
+        creerGraphique('chartBarrage', data.seuil_barrage, 'Points nécessaires (24ème)', '#ffc107');
+    } catch (e) { console.error(e); }
+}
+
+async function chargerProbas() {
+    const day = document.getElementById('probaStartDay').value;
+    const t8 = document.getElementById('tbodyTop8');
+    const tq = document.getElementById('tbodyQualif');
+    
+    t8.innerHTML = '<tr><td colspan="3" style="text-align:center"><div class="loader"></div></td></tr>';
+    tq.innerHTML = '<tr><td colspan="3" style="text-align:center"><div class="loader"></div></td></tr>';
+    
+    try {
+        const res = await fetch('/api/probas', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({day: day})
+        });
+        const data = await res.json();
+        
+        function fillTable(tbody, list, color) {
+            if(!list || list.length === 0) tbody.innerHTML = '<tr><td colspan="3">Aucune donnée</td></tr>';
+            else tbody.innerHTML = list.map((item, i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td style="text-align:left"><img src="logos/${item.club}.png" class="mini-logo"> ${item.club}</td>
+                    <td><span class="score-badge" style="background:${color}">${item.proba}%</span></td>
+                </tr>
+            `).join('');
+        }
+        
+        fillTable(t8, data.ranking_top8, '#28a745');
+        fillTable(tq, data.ranking_qualif, '#fd7e14');
+        
+    } catch(e) {
+        t8.innerHTML = '<tr><td colspan="3">Erreur</td></tr>';
+        tq.innerHTML = '<tr><td colspan="3">Erreur</td></tr>';
+    }
+}
+
+// =============================================================================
+// 7. SECTION : IMPACT DES MATCHS (ANCIENNE / DÉTAILLÉE)
+// =============================================================================
+
+function switchImpactTab(tabName) {
+    // Masquer les contenus
+    document.querySelectorAll('#match-impact .impact-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('#match-impact .tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Afficher le bon
+    document.getElementById('impact-' + tabName).style.display = 'block';
+    // Activer le bouton (astuce simple basée sur l'ordre ou onclick, ici on suppose que l'utilisateur clique)
+    event.target.classList.add('active');
+}
+
+async function analyserImpactMatch() {
+    const club = document.getElementById('impactClub').value;
+    const journee = document.getElementById('impactJournee').value;
+    const container = document.getElementById('impactResults');
+    
+    if(!club) return alert("Entrez un club");
+    container.innerHTML = '<div class="loader"></div> Calcul...';
+    
+    try {
+        const res = await fetch('/api/match-impact', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({club: club, journee: journee})
+        });
+        const data = await res.json();
+        
+        if(data.error) { container.innerHTML = `<div class="error-msg">${data.error}</div>`; return; }
+        
+        container.innerHTML = `
+            <div class="impact-card">
+                <h3>${data.club} ${data.domicile ? '🏠' : '✈️'} vs ${data.adversaire}</h3>
+                <div class="scenarios-grid">
+                    <div class="scenario-box victoire">
+                        <h4>Victoire</h4>
+                        <div>Qualif: <strong>${data.impact_victoire.proba_qualif}%</strong></div>
+                        <div>Top 8: <strong>${data.impact_victoire.proba_top8}%</strong></div>
+                    </div>
+                    <div class="scenario-box nul">
+                        <h4>Nul</h4>
+                        <div>Qualif: <strong>${data.impact_nul.proba_qualif}%</strong></div>
+                        <div>Top 8: <strong>${data.impact_nul.proba_top8}%</strong></div>
+                    </div>
+                    <div class="scenario-box defaite">
+                        <h4>Défaite</h4>
+                        <div>Qualif: <strong>${data.impact_defaite.proba_qualif}%</strong></div>
+                        <div>Top 8: <strong>${data.impact_defaite.proba_top8}%</strong></div>
+                    </div>
+                </div>
+                <div class="gains-box">
+                    <p>Enjeu Victoire vs Défaite (Qualif) : <strong style="color:blue">+${(data.impact_victoire.proba_qualif - data.impact_defaite.proba_qualif).toFixed(1)}%</strong></p>
+                </div>
+            </div>
+        `;
+    } catch(e) { container.innerHTML = "Erreur serveur"; }
+}
+
+async function chargerMatchsImportants(type) {
+    const container = document.getElementById(type === 'qualif' ? 'tableQualif' : 'tableTop8');
+    container.innerHTML = '<div class="loader"></div>';
+    
+    try {
+        const res = await fetch('/api/all-matches-impact', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({journee: 7}) // Par défaut J7 pour l'instant
+        });
+        const data = await res.json();
+        const list = type === 'qualif' ? data.par_qualif : data.par_top8;
+        
+        container.innerHTML = list.map((m, i) => `
+            <div class="match-card" style="margin-bottom:10px; display:flex; justify-content:space-between;">
+                <span><strong>#${i+1}</strong> ${m.match}</span>
+                <span class="score-badge high">Impact: ${type === 'qualif' ? m.impact_qualif.global : m.impact_top8.global}</span>
+            </div>
+        `).join('');
+    } catch(e) { container.innerHTML = "Erreur"; }
+}
+
+// =============================================================================
+// 8. SECTION : SCÉNARIOS & HYPE (NOUVELLE / RAPIDE)
+// =============================================================================
+
+function switchScenarioTab(tabName) {
+    document.getElementById('scenario-tab').style.display = 'none';
+    document.getElementById('hype-tab').style.display = 'none';
+    
+    // Reset boutons
+    const btns = document.querySelectorAll('#impact-zone .tab-btn');
+    btns.forEach(b => b.classList.remove('active'));
+    
+    if (tabName === 'scenario') {
+        document.getElementById('scenario-tab').style.display = 'block';
+        btns[0].classList.add('active');
+    } else {
+        document.getElementById('hype-tab').style.display = 'block';
+        btns[1].classList.add('active');
+    }
+}
+
+async function lancerScenario() {
+    const club = document.getElementById('scenarioClub').value;
+    const start = document.getElementById('scenarioStartDay').value;
+    const target = document.getElementById('scenarioTargetDay').value;
+    const resVal = document.getElementById('scenarioResult').value;
+    const box = document.getElementById('scenarioResultBox');
+
+    if(!club) return alert("Entrez un club");
+    
+    box.style.display = 'block';
+    document.getElementById('scenarioVerdict').innerHTML = '<div class="loader"></div>';
+
+    try {
+        const res = await fetch('/api/scenario', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({club: club, start_day: start, day: target, result: resVal})
+        });
+        const data = await res.json();
+        
+        if(data.error) {
+            document.getElementById('scenarioVerdict').innerText = data.error;
+            return;
+        }
+
+        document.getElementById('scenarioTitle').innerHTML = `Si <strong>${data.club}</strong> fait <strong>${resVal}</strong> en J${target}`;
+        
+        // Mise à jour des barres
+        document.getElementById('dispTop8').innerText = data.proba_top8 + "%";
+        document.getElementById('barTop8').style.width = data.proba_top8 + "%";
+        
+        document.getElementById('dispQualif').innerText = data.proba_qualif + "%";
+        document.getElementById('barQualif').style.width = data.proba_qualif + "%";
+        
+        // Verdict
+        let vText = "❌ Éliminé probable";
+        let vColor = "red";
+        if (data.proba_qualif > 99) { vText = "✅ Qualifié (Top 24) Sûr"; vColor = "green"; }
+        else if (data.proba_qualif > 50) { vText = "⚖️ En ballotage favorable"; vColor = "orange"; }
+        
+        const vb = document.getElementById('scenarioVerdict');
+        vb.innerText = vText;
+        vb.style.borderLeftColor = vColor;
+
+    } catch(e) { 
+        document.getElementById('scenarioVerdict').innerText = "Erreur serveur"; 
+    }
+}
+
+async function chargerImportance() {
+    const start = document.getElementById('impStartDay').value;
+    const target = document.getElementById('impTargetDay').value;
+    const list = document.getElementById('importanceList');
+    
+    list.innerHTML = '<div style="text-align:center; padding:20px"><div class="loader"></div> Calcul des enjeux...</div>';
+    
+    try {
+        const res = await fetch('/api/importance', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({start: start, target: target})
+        });
+        const data = await res.json();
+        
+        list.innerHTML = "";
+        if(data.length === 0) { list.innerHTML = "Aucun match trouvé."; return; }
+        
+        data.forEach((m, i) => {
+            let cls = m.score > 50 ? 'high' : (m.score > 20 ? 'medium' : 'low');
+            list.innerHTML += `
+                <div class="match-card">
+                    <div class="match-info">
+                        <span class="rank">#${i+1}</span>
+                        <div class="teams">
+                            <img src="logos/${m.dom}.png" class="mini-logo"> ${m.dom} 
+                            <span class="vs">vs</span> 
+                            ${m.ext} <img src="logos/${m.ext}.png" class="mini-logo">
+                        </div>
+                        <div class="score-badge ${cls}">${m.score}</div>
+                    </div>
+                    <div class="hype-bar-bg">
+                        <div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score, 100)}%"></div>
+                    </div>
+                    <div class="match-details-text">
+                        Intérêt ${m.dom}: <strong>${m.details.dom_val}</strong> | 
+                        Intérêt ${m.ext}: <strong>${m.details.ext_val}</strong>
+                    </div>
+                </div>`;
+        });
+    } catch(e) { list.innerHTML = "Erreur serveur"; }
+}
+
+// =============================================================================
+// 9. UTILITAIRES GRAPHIQUES (CHART.JS)
+// =============================================================================
+
+function creerGraphique(canvasId, distributionData, label, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    // Détruire l'ancien graphique s'il existe pour éviter le scintillement
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+    }
+    
+    // Trier les clés (x-axis) numériquement
+    const labels = Object.keys(distributionData).sort((a, b) => parseFloat(a) - parseFloat(b));
+    const values = labels.map(k => distributionData[k] * 100); // Conversion en %
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: values,
+                backgroundColor: color,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: '%' } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+"""
+
+#==================================================================================================================
+#html version apres premier nettoyage 
+"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulation Ligue des Champions</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>⚽ Simulation LDC</h1>
+        <nav>
+            <button onclick="showPage('home')">Accueil</button>
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()">Analyses Globales</button>
+            <button onclick="showPage('duel')">⚔️ Duel</button>
+            <button onclick="showPage('ranking'); chargerClassement()">🏆 Classement</button>
+            <button onclick="showPage('match-impact')">⚡ Impact Matchs</button>
+            <button onclick="showPage('probas-zone')">📊 Probabilités</button>
+            <button onclick="showPage('impact-zone')">🔮 Scénarios & Hype</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="page">
+            <div class="hero">
+                <h2>Bienvenue sur le Simulateur LDC</h2>
+                <p>Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.</p>
+                <div class="actions">
+                    <button class="big-btn" onclick="showPage('simulate')">Simuler mon club</button>
+                    <button class="big-btn secondary" onclick="showPage('analyses'); chargerAnalysesGlobales()">Voir les tendances</button>
+                </div>
+            </div>
+            <!-- 19/12/2025 16:42 début MIR-->
+            <div class="clubs-container">
+                <h3>Ou choisissez une équipe directement :</h3>
+
+                <div id="clubsGrid" class="clubs-grid">
+                    <div class="loader"></div> Chargement...
+                </div>
+            </div>
+        </section>
+
+        <section id="duel" class="page" style="display:none;">
+            <h2>🔮 Prédicteur de Match</h2>
+            <p>Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.</p>
+
+            <div class="duel-container">
+                <div class="team-selector">
+                    <label>Domicile 🏠</label>
+                    <select id="selHome"></select>
+                </div>
+
+                <div class="vs-badge">VS</div>
+
+                <div class="team-selector">
+                    <label>Extérieur ✈️</label>
+                    <select id="selAway"></select>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top:20px;">
+                <button class="big-btn" onclick="lancerDuel()">Simuler le match</button>
+            </div>
+
+            <div id="duelResult" class="duel-result" style="display:none;">
+                <div class="score-board">
+                    <div class="team-score">
+                        <span id="resHomeName">Home</span>
+                        <span id="resHomeScore" class="score-digit">0</span>
+                    </div>
+                    <div class="divider">-</div>
+                    <div class="team-score">
+                        <span id="resAwayName">Away</span>
+                        <span id="resAwayScore" class="score-digit">0</span>
+                    </div>
+                </div>
+                
+                <div class="proba-bar-container">
+                    <div id="barWin" class="p-bar win">Win</div>
+                    <div id="barDraw" class="p-bar draw">Draw</div>
+                    <div id="barLoss" class="p-bar loss">Loss</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 20/12/2025  MIR-->
+        <section id="ranking" class="page" style="display:none;">
+            <h2>🏆 Classement Projeté (Moyenne)</h2>
+            <p>Simulez le classement sur une période précise.</p>
+            
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label for="startDay">Situation de départ (Après) :</label>
+                    <select id="startDay">
+                        <option value="0" selected>J0 (Début)</option>
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6 (Actuel)</option>
+                        <option value="7">J7</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="endDay">Simuler jusqu'à la :</label>
+                    <select id="endDay">
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6</option>
+                        <option value="7">J7</option>
+                        <option value="8" selected>J8 (Fin)</option>
+                    </select>
+                </div>
+                
+                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
+            </div>
+
+            <div class="table-container">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align:left;">Club</th>
+                            <th>Pts</th>
+                            <th>Diff.</th>
+                            <th>Buts</th>
+                            <th class="secondary-stat">Buts Ext.</th>
+                            <th>Vic.</th>
+                            <th class="secondary-stat">Vict. Ext.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <tr><td colspan="8" style="text-align:center;">Cliquez sur Calculer...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="legend">
+                <span class="dot green"></span> Qualif Directe (1-8)
+                <span class="dot orange"></span> Barrages (9-24)
+                <span class="dot red"></span> Éliminé (25-36)
+            </div>
+        </section>
+        
+
+        <section id="results" class="page" style="display:none;">
+            <h2>Résultats de la simulation</h2>
+            <button onclick="showPage('simulate')" class="back-btn">← Nouvelle recherche</button>
+            
+            <div id="resultsContainer">
+                </div>
+        </section>
+
+        <section id="analyses" class="page" style="display:none;">
+            <h2>Analyses Globales (Monte Carlo)</h2>
+            
+            <div class="analysis-section">
+                <h3>1. Les Seuils de Qualification</h3>
+                <p>Combien de points faut-il pour se qualifier ?</p>
+                <div class="charts-row">
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 8 (Qualif Directe)</h4>
+                        <div class="chart-area">
+                            <canvas id="chartTop8"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 24 (Barrages)</h4>
+                        <div class="chart-area">
+                            <canvas id="chartBarrage"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h3>2. Matchs Décisifs (Prochaine Journée)</h3>
+                <p>Les rencontres qui auront le plus d'impact sur le classement général.</p>
+                <ul id="listeImportance" class="importance-list">
+                    <li>Chargement des données...</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="probas-zone" class="page" style="display:none;">
+            <h2>📊 Probabilités de Qualification</h2>
+            <p>Estimation des chances de chaque club selon la journée de départ (Simulé 1000 fois).</p>
+
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label>Situation après la :</label>
+                    <select id="probaStartDay">
+                        <option value="0" selected>J0 (Début Saison)</option>
+                        <option value="1">Journée 1</option>
+                        <option value="2">Journée 2</option>
+                        <option value="3">Journée 3</option>
+                        <option value="4">Journée 4</option>
+                        <option value="5">Journée 5</option>
+                        <option value="6">Journée 6 (Actuel)</option>
+                        <option value="7">Journée 7</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="chargerProbas()">Calculer les chances</button>
+            </div>
+
+            <div class="probas-container">
+                
+                <div class="proba-column">
+                    <h3 class="green-text">🏆 Favoris Top 8 (Qualif Directe)</h3>
+                    <div class="table-wrapper">
+                        <table class="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th style="text-align:left;">Club</th>
+                                    <th>% Chance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyTop8">
+                                <tr><td colspan="3">Cliquez sur Calculer...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="proba-column">
+                    <h3 class="orange-text">🎟️ Favoris Top 24 (Barrages + Top8)</h3>
+                    <div class="table-wrapper">
+                        <table class="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th style="text-align:left;">Club</th>
+                                    <th>% Chance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyQualif">
+                                <tr><td colspan="3">Cliquez sur Calculer...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Nouvelle section : Impact des matchs  "moi" -->
+        <section id="match-impact" class="page" style="display:none;">
+            <h2>⚡ Impact des Matchs</h2>
+            
+            <div class="impact-tabs">
+                <button class="tab-btn active" onclick="switchImpactTab('specific')">🔍 Match Spécifique</button>
+                <button class="tab-btn" onclick="switchImpactTab('qualif')">🎯 Qualification</button>
+                <button class="tab-btn" onclick="switchImpactTab('top8')">🏆 Top 8</button>
+            </div>
+
+            <!-- TAB 1 : Analyse d'un match spécifique -->
+            <div id="impact-specific" class="impact-tab-content">
+                <div class="controls-bar">
+                    <input type="text" id="impactClub" placeholder="Ex: Arsenal" list="clubsList">
+                    <datalist id="clubsList"></datalist>
+                    <select id="impactJournee">
+                        <option value="7" selected>Journée 7</option>
+                        <option value="8">Journée 8</option>
+                    </select>
+                    <button class="action-btn" onclick="analyserImpactMatch()">🔍 Analyser</button>
+                </div>
+                
+                <div id="impactResults"></div>
+            </div>
+
+            <!-- TAB 2 : Matchs importants QUALIFICATION -->
+            <div id="impact-qualif" class="impact-tab-content" style="display:none;">
+                <div class="info-box">
+                    <p><strong>📊 Classement des matchs par impact sur la QUALIFICATION</strong></p>
+                    <p>Ces matchs changent le plus les probabilités de finir dans le top 24 (qualifié).</p>
+                </div>
+                <button class="action-btn" onclick="chargerMatchsImportants('qualif')">🔄 Charger les matchs J7</button>
+                <div id="tableQualif"></div>
+            </div>
+
+            <!-- TAB 3 : Matchs importants TOP 8 -->
+            <div id="impact-top8" class="impact-tab-content" style="display:none;">
+                <div class="info-box">
+                    <p><strong>🏆 Classement des matchs par impact sur le TOP 8</strong></p>
+                    <p>Ces matchs changent le plus les probabilités de finir dans le top 8 (qualification directe).</p>
+                </div>
+                <button class="action-btn" onclick="chargerMatchsImportants('top8')">🔄 Charger les matchs J7</button>
+                <div id="tableTop8"></div>
+            </div>
+        </section>
+    
+    
+        <section id="impact-zone" class="page" style="display:none;">
+            <h2>💥 Analyse d'Impact & Enjeux</h2>
+            <p>Utilisez les fonctions de simulation avancées pour prédire l'avenir.</p>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchScenarioTab('scenario')">🔮 Scénario (What-If)</button>
+                <button class="tab-btn" onclick="switchScenarioTab('hype')">🔥 Hype-o-mètre</button>
+            </div>
+
+            <div id="scenario-tab" class="impact-tab-content">
+                <div class="search-box">
+                    <div class="control-group">
+                        <label>Départ (Historique) :</label>
+                        <select id="scenarioStartDay">
+                            <option value="0" selected>J0 (Début)</option>
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Match en :</label>
+                        <select id="scenarioTargetDay">
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                            <option value="8"selected>J8</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Club & Résultat :</label>
+                        <input type="text" id="scenarioClub" placeholder="Ex: Monaco">
+                        <select id="scenarioResult">
+                            <option value="V">Victoire</option>
+                            <option value="N">Nul</option>
+                            <option value="D">Défaite</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="lancerScenario()">Simuler</button>
+                </div>
+
+                <div id="scenarioResultBox" style="margin-top:20px; display:none;">
+                    <h3 id="scenarioTitle" style="text-align:center;">Résultat</h3>
+                    <div class="scenario-dashboard">
+                        <div class="stat-card">
+                            <div class="stat-icon">🏆</div><div class="stat-label">Top 8</div>
+                            <div class="stat-big-number green-text" id="dispTop8">0%</div>
+                            <div class="progress-bg"><div id="barTop8" class="progress-bar green" style="width:0%"></div></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎟️</div><div class="stat-label">Qualif</div>
+                            <div class="stat-big-number orange-text" id="dispQualif">0%</div>
+                            <div class="progress-bg"><div id="barQualif" class="progress-bar orange" style="width:0%"></div></div>
+                        </div>
+                    </div>
+                    <div id="scenarioVerdict" class="verdict-box">...</div>
+                </div>
+            </div>
+
+            <div id="hype-tab" class="impact-tab-content" style="display:none;">
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <label>Contexte :</label>
+                        <select id="impStartDay">
+                            <option value="0" selected>J0 (Début)</option>
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Analyser :</label>
+                        <select id="impTargetDay">
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                            <option value="8" selected>J8</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="chargerImportance()">Calculer Hype</button>
+                </div>
+                <div id="importanceList" class="matches-list">
+                    <div class="placeholder-text">Cliquez sur calculer pour voir les matchs importants...</div>
+                </div>
+            </div>
+        </section>
+        
+        
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
+"""
+
+#============================================================================================
+# script =.js enlever matchs decisivs dans chargerAnalysesGlobales
+"""
+async function chargerAnalysesGlobales() {
+    // 1. Récupération de la journée choisie
+    const select = document.getElementById('analysesStartDay');
+    // Si le select n'existe pas encore (premier chargement), on prend 0 par défaut
+    const day = select ? parseInt(select.value) : 0;
+
+    // 2. Appel API (Notez le changement en POST)
+    try {
+        const response = await fetch('/api/seuils', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: day })
+        });
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+
+        // 3. Mise à jour des graphiques avec le titre dynamique
+        creerGraphique('chartTop8', data.seuil_top8, `Points du 8ème (Base J${data.journee_utilisee})`, '#4bc0c0');
+        creerGraphique('chartBarrage', data.seuil_barrage, `Points du 24ème (Base J${data.journee_utilisee})`, '#ffcd56');
+    } catch (e) {
+        console.error("Erreur seuils", e);
+    }
+
+    // 4. Chargement de la liste d'importance (reste inchangé pour l'instant)
+    try {
+        const list = document.getElementById('listeImportance');
+        if(list) list.innerHTML = '<div class="loader small"></div> Calcul des impacts...';
+        
+        const response2 = await fetch('/api/importance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: 7, start: 6 }) // Par défaut sur la prochaine journée
+        });
+        const data2 = await response2.json();
+
+        if(list) {
+            list.innerHTML = "";
+            data2.slice(0, 10).forEach((item, index) => { // Top 10 seulement
+                list.innerHTML += `
+                    <li>
+                        <span class="rank">#${index + 1}</span>
+                        <span class="match-name">${item.match}</span>
+                        <span class="score">Impact: <strong>${item.score}</strong></span>
+                    </li>`;
+            });
+        }
+    } catch (e) {
+        console.error("Erreur importance", e);
+    }
+}
+
+"""

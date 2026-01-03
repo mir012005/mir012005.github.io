@@ -8,8 +8,10 @@ let charts = {};
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
     chargerListeClubs();      // Remplit la grille d'accueil
-    remplirListesDuel();      // Remplit les sélecteurs du Duel
+    remplirTousLesMenus();      // Remplit les sélecteurs des clubs
     remplirDataListClubs();   // Remplit l'autocomplétion pour la recherche de match
+
+    showPage('home');
 });
 
 // Navigation entre les pages (Sections)
@@ -144,20 +146,32 @@ async function simulate() {
 // 4. DUEL (PRÉDICTEUR MATCH UNIQUE)
 // =============================================================================
 
-async function remplirListesDuel() {
+async function remplirTousLesMenus() {
     try {
         const res = await fetch('/api/clubs');
         const clubs = await res.json();
-        const h = document.getElementById('selHome');
-        const a = document.getElementById('selAway');
-        if (h && a) {
-            clubs.forEach(c => {
-                h.add(new Option(c, c));
-                a.add(new Option(c, c));
-            });
-            a.selectedIndex = 1; // Sélectionner un club différent par défaut
-        }
-    } catch (e) {}
+        
+        // Cibles : Duel (Home/Away) et Scénario (Club)
+        const selHome = document.getElementById('selHome');
+        const selAway = document.getElementById('selAway');
+        const selScenario = document.getElementById('scenarioClub');
+
+        // On remplit tout d'un coup
+        clubs.forEach(c => {
+            // Pour le Duel
+            if (selHome) selHome.add(new Option(c, c));
+            if (selAway) selAway.add(new Option(c, c));
+            
+            // Pour le Scénario (NOUVEAU)
+            if (selScenario) selScenario.add(new Option(c, c));
+        });
+
+        // Petite astuce : sélectionner un club différent par défaut pour le Duel Away
+        if (selAway) selAway.selectedIndex = 1; 
+
+    } catch (e) {
+        console.error("Erreur remplissage menus", e);
+    }
 }
 
 async function lancerDuel() {
@@ -254,12 +268,31 @@ async function chargerClassement() {
 // =============================================================================
 
 async function chargerAnalysesGlobales() {
+    // 1. Récupération de la journée choisie
+    const select = document.getElementById('analysesStartDay');
+    // Si le select n'existe pas encore (premier chargement), on prend 0 par défaut
+    const day = select ? parseInt(select.value) : 0;
+
+    // 2. Appel API pour les SEUILS (Graphiques)
     try {
-        const res = await fetch('/api/seuils');
-        const data = await res.json();
-        creerGraphique('chartTop8', data.seuil_top8, 'Points nécessaires (8ème)', '#28a745');
-        creerGraphique('chartBarrage', data.seuil_barrage, 'Points nécessaires (24ème)', '#ffc107');
-    } catch (e) { console.error(e); }
+        const response = await fetch('/api/seuils', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: day })
+        });
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+
+        // 3. Mise à jour des graphiques
+        creerGraphique('chartTop8', data.seuil_top8, `Points du 8ème (Base J${data.journee_utilisee})`, '#4bc0c0');
+        creerGraphique('chartBarrage', data.seuil_barrage, `Points du 24ème (Base J${data.journee_utilisee})`, '#ffcd56');
+    } catch (e) {
+        console.error("Erreur seuils", e);
+    }
 }
 
 async function chargerProbas() {
@@ -308,8 +341,12 @@ function switchImpactTab(tabName) {
     
     // Afficher le bon
     document.getElementById('impact-' + tabName).style.display = 'block';
-    // Activer le bouton (astuce simple basée sur l'ordre ou onclick, ici on suppose que l'utilisateur clique)
-    event.target.classList.add('active');
+    
+    // Activer le bon bouton (Astuce basée sur l'ordre)
+    const btns = document.querySelectorAll('#match-impact .tab-btn');
+    if (tabName === 'specific') btns[0].classList.add('active');
+    if (tabName === 'qualif') btns[1].classList.add('active');
+    if (tabName === 'top8') btns[2].classList.add('active');
 }
 
 async function analyserImpactMatch() {

@@ -44,10 +44,22 @@ def run_simulation():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/seuils', methods=['GET'])
+@app.route('/api/seuils', methods=['POST']) # Changé de GET à POST
 def get_seuils():
-    # Seuils de qualification (barres graphiques)
-    return jsonify(simulator.get_web_seuils(nb_simulations=1000))
+    try:
+        data = request.json or {}
+        # On récupère la journée demandée, par défaut 0
+        day = int(data.get('day', 0))
+        
+        print(f"--> Calcul des seuils globaux (Base J{day})...")
+        
+        # Appel de la fonction mise à jour
+        result = simulator.get_web_seuils(nb_simulations=1000, journee_depart=day)
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"ERREUR SEUILS : {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/predict-match', methods=['POST'])
 def predict_match():

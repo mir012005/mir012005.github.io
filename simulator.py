@@ -895,28 +895,45 @@ def simulation_pour_enjeux(journee,données={"classement" : None, "points" : Non
 # =========================== Affichage Web ==================================================
 # =============================================================================
 
-def get_web_seuils(nb_simulations=1000):
+def get_web_seuils(nb_simulations=1000, journee_depart=0):
     """
     Calcule la distribution des points du 8ème (Qualif) et du 24ème (Barrage).
-    Répond à l'exigence (2) du projet.
+    Permet de voyager dans le temps (J0 à J8).
     """
-    # On utilise l'état actuel (J6 par défaut, ou J7 si vous avez décommenté le code)
-    # Assurez-vous que 'données_J6' ou votre variable d'état est bien accessible ici
-    etat = données_J6 
+    # 1. MAPPING DES DONNÉES HISTORIQUES
+    # Assurez-vous que toutes ces variables (données_J1...) existent bien en haut du fichier
+    map_historique = {
+        0: etat_zero, 
+        1: données_J1, 2: données_J2, 3: données_J3, 
+        4: données_J4, 5: données_J5, 6: données_J6, 
+        7: données_J7, 8: données_J8
+    }
+    
+    # On récupère les données correspondantes (ou J6 par défaut si erreur)
+    etat = map_historique.get(journee_depart, etat_zero)
+    
+    # La simulation commence le lendemain de la journée de départ
+    debut_simu = journee_depart + 1
     
     # On lance la simu pour récupérer les points par position
-    # debut=7 car on suppose qu'on est après la J6
-    distrib_pos = distribution_par_position(N=nb_simulations, données=etat, debut=7, fin=8)
+    distrib_pos = distribution_par_position(
+        N=nb_simulations, 
+        données=etat, 
+        debut=debut_simu, 
+        fin=8
+    )
     
     # On récupère les stats pour le 8ème (Cut-off Top 8) et le 24ème (Cut-off Barrage)
-    stats_8 = distrib_pos[8]
-    stats_24 = distrib_pos[24] # Ou 25 selon si vous voulez le premier éliminé ou le dernier qualifié
+    # .get(8, {}) évite le crash si la clé n'existe pas
+    stats_8 = distrib_pos.get(8, {})
+    stats_24 = distrib_pos.get(24, {})
     
-    # Nettoyage pour le JSON (on enlève les probas nulles)
+    # Nettoyage pour le JSON (on enlève les probas < 0.5% pour alléger le transfert)
     def clean_dict(d):
         return {k: v for k, v in d.items() if v > 0.005}
 
     return {
+        "journee_utilisee": journee_depart,
         "seuil_top8": clean_dict(stats_8),
         "seuil_barrage": clean_dict(stats_24)
     }
