@@ -1,17 +1,13 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-import os
-
-# --- MODIFICATION ICI ---
-# On importe "simulator" car c'est le nom de votre fichier (simulator.py)
-import simulator 
+import simulator  # Ton fichier simulator.py
 
 app = Flask(__name__, static_folder='.')
-CORS(app) 
+CORS(app)
 
-# ------------------------------------------------------------------
-# 1. ROUTES POUR LE SITE WEB
-# ------------------------------------------------------------------
+# ==============================================================================
+# 1. ROUTES STATIQUES (POUR AFFICHER LE SITE)
+# ==============================================================================
 
 @app.route('/')
 def index():
@@ -21,320 +17,142 @@ def index():
 def static_files(path):
     return send_from_directory('.', path)
 
-# ------------------------------------------------------------------
-# 2. ROUTES API
-# ------------------------------------------------------------------
+# ==============================================================================
+# 2. ROUTES GÉNÉRALES (SIMULATEUR, CLASSEMENT, DUEL)
+# ==============================================================================
 
-#============ 16: 42 19/12/2025===============================
 @app.route('/api/clubs', methods=['GET'])
 def get_clubs():
     try:
-        clubs = simulator.get_clubs_list()
-        return jsonify(clubs)
+        return jsonify(simulator.get_clubs_list())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-#======================================================
-"""
-@app.route('/api/simulate', methods=['POST'])
-def run_simulation():
-    try:
-        data = request.json
-        club = data.get('club')
-        
-        print(f"--> Simulation demandée pour : {club}")
-        
-        if not club:
-            return jsonify({"error": "Nom de club manquant"}), 400
 
-        # Appel avec "simulator."
-        resultats = simulator.get_web_simulation(club)
-        
-        if "error" in resultats:
-            return jsonify(resultats), 404
-            
-        return jsonify(resultats)
-        
-    except Exception as e:
-        print(f"ERREUR : {e}")
-        return jsonify({"error": str(e)}), 500
-
-"""
-"""
-<section id="ranking" class="page" style="display:none;">
-            <h2>🏆 Classement Projeté (Moyenne)</h2>
-            
-            <div class="controls-bar">
-                <div class="control-group">
-                    <label>De :</label>
-                    <select id="startDay">
-                        <option value="1" selected>J0</option><option value="1">J1</option><option value="2">J2</option>
-                        <option value="3">J3</option><option value="4">J4</option>
-                        <option value="5">J5</option><option value="6">J6</option>
-                        <option value="7">J7</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>À :</label>
-                    <select id="endDay">
-                        <option value="1">J1</option><option value="2">J2</option>
-                        <option value="3">J3</option><option value="4">J4</option>
-                        <option value="5">J5</option><option value="6">J6</option>
-                        <option value="7">J7</option><option value="8" selected>J8</option>
-                    </select>
-                </div>
-                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
-            </div>
-
-            <div class="table-container">
-                <table class="ranking-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th style="text-align:left;">Club</th>
-                            <th>Points</th>
-                            <th>Diff. Buts</th>
-                            <th>Buts</th>
-                            <th class="secondary-stat">Buts Ext.</th>
-                            <th>Victoires</th>
-                            <th class="secondary-stat">Vict. Ext.</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rankingBody">
-                        <tr><td colspan="8">Cliquez sur Calculer...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="legend">
-                <span class="dot green"></span> Qualif Directe (1-8)
-                <span class="dot orange"></span> Barrages (9-24)
-                <span class="dot red"></span> Éliminé (25-36)
-            </div>
-        </section>
-"""
-    
 @app.route('/api/simulate', methods=['POST'])
 def run_simulation():
     try:
         data = request.json or {}
         club = data.get('club')
-        day = int(data.get('day', 6)) # On récupère le jour
+        day = int(data.get('day', 6))
         
-        if not club:
-            return jsonify({"error": "Club manquant"}), 400
-
-        # Appel de la fonction web simulation
-        resultats = simulator.get_web_simulation(club, journee_depart=day)
+        if not club: return jsonify({"error": "Club manquant"}), 400
         
-        if "error" in resultats:
-            return jsonify(resultats), 404
-            
-        return jsonify(resultats)
+        # Simulation individuelle d'un club
+        res = simulator.get_web_simulation(club, journee_depart=day)
+        if "error" in res: return jsonify(res), 404
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/seuils', methods=['GET'])
 def get_seuils():
-    try:
-        print("--> Calcul des seuils globaux...")
-        # Appel avec "simulator."
-        data = simulator.get_web_seuils(nb_simulations=1000)
-        return jsonify(data)
-    except Exception as e:
-        print(f"ERREUR : {e}")
-        return jsonify({"error": str(e)}), 500
+    # Seuils de qualification (barres graphiques)
+    return jsonify(simulator.get_web_seuils(nb_simulations=1000))
 
-#============ 19/12/2025===============================
 @app.route('/api/predict-match', methods=['POST'])
 def predict_match():
-    try:
-        data = request.json
-        home = data.get('home')
-        away = data.get('away')
-        
-        # Appel de la fonction du simulateur
-        result = simulator.get_match_prediction(home, away)
-        
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Duel entre deux équipes (Page Duel)
+    data = request.json or {}
+    return jsonify(simulator.get_match_prediction(data.get('home'), data.get('away')))
 
-#============ 20/12/2025===============================
-"""
-@app.route('/api/ranking', methods=['POST'])
-def get_ranking():
-    try:
-        # Récupération des données JSON envoyées par le site
-        data = request.json
-        
-        # Par défaut : Simulation complète (J1 à J8) si rien n'est précisé
-        start = int(data.get('start', 1))
-        end = int(data.get('end', 8))
-
-        # Appel de la nouvelle fonction wrapper
-        result = simulator.get_simulation_flexible(n_simulations=1000, start_day=start, end_day=end)
-        
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-"""
 @app.route('/api/rankings', methods=['POST'])
 def get_rankings():
-    try:
-        data = request.json or {}
-        
-        # On récupère le début et la fin demandés
-        # Par défaut : du début (0) à la fin (8)
-        start = int(data.get('start', 0))
-        end = int(data.get('end', 8))
-        
-        print(f"--> Simulation de J{start} jusqu'à J{end}...")
-        
-        # Appel de la fonction flexible avec les deux bornes
-        results = simulator.get_simulation_flexible(n_simulations=1000, start_day=start, end_day=end)
-        
-        return jsonify(results)
-        
-    except Exception as e:
-        print(f"ERREUR RANKING: {e}")
-        return jsonify({"error": str(e)}), 500
-
-# -----------------------------------------------------
-# 2. Route pour les PROBABILITÉS (Top 8 / Qualif)
-# -----------------------------------------------------
-@app.route('/api/rankings_top8_qualif', methods=['POST']) # Changé en POST
-def get_probas_api():
-    try:
-        data = request.json or {}
-        day = int(data.get('day', 6))
-        
-        print(f"--> Calcul Probas (Base J{day})...")
-        
-        # Appel de la fonction probas
-        results = simulator.get_probas_top8_qualif(nb_simulations=1000, journee_depart=day)
-        
-        return jsonify(results)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Classement projeté (Page Classement)
+    data = request.json or {}
+    return jsonify(simulator.get_simulation_flexible(
+        n_simulations=1000, 
+        start_day=int(data.get('start', 0)), 
+        end_day=int(data.get('end', 8))
+    ))
 
 @app.route('/api/probas', methods=['POST'])
 def get_probas():
-    try:
-        data = request.json or {}
-        # On récupère la journée demandée (par défaut 0 ou 6 selon votre préférence)
-        day = int(data.get('day', 6))
-        
-        # Appel de votre fonction
-        results = simulator.get_probas_top8_qualif(nb_simulations=1000, journee_depart=day)
-        
-        return jsonify(results)
-    except Exception as e:
-        print(f"Erreur Probas: {e}")
-        return jsonify({"error": str(e)}), 500
-    
-# ------------------------------------------------------------------
-# ROUTES POUR L'ANALYSE D'IMPACT DES MATCHS
-# ------------------------------------------------------------------
+    # Page Probabilités (Tableaux Top 8 / Qualif)
+    data = request.json or {}
+    return jsonify(simulator.get_probas_top8_qualif(
+        nb_simulations=1000, 
+        journee_depart=int(data.get('day', 6))
+    ))
+
+# ==============================================================================
+# 3. ROUTES ONGLET 1 : IMPACT MATCHS (DÉTAILLÉ)
+# ==============================================================================
 
 @app.route('/api/match-impact', methods=['POST'])
 def get_match_impact():
     try:
         data = request.json or {}
-        club = data.get('club')
-        journee = int(data.get('journee', 7))
-        journee_donnees = int(data.get('journee_donnees', 6))
-        
-        if not club:
-            return jsonify({"error": "Club manquant"}), 400
-        
-        result = simulator.get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=journee_donnees)
-        
-        if "error" in result:
-            return jsonify(result), 404
-            
-        return jsonify(result)
+        res = simulator.get_web_match_impact(
+            club=data.get('club'), 
+            journee=int(data.get('journee', 7)), 
+            nb_simulations=1000, 
+            journee_donnees=int(data.get('journee_donnees', 6))
+        )
+        if "error" in res: return jsonify(res), 404
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/all-matches-impact', methods=['POST'])
 def get_all_matches_impact():
     try:
         data = request.json or {}
-        journee = int(data.get('journee', 7))
-        journee_donnees = int(data.get('journee_donnees', 6))
-        
-        result = simulator.get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=journee_donnees)
-        
-        return jsonify(result)
+        return jsonify(simulator.get_web_all_matches_impact(
+            journee=int(data.get('journee', 7)), 
+            nb_simulations=500, 
+            journee_donnees=int(data.get('journee_donnees', 6))
+        ))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/next-match-scenarios', methods=['POST'])
 def get_next_match_scenarios():
     try:
         data = request.json or {}
-        club = data.get('club')
-        journee_donnees = int(data.get('journee_donnees', 6))
-        
-        if not club:
-            return jsonify({"error": "Club manquant"}), 400
-        
-        result = simulator.get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees=journee_donnees)
-        
-        if "error" in result:
-            return jsonify(result), 404
-            
-        return jsonify(result)
+        return jsonify(simulator.get_web_club_next_match_scenarios(
+            club=data.get('club'), 
+            nb_simulations=1000, 
+            journee_donnees=int(data.get('journee_donnees', 6))
+        ))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#moi
-# Route pour le Tableau de Bord Scénario
+# ==============================================================================
+# 4. ROUTES ONGLET 2 : SCÉNARIO & HYPE (RAPIDE)
+# ==============================================================================
+
 @app.route('/api/scenario', methods=['POST'])
 def run_scenario():
     try:
-        data = request.json
-        # Paramètres envoyés par le JS
-        club = data.get('club')
-        result = data.get('result') # V, N ou D
-        target_day = int(data.get('day', 7))      # Journée du match
-        start_day = int(data.get('start_day', 6)) # Journée de départ de la simu
-        
-        if not club or not result: return jsonify({"error": "Données incomplètes"}), 400
-
-        # Appel du wrapper
-        analysis = simulator.get_scenario_analysis(
-            club_cible=club, journee_cible=target_day, resultat_fixe=result, 
-            journee_depart=start_day, n_simulations=500
+        data = request.json or {}
+        res = simulator.get_scenario_analysis(
+            club_cible=data.get('club'), 
+            journee_cible=int(data.get('day', 7)), 
+            resultat_fixe=data.get('result'), 
+            journee_depart=int(data.get('start_day', 6)), 
+            n_simulations=500
         )
-        return jsonify(analysis)
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Route pour la Liste d'Importance
 @app.route('/api/importance', methods=['POST'])
 def get_importance_route():
     try:
-        data = request.json
-        target = int(data.get('target', 7))
-        start = int(data.get('start', 6))
-        
-        # Appel du wrapper
-        results = simulator.get_web_importance(
-            journee_cible=target, journee_depart=start, n_simulations=300
+        data = request.json or {}
+        res = simulator.get_web_importance(
+            journee_cible=int(data.get('target', 7)), 
+            journee_depart=int(data.get('start', 6)), 
+            n_simulations=300
         )
-        if isinstance(results, dict) and "error" in results: return jsonify(results), 400
-        return jsonify(results)
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-#===============================================================================================
+
+# ==============================================================================
+# LANCEMENT DU SERVEUR
+# ==============================================================================
 
 if __name__ == '__main__':
     print("Serveur lancé sur http://127.0.0.1:5000")
     app.run(debug=True)
-
-

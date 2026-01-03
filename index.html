@@ -17,6 +17,7 @@
             <button onclick="showPage('ranking'); chargerClassement()">🏆 Classement</button>
             <button onclick="showPage('match-impact')">⚡ Impact Matchs</button>
             <button onclick="showPage('probas-zone')">📊 Probabilités</button>
+            <button onclick="showPage('impact-zone')">🔮 Scénarios & Hype</button>
         </nav>
     </header>
 
@@ -258,7 +259,7 @@
             </div>
         </section>
 
-        <!-- Nouvelle section : Impact des matchs -->
+        <!-- Nouvelle section : Impact des matchs  "moi" -->
         <section id="match-impact" class="page" style="display:none;">
             <h2>⚡ Impact des Matchs</h2>
             
@@ -319,15 +320,27 @@
                     <div class="control-group">
                         <label>Départ (Historique) :</label>
                         <select id="scenarioStartDay">
-                            <option value="6" selected>Après J6</option>
-                            <option value="7">Après J7</option>
+                            <option value="0" selected>J0 (Début)</option>
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
                         </select>
                     </div>
                     <div class="control-group">
                         <label>Match en :</label>
                         <select id="scenarioTargetDay">
-                            <option value="7" selected>Journée 7</option>
-                            <option value="8">Journée 8</option>
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                            <option value="8"selected>J8</option>
                         </select>
                     </div>
                     <div class="control-group">
@@ -363,17 +376,35 @@
             <div id="hype-tab" class="impact-tab-content" style="display:none;">
                 <div class="controls-bar">
                     <div class="control-group">
-                        <label>Départ :</label>
-                        <select id="impStartDay"><option value="6" selected>Après J6</option><option value="7">Après J7</option></select>
+                        <label>Contexte :</label>
+                        <select id="impStartDay">
+                            <option value="0" selected>J0 (Début)</option>
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                        </select>
                     </div>
                     <div class="control-group">
                         <label>Analyser :</label>
-                        <select id="impTargetDay"><option value="7" selected>Journée 7</option><option value="8">Journée 8</option></select>
+                        <select id="impTargetDay">
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                            <option value="8" selected>J8</option>
+                        </select>
                     </div>
                     <button class="action-btn" onclick="chargerImportance()">Calculer Hype</button>
                 </div>
                 <div id="importanceList" class="matches-list">
-                    <div class="placeholder-text">Cliquez sur calculer...</div>
+                    <div class="placeholder-text">Cliquez sur calculer pour voir les matchs importants...</div>
                 </div>
             </div>
         </section>

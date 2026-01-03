@@ -1197,4 +1197,2044 @@ with open('CODE_A_COPIER.py', 'w', encoding='utf-8') as f:
             f.write("}\n\n")
 """
 
+#==================================================================================================================
+#Dans App.py
 
+"""
+@app.route('/api/simulate', methods=['POST'])
+def run_simulation():
+    try:
+        data = request.json
+        club = data.get('club')
+        
+        print(f"--> Simulation demandée pour : {club}")
+        
+        if not club:
+            return jsonify({"error": "Nom de club manquant"}), 400
+
+        # Appel avec "simulator."
+        resultats = simulator.get_web_simulation(club)
+        
+        if "error" in resultats:
+            return jsonify(resultats), 404
+            
+        return jsonify(resultats)
+        
+    except Exception as e:
+        print(f"ERREUR : {e}")
+        return jsonify({"error": str(e)}), 500
+
+"""
+"""
+<section id="ranking" class="page" style="display:none;">
+            <h2>🏆 Classement Projeté (Moyenne)</h2>
+            
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label>De :</label>
+                    <select id="startDay">
+                        <option value="1" selected>J0</option><option value="1">J1</option><option value="2">J2</option>
+                        <option value="3">J3</option><option value="4">J4</option>
+                        <option value="5">J5</option><option value="6">J6</option>
+                        <option value="7">J7</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>À :</label>
+                    <select id="endDay">
+                        <option value="1">J1</option><option value="2">J2</option>
+                        <option value="3">J3</option><option value="4">J4</option>
+                        <option value="5">J5</option><option value="6">J6</option>
+                        <option value="7">J7</option><option value="8" selected>J8</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
+            </div>
+
+            <div class="table-container">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align:left;">Club</th>
+                            <th>Points</th>
+                            <th>Diff. Buts</th>
+                            <th>Buts</th>
+                            <th class="secondary-stat">Buts Ext.</th>
+                            <th>Victoires</th>
+                            <th class="secondary-stat">Vict. Ext.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <tr><td colspan="8">Cliquez sur Calculer...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="legend">
+                <span class="dot green"></span> Qualif Directe (1-8)
+                <span class="dot orange"></span> Barrages (9-24)
+                <span class="dot red"></span> Éliminé (25-36)
+            </div>
+        </section>
+"""
+
+"""
+@app.route('/api/ranking', methods=['POST'])
+def get_ranking():
+    try:
+        # Récupération des données JSON envoyées par le site
+        data = request.json
+        
+        # Par défaut : Simulation complète (J1 à J8) si rien n'est précisé
+        start = int(data.get('start', 1))
+        end = int(data.get('end', 8))
+
+        # Appel de la nouvelle fonction wrapper
+        result = simulator.get_simulation_flexible(n_simulations=1000, start_day=start, end_day=end)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+"""
+#==================================================================================================================================
+#App.py avant nettoyage
+"""
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
+import os
+
+import simulator 
+
+app = Flask(__name__, static_folder='.')
+CORS(app) 
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('.', path)
+
+@app.route('/api/clubs', methods=['GET'])
+def get_clubs():
+    try:
+        clubs = simulator.get_clubs_list()
+        return jsonify(clubs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/simulate', methods=['POST'])
+def run_simulation():
+    try:
+        data = request.json or {}
+        club = data.get('club')
+        day = int(data.get('day', 6)) # On récupère le jour
+        
+        if not club:
+            return jsonify({"error": "Club manquant"}), 400
+
+        # Appel de la fonction web simulation
+        resultats = simulator.get_web_simulation(club, journee_depart=day)
+        
+        if "error" in resultats:
+            return jsonify(resultats), 404
+            
+        return jsonify(resultats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/seuils', methods=['GET'])
+def get_seuils():
+    try:
+        print("--> Calcul des seuils globaux...")
+        # Appel avec "simulator."
+        data = simulator.get_web_seuils(nb_simulations=1000)
+        return jsonify(data)
+    except Exception as e:
+        print(f"ERREUR : {e}")
+        return jsonify({"error": str(e)}), 500
+
+#============ 19/12/2025===============================
+@app.route('/api/predict-match', methods=['POST'])
+def predict_match():
+    try:
+        data = request.json
+        home = data.get('home')
+        away = data.get('away')
+        
+        # Appel de la fonction du simulateur
+        result = simulator.get_match_prediction(home, away)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/rankings', methods=['POST'])
+def get_rankings():
+    try:
+        data = request.json or {}
+        
+        # On récupère le début et la fin demandés
+        # Par défaut : du début (0) à la fin (8)
+        start = int(data.get('start', 0))
+        end = int(data.get('end', 8))
+        
+        print(f"--> Simulation de J{start} jusqu'à J{end}...")
+        
+        # Appel de la fonction flexible avec les deux bornes
+        results = simulator.get_simulation_flexible(n_simulations=1000, start_day=start, end_day=end)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        print(f"ERREUR RANKING: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# -----------------------------------------------------
+# 2. Route pour les PROBABILITÉS (Top 8 / Qualif)
+# -----------------------------------------------------
+@app.route('/api/rankings_top8_qualif', methods=['POST']) # Changé en POST
+def get_probas_api():
+    try:
+        data = request.json or {}
+        day = int(data.get('day', 6))
+        
+        print(f"--> Calcul Probas (Base J{day})...")
+        
+        # Appel de la fonction probas
+        results = simulator.get_probas_top8_qualif(nb_simulations=1000, journee_depart=day)
+        
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/probas', methods=['POST'])
+def get_probas():
+    try:
+        data = request.json or {}
+        # On récupère la journée demandée (par défaut 0 ou 6 selon votre préférence)
+        day = int(data.get('day', 6))
+        
+        # Appel de votre fonction
+        results = simulator.get_probas_top8_qualif(nb_simulations=1000, journee_depart=day)
+        
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur Probas: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/match-impact', methods=['POST'])
+def get_match_impact():
+    try:
+        data = request.json or {}
+        club = data.get('club')
+        journee = int(data.get('journee', 7))
+        journee_donnees = int(data.get('journee_donnees', 6))
+        
+        if not club:
+            return jsonify({"error": "Club manquant"}), 400
+        
+        result = simulator.get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=journee_donnees)
+        
+        if "error" in result:
+            return jsonify(result), 404
+            
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/all-matches-impact', methods=['POST'])
+def get_all_matches_impact():
+    try:
+        data = request.json or {}
+        journee = int(data.get('journee', 7))
+        journee_donnees = int(data.get('journee_donnees', 6))
+        
+        result = simulator.get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=journee_donnees)
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/next-match-scenarios', methods=['POST'])
+def get_next_match_scenarios():
+    try:
+        data = request.json or {}
+        club = data.get('club')
+        journee_donnees = int(data.get('journee_donnees', 6))
+        
+        if not club:
+            return jsonify({"error": "Club manquant"}), 400
+        
+        result = simulator.get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees=journee_donnees)
+        
+        if "error" in result:
+            return jsonify(result), 404
+            
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+#moi
+# Route pour le Tableau de Bord Scénario
+@app.route('/api/scenario', methods=['POST'])
+def run_scenario():
+    try:
+        data = request.json
+        # Paramètres envoyés par le JS
+        club = data.get('club')
+        result = data.get('result') # V, N ou D
+        target_day = int(data.get('day', 7))      # Journée du match
+        start_day = int(data.get('start_day', 6)) # Journée de départ de la simu
+        
+        if not club or not result: return jsonify({"error": "Données incomplètes"}), 400
+
+        # Appel du wrapper
+        analysis = simulator.get_scenario_analysis(
+            club_cible=club, journee_cible=target_day, resultat_fixe=result, 
+            journee_depart=start_day, n_simulations=500
+        )
+        return jsonify(analysis)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route pour la Liste d'Importance
+@app.route('/api/importance', methods=['POST'])
+def get_importance_route():
+    try:
+        data = request.json
+        target = int(data.get('target', 7))
+        start = int(data.get('start', 6))
+        
+        # Appel du wrapper
+        results = simulator.get_web_importance(
+            journee_cible=target, journee_depart=start, n_simulations=300
+        )
+        if isinstance(results, dict) and "error" in results: return jsonify(results), 400
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+#===============================================================================================
+
+if __name__ == '__main__':
+    print("Serveur lancé sur http://127.0.0.1:5000")
+    app.run(debug=True)
+
+"""
+
+#========================================================================================================================
+# script.js avant nettoyage
+
+"""
+// Variable globale pour stocker les instances de graphiques et éviter les bugs de superposition
+let charts = {};
+
+function showPage(pageId) {
+    const pages = document.querySelectorAll('.page');
+    pages.forEach(page => page.style.display = 'none');
+    document.getElementById(pageId).style.display = 'block';
+}
+
+// ==========================================
+// 1. SIMULATION INDIVIDUELLE
+// ==========================================
+/*
+//je step un peu sur houssam
+async function simulate() {
+    const clubInput = document.getElementById('club');
+    const club = clubInput.value.trim();
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    if (club === "") {
+        alert("Veuillez entrer un nom de club !");
+        return;
+    }
+
+    showPage('results');
+    resultsContainer.innerHTML = `
+        <div class="loading-container">
+            <div class="loader"></div>
+            <p>Simulation de 1000 saisons pour ${club}...</p>
+        </div>`;
+
+    try {
+        // Appel à l'API Python
+        const response = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club: club })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="error-msg">❌ Erreur : ${data.error} <br> Vérifiez l'orthographe (ex: "Paris SG", "Man City").</div>`;
+            return;
+        }
+
+        // Construction de l'affichage
+        resultsContainer.innerHTML = `
+            <div class="club-header">
+                <h3>${data.club}</h3>
+                <span class="avg-points">Points moyens estimés : <strong>${data.points_moyens}</strong></span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box green">
+                    <h4>Top 8 (Direct)</h4>
+                    <span class="percentage">${data.proba_top_8}%</span>
+                </div>
+                <div class="stat-box yellow">
+                    <h4>Barrages</h4>
+                    <span class="percentage">${data.proba_barrage}%</span>
+                </div>
+                <div class="stat-box red">
+                    <h4>Éliminé</h4>
+                    <span class="percentage">${data.proba_elimine}%</span>
+                </div>
+            </div>
+
+            <div class="main-chart-container">
+                <canvas id="probaChart"></canvas>
+            </div>
+        `;
+
+        // Dessiner le graphique
+        creerGraphique('probaChart', data.distribution, `Distribution des points - ${data.club}`, '#0066cc');
+
+    } catch (error) {
+        console.error(error);
+        resultsContainer.innerHTML = `<div class="error-msg">❌ Impossible de contacter le serveur Python. Vérifiez qu'il est lancé.</div>`;
+    }
+}
+
+*/
+// ==========================================
+// 1. SIMULATION INDIVIDUELLE (MISE A JOUR)
+// ==========================================
+// ==========================================
+// 1. SIMULATION INDIVIDUELLE (MISE A JOUR)
+// ==========================================
+async function simulate() {
+    const clubInput = document.getElementById('club');
+    const club = clubInput.value.trim();
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    if (club === "") {
+        alert("Veuillez entrer un nom de club !");
+        return;
+    }
+
+    showPage('results');
+    resultsContainer.innerHTML = `
+        <div class="loading-container">
+            <div class="loader"></div>
+            <p>Simulation de 1000 saisons pour ${club}...</p>
+        </div>`;
+
+    try {
+        // Appel API
+        const response = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club: club })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="error-msg">❌ Erreur : ${data.error}</div>`;
+            return;
+        }
+
+        // Construction de l'affichage
+        // Notez la nouvelle div "charts-column" pour empiler les graphes
+        resultsContainer.innerHTML = `
+            <div class="club-header">
+                <h3>${data.club}</h3>
+                <span class="avg-points">Points moyens estimés : <strong>${data.points_moyens}</strong></span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box green">
+                    <h4>Top 8 (Direct)</h4>
+                    <span class="percentage">${data.proba_top_8}%</span>
+                </div>
+                <div class="stat-box yellow">
+                    <h4>Barrages</h4>
+                    <span class="percentage">${data.proba_barrage}%</span>
+                </div>
+                <div class="stat-box red">
+                    <h4>Éliminé</h4>
+                    <span class="percentage">${data.proba_elimine}%</span>
+                </div>
+            </div>
+
+            <div class="charts-column">
+                
+                <div class="chart-box">
+                    <h4>📊 Distribution des Points Finaux</h4>
+                    <div class="chart-area">
+                        <canvas id="pointsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <h4>🏆 Distribution du Classement Final</h4>
+                    <div class="chart-area">
+                        <canvas id="rankChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        `;
+
+        // Génération des graphiques
+        // Graphe Points (Bleu)
+        creerGraphique('pointsChart', data.distribution_points, 'Probabilité (%)', '#0066cc');
+        
+        // Graphe Classement (Violet pour différencier)
+        creerGraphique('rankChart', data.distribution_rangs, 'Probabilité (%)', '#9b59b6');
+
+    } catch (error) {
+        console.error(error);
+        resultsContainer.innerHTML = `<div class="error-msg">❌ Erreur de communication avec le serveur.</div>`;
+    }
+}
+
+// ==========================================
+// 2. ANALYSES GLOBALES
+// ==========================================
+async function chargerAnalysesGlobales() {
+    // On charge les seuils
+    try {
+        const response = await fetch('/api/seuils');
+        const data = await response.json();
+        
+        creerGraphique('chartTop8', data.seuil_top8, 'Points du 8ème', '#4bc0c0');
+        creerGraphique('chartBarrage', data.seuil_barrage, 'Points du 24ème', '#ffcd56');
+    } catch (e) {
+        console.error("Erreur seuils", e);
+    }
+
+    // On charge l'importance des matchs
+    try {
+        const list = document.getElementById('listeImportance');
+        list.innerHTML = '<div class="loader small"></div> Calcul des impacts...';
+        
+        const response2 = await fetch('/api/importance');
+        const data2 = await response2.json();
+
+        list.innerHTML = "";
+        data2.forEach((item, index) => {
+            list.innerHTML += `
+                <li>
+                    <span class="rank">#${index + 1}</span>
+                    <span class="match-name">${item.match}</span>
+                    <span class="score">Impact: <strong>${item.score}</strong></span>
+                </li>`;
+        });
+    } catch (e) {
+        console.error("Erreur importance", e);
+    }
+}
+
+// ==========================================
+// 3. FONCTION UTILITAIRE GRAPHIQUE
+// ==========================================
+function creerGraphique(canvasId, distribution, label, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    // Si un graphique existe déjà sur ce canvas, on le détruit proprement
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+    }
+
+    // Trier les clés (points) par ordre croissant
+    const labels = Object.keys(distribution).sort((a, b) => parseInt(a) - parseInt(b));
+    // Récupérer les valeurs correspondantes et convertir en pourcentage si nécessaire
+    const dataValues = labels.map(k => distribution[k] * 100); 
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels, // ex: ["10 pts", "11 pts"...]
+            datasets: [{
+                label: label + ' (%)',
+                data: dataValues,
+                backgroundColor: color,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (context) => context.raw.toFixed(1) + '%' } }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Probabilité (%)' } }
+            }
+        }
+    });
+}
+
+// =========== 19/12/2025 16:42 début MIR ===============================
+// 4. GESTION DES LOGOS ET DE LA GRILLE
+// ==========================================
+
+// Lancer le chargement dès que la page s'ouvre
+document.addEventListener('DOMContentLoaded', () => {
+    chargerListeClubs();
+    // Si vous aviez d'autres inits, gardez-les
+});
+
+async function chargerListeClubs() {
+    const grid = document.getElementById('clubsGrid');
+    
+    try {
+        const response = await fetch('/api/clubs');
+        const clubs = await response.json();
+        
+        // Si erreur
+        if (clubs.error) {
+            grid.innerHTML = `<p style="color:red">Erreur: ${clubs.error}</p>`;
+            return;
+        }
+
+        // On vide le "Chargement..."
+        grid.innerHTML = ''; 
+
+        clubs.forEach(club => {
+            // Création de la carte (div)
+            const card = document.createElement('div');
+            card.className = 'club-card';
+            
+            // Chemin de l'image : on suppose que c'est le nom exact + .png
+            // On ajoute un timestamp ?v=1 pour éviter les soucis de cache si vous changez l'image
+            const logoPath = `logos/${club}.png`; 
+            
+            // On construit le HTML de la carte
+            // onerror : si l'image n'existe pas, on met une image par défaut
+            card.innerHTML = `
+                <div class="club-logo-wrapper">
+                    <img src="${logoPath}" 
+                         alt="${club}" 
+                         onerror="this.onerror=null; this.src='logos/default.png';">
+                </div>
+                <span class="club-name">${club}</span>
+            `;
+
+            // RENDRE CLIQUABLE
+            // Quand on clique, ça remplit le champ caché et ça lance la simulation
+            card.onclick = () => {
+                // 1. Remplir l'input (même s'il est caché ou sur l'autre page)
+                const input = document.getElementById('club');
+                if(input) input.value = club;
+
+                // 2. Changer de page
+                showPage('simulate');
+
+                // 3. Lancer la fonction existante simulate()
+                simulate();
+            };
+
+            grid.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Erreur JS:", error);
+        grid.innerHTML = '<p>Impossible de charger les équipes.</p>';
+    }
+}
+// =========== 19/12/2025 16:42 fin MIR ===============================
+
+// ==========================================
+// 5. GESTION DU DUEL (MATCH PREDICTOR)
+// ==========================================
+
+// A. AU CHARGEMENT DE LA PAGE
+// On écoute l'événement "DOMContentLoaded" (quand la page est prête)
+document.addEventListener('DOMContentLoaded', () => {
+    // On lance la fonction qui remplit les listes
+    remplirListesDuel();
+});
+
+// Fonction pour récupérer les clubs et remplir les <select>
+async function remplirListesDuel() {
+    try {
+        // 1. On demande la liste des clubs à Python
+        const res = await fetch('/api/clubs');
+        const clubs = await res.json();
+        
+        // 2. On cible les deux menus déroulants HTML par leur ID
+        const selHome = document.getElementById('selHome');
+        const selAway = document.getElementById('selAway');
+        
+        // 3. Pour chaque club, on crée une option
+        clubs.forEach(clubName => {
+            // new Option(texte_visible, valeur_interne)
+            selHome.add(new Option(clubName, clubName));
+            selAway.add(new Option(clubName, clubName));
+        });
+        
+        // Petite astuce : on sélectionne par défaut le 2ème club pour l'équipe extérieure
+        // pour ne pas avoir "Arsenal vs Arsenal" au début.
+        selAway.selectedIndex = 1; 
+
+    } catch (err) {
+        console.error("Erreur chargement liste duel:", err);
+    }
+}
+
+// B. QUAND ON CLIQUE SUR "SIMULER LE MATCH"
+async function lancerDuel() {
+    // 1. Récupérer les valeurs choisies par l'utilisateur
+    const homeTeam = document.getElementById('selHome').value;
+    const awayTeam = document.getElementById('selAway').value;
+    
+    // 2. Vérification de sécurité
+    if(homeTeam === awayTeam) {
+        alert("Une équipe ne peut pas jouer contre elle-même !");
+        return; // On arrête tout ici
+    }
+
+    // 3. On cache le résultat précédent (si existant) pour faire propre
+    const resultBox = document.getElementById('duelResult');
+    resultBox.style.display = 'none';
+
+    try {
+        // 4. On appelle le serveur Python (C'est le coup de téléphone)
+        const response = await fetch('/api/predict-match', {
+            method: 'POST', // On envoie des données
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ home: homeTeam, away: awayTeam })
+        });
+        
+        // 5. On récupère la réponse de Python (le dictionnaire JSON)
+        const data = await response.json();
+        
+        // Si Python renvoie une erreur, on l'affiche
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        // 6. MISE A JOUR DE L'INTERFACE (On remplit les trous du HTML)
+        
+        // Noms des équipes
+        document.getElementById('resHomeName').innerText = data.home_team;
+        document.getElementById('resAwayName').innerText = data.away_team;
+        
+        // Scores prédits (moyennes)
+        document.getElementById('resHomeScore').innerText = data.score_avg_home;
+        document.getElementById('resAwayScore').innerText = data.score_avg_away;
+
+        // Barres de probabilités (Largeur en % + Texte)
+        // Victoire Domicile
+        const bWin = document.getElementById('barWin');
+        bWin.style.width = data.proba_win + '%';
+        bWin.innerText = data.proba_win + '%';
+        
+        // Match Nul
+        const bDraw = document.getElementById('barDraw');
+        bDraw.style.width = data.proba_draw + '%';
+        bDraw.innerText = data.proba_draw + '%';
+        
+        // Victoire Extérieur
+        const bLoss = document.getElementById('barLoss');
+        bLoss.style.width = data.proba_loss + '%';
+        bLoss.innerText = data.proba_loss + '%';
+
+        // 7. Tout est prêt, on affiche la boite de résultat !
+        resultBox.style.display = 'block';
+
+    } catch (err) {
+        console.error("Erreur duel:", err);
+        alert("Erreur lors de la simulation du match.");
+    }
+}
+
+// =========== 20/12/2025 MIR ===============================
+
+// ==========================================
+// 6. CLASSEMENT
+// ==========================================
+/*
+async function chargerClassement() {
+    const tbody = document.getElementById('rankingBody');
+    const startSelect = document.getElementById('startDay');
+    const endSelect = document.getElementById('endDay');
+    
+    const startVal = startSelect ? startSelect.value : 1;
+    const endVal = endSelect ? endSelect.value : 8;
+
+    if (parseInt(startVal) > parseInt(endVal)) {
+        alert("La journée de début doit être <= à la fin !"); return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">Calcul en cours...</td></tr>';
+
+    try {
+        const response = await fetch('/api/ranking', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: startVal, end: endVal })
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            tbody.innerHTML = `<tr><td colspan="8" style="color:red">Erreur: ${data.error}</td></tr>`; return;
+        }
+
+        tbody.innerHTML = ''; 
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            // Définition de la couleur de la ligne (Zone)
+            let rowClass = '';
+            if (row.rank <= 8) rowClass = 'zone-top8';
+            else if (row.rank <= 24) rowClass = 'zone-barrage';
+            else rowClass = 'zone-elim';
+
+            tr.className = rowClass;
+            
+            // Injection des 8 colonnes (Pas de colonne Zone texte, pas d'Elo)
+            tr.innerHTML = `
+                <td class="rank-cell"><b>${row.rank}</b></td>
+                <td class="club-cell" style="text-align:left;">
+                    <div class="club-flex">
+                        <img src="logos/${row.club}.png" onerror="this.src='logos/default.png'" class="mini-logo">
+                        <span>${row.club}</span>
+                    </div>
+                </td>
+                <td class="points-cell"><b>${row.points}</b></td>
+                <td>${row.diff > 0 ? '+' : ''}${row.diff}</td>
+                <td>${row.buts}</td>
+                <td class="secondary-stat">${row.buts_ext}</td>
+                <td>${row.victoires}</td>
+                <td class="secondary-stat">${row.victoires_ext}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="8">Erreur connexion.</td></tr>';
+    }
+}
+*/
+async function chargerClassement() {
+    const tbody = document.getElementById('rankingBody');
+    
+    // 1. Récupération des valeurs
+    const startSelect = document.getElementById('startDay');
+    const endSelect = document.getElementById('endDay');
+    
+    const startVal = parseInt(startSelect.value);
+    const endVal = parseInt(endSelect.value);
+
+    // 2. Sécurité : Vérifier l'ordre chronologique
+    if (startVal >= endVal) {
+        alert(`Impossible de simuler : La journée de fin (J${endVal}) doit être après le départ (J${startVal}).`);
+        return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="loader small"></div> Calcul en cours...</td></tr>';
+
+    try {
+        // 3. Appel API avec les DEUX paramètres
+        const response = await fetch('/api/rankings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                start: startVal, 
+                end: endVal 
+            }) 
+        });
+
+        const data = await response.json();
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8">Aucune donnée disponible.</td></tr>';
+            return;
+        }
+
+        // 4. Affichage du tableau
+        data.forEach(row => {
+            let rowClass = "";
+            if (row.rank <= 8) rowClass = "qualif-direct";
+            else if (row.rank <= 24) rowClass = "barrage";
+            else rowClass = "elimine";
+
+            tbody.innerHTML += `
+                <tr class="${rowClass}">
+                    <td>${row.rank}</td>
+                    <td class="club-cell">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="logos/${row.club}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                            <strong>${row.club}</strong>
+                        </div>
+                    </td>
+                    <td><strong>${row.points}</strong></td>
+                    <td>${row.diff}</td>
+                    <td>${row.buts}</td>
+                    <td class="secondary-stat">${row.buts_ext}</td>
+                    <td>${row.victoires}</td>
+                    <td class="secondary-stat">${row.victoires_ext}</td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        tbody.innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Erreur serveur</td></tr>';
+    }
+}
+
+// ==========================================
+// ANALYSE D'IMPACT DES MATCHS
+// ==========================================
+
+function switchImpactTab(tabName) {
+    // Cacher tous les onglets DE LA SECTION match-impact UNIQUEMENT
+    document.querySelectorAll('#match-impact .impact-tab-content').forEach(tab => tab.style.display = 'none');
+    document.querySelectorAll('#match-impact .tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Afficher le bon onglet
+    if (tabName === 'specific') {
+        document.getElementById('impact-specific').style.display = 'block';
+        document.querySelectorAll('#match-impact .tab-btn')[0].classList.add('active');
+    } else if (tabName === 'qualif') {
+        document.getElementById('impact-qualif').style.display = 'block';
+        document.querySelectorAll('#match-impact .tab-btn')[1].classList.add('active');
+    } else if (tabName === 'top8') {
+        document.getElementById('impact-top8').style.display = 'block';
+        document.querySelectorAll('#match-impact .tab-btn')[2].classList.add('active');
+    }
+}
+
+function switchScenarioTab(tabName) {
+    // Cacher tous les onglets de la section impact-zone
+    document.querySelectorAll('#impact-zone .impact-tab-content').forEach(tab => tab.style.display = 'none');
+    document.querySelectorAll('#impact-zone .tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Afficher le bon onglet
+    if (tabName === 'scenario') {
+        document.getElementById('scenario-tab').style.display = 'block';
+        document.querySelectorAll('#impact-zone .tab-btn')[0].classList.add('active');
+    } else if (tabName === 'hype') {
+        document.getElementById('hype-tab').style.display = 'block';
+        document.querySelectorAll('#impact-zone .tab-btn')[1].classList.add('active');
+    }
+}
+
+
+async function analyserImpactMatch() {
+    const club = document.getElementById('impactClub').value.trim();
+    const journee = parseInt(document.getElementById('impactJournee').value);
+    const container = document.getElementById('impactResults');
+    
+    if (!club) {
+        alert('Entrez un nom de club');
+        return;
+    }
+    
+    container.innerHTML = '<div class="loading-container"><div class="loader"></div><p>Analyse en cours...</p></div>';
+    
+    try {
+        const response = await fetch('/api/match-impact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club, journee, journee_donnees: 6 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            container.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
+            return;
+        }
+        
+        const domicileText = data.domicile ? '🏠 Domicile' : '✈️ Extérieur';
+        
+        container.innerHTML = `
+            <div class="impact-card">
+                <h3>${club} vs ${data.adversaire}</h3>
+                <p class="match-info">${domicileText} - Journée ${journee}</p>
+                
+                <div class="scenarios-grid">
+                    <div class="scenario-box victoire">
+                        <h4>✅ Victoire</h4>
+                        <div class="stat-line">
+                            <span>Qualification :</span>
+                            <strong>${data.impact_victoire.proba_qualif}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Top 8 :</span>
+                            <strong>${data.impact_victoire.proba_top8}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Classement moyen :</span>
+                            <strong>${data.impact_victoire.classement_moyen}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-box nul">
+                        <h4>⚖️ Match Nul</h4>
+                        <div class="stat-line">
+                            <span>Qualification :</span>
+                            <strong>${data.impact_nul.proba_qualif}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Top 8 :</span>
+                            <strong>${data.impact_nul.proba_top8}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Classement moyen :</span>
+                            <strong>${data.impact_nul.classement_moyen}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-box defaite">
+                        <h4>❌ Défaite</h4>
+                        <div class="stat-line">
+                            <span>Qualification :</span>
+                            <strong>${data.impact_defaite.proba_qualif}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Top 8 :</span>
+                            <strong>${data.impact_defaite.proba_top8}%</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Classement moyen :</span>
+                            <strong>${data.impact_defaite.classement_moyen}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="gains-box">
+                    <h4>📊 Enjeux</h4>
+                    <p><strong>Victoire vs Nul :</strong> +${data.gain_victoire_vs_nul.qualif}% qualif, +${data.gain_victoire_vs_nul.top8}% top8</p>
+                    <p><strong>Nul vs Défaite :</strong> +${data.gain_nul_vs_defaite.qualif}% qualif, +${data.gain_nul_vs_defaite.top8}% top8</p>
+                    <p><strong>Places gagnées (victoire) :</strong> ${data.gain_victoire_vs_nul.classement} places en moyenne</p>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        container.innerHTML = '<div class="error-msg">❌ Erreur serveur</div>';
+    }
+}
+
+async function chargerMatchsImportants(type) {
+    const container = type === 'qualif' 
+        ? document.getElementById('tableQualif') 
+        : document.getElementById('tableTop8');
+    
+    container.innerHTML = '<div class="loading-container"><div class="loader"></div><p>Calcul en cours...</p></div>';
+    
+    try {
+        const response = await fetch('/api/all-matches-impact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ journee: 7, journee_donnees: 6 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            container.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
+            return;
+        }
+        
+        // Choisir le bon classement
+        const matchs = type === 'qualif' ? data.par_qualif : data.par_top8;
+        const metrique = type === 'qualif' ? 'impact_qualif' : 'impact_top8';
+        const titre = type === 'qualif' ? 'Qualification' : 'Top 8';
+        
+        let html = `
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Match</th>
+                        <th>Impact Global ${titre}</th>
+                        <th>Club le + Impacté</th>
+                        <th>Impact Max</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        matchs.forEach((match, idx) => {
+            html += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td style="text-align:left;">${match.match}</td>
+                    <td>${match[metrique].global}</td>
+                    <td>${match[metrique].club_max}</td>
+                    <td>${match[metrique].max}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        container.innerHTML = '<div class="error-msg">❌ Erreur serveur</div>';
+    }
+}
+
+// --- FONCTION POUR CHARGER LES PROBAS ---
+async function chargerProbas() {
+    const day = document.getElementById('probaStartDay').value;
+    const tbodyTop8 = document.getElementById('tbodyTop8');
+    const tbodyQualif = document.getElementById('tbodyQualif');
+
+    // Afficher le chargement
+    const loadingRow = '<tr><td colspan="3" style="text-align:center;"><div class="loader"></div> Calcul...</td></tr>';
+    tbodyTop8.innerHTML = loadingRow;
+    tbodyQualif.innerHTML = loadingRow;
+
+    try {
+        const response = await fetch('/api/probas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: parseInt(day) })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            tbodyTop8.innerHTML = `<tr><td colspan="3" style="color:red">${data.error}</td></tr>`;
+            tbodyQualif.innerHTML = `<tr><td colspan="3" style="color:red">${data.error}</td></tr>`;
+            return;
+        }
+
+        // Fonction utilitaire pour générer les lignes
+        const generateRows = (list, colorClass) => {
+            if (list.length === 0) return '<tr><td colspan="3">Aucune donnée</td></tr>';
+            
+            return list.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td style="text-align:left; display:flex; align-items:center; gap:10px;">
+                        <img src="logos/${item.club}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                        ${item.club}
+                    </td>
+                    <td>
+                        <span class="score-badge ${colorClass}" style="width:50px; display:inline-block;">
+                            ${item.proba}%
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        // Remplissage des tableaux
+        tbodyTop8.innerHTML = generateRows(data.ranking_top8, 'green-bg');
+        tbodyQualif.innerHTML = generateRows(data.ranking_qualif, 'orange-bg');
+
+    } catch (error) {
+        console.error(error);
+        tbodyTop8.innerHTML = '<tr><td colspan="3">Erreur serveur</td></tr>';
+        tbodyQualif.innerHTML = '<tr><td colspan="3">Erreur serveur</td></tr>';
+    }
+}
+
+//c'est moi ca
+// --- FONCTION SCENARIO (DASHBOARD) ---
+// GESTION DES ONGLETS
+function switchImpactTab(tabName) {
+    document.getElementById('impact-specific').style.display = 'none';
+    document.getElementById('impact-ranking').style.display = 'none';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+    if (tabName === 'specific') {
+        document.getElementById('impact-specific').style.display = 'block';
+        document.querySelector("button[onclick*='specific']").classList.add('active');
+    } else {
+        document.getElementById('impact-ranking').style.display = 'block';
+        document.querySelector("button[onclick*='ranking']").classList.add('active');
+    }
+}
+
+// FONCTION SCENARIO
+async function lancerScenario() {
+    const club = document.getElementById('scenarioClub').value;
+    const start = document.getElementById('scenarioStartDay').value;
+    const target = document.getElementById('scenarioTargetDay').value;
+    const res = document.getElementById('scenarioResult').value;
+    const box = document.getElementById('scenarioResultBox');
+
+    if(!club) return alert("Club?");
+    box.style.display = 'block';
+    document.getElementById('scenarioVerdict').innerText = "Simulation...";
+
+    try {
+        const rep = await fetch('/api/scenario', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({club:club, start_day:start, day:target, result:res})
+        });
+        const data = await rep.json();
+        if(data.error) return alert(data.error);
+
+        // Mise à jour UI
+        document.getElementById('scenarioTitle').innerHTML = `Si <strong>${data.club}</strong> fait <strong>${res}</strong>`;
+        document.getElementById('dispTop8').innerText = data.proba_top8+"%";
+        document.getElementById('barTop8').style.width = data.proba_top8+"%";
+        document.getElementById('dispQualif').innerText = data.proba_qualif+"%";
+        document.getElementById('barQualif').style.width = data.proba_qualif+"%";
+        
+        let v = "❌ Éliminé"; let c = "red";
+        if(data.proba_qualif > 99) { v="✅ Qualifié"; c="green"; }
+        else if(data.proba_qualif > 50) { v="⚖️ Incertain"; c="orange"; }
+        
+        const vb = document.getElementById('scenarioVerdict');
+        vb.innerText = v; vb.style.borderLeftColor = c;
+
+    } catch(e) { alert(e); }
+}
+
+// FONCTION IMPORTANCE
+// --- FONCTION IMPORTANCE (HYPE) CORRIGÉE ---
+async function chargerImportance() {
+    // 1. Récupération des éléments par ID
+    const startSelect = document.getElementById('impStartDay');
+    const targetSelect = document.getElementById('impTargetDay');
+    const list = document.getElementById('importanceList');
+
+    // 2. Sécurité : Si les éléments n'existent pas dans le HTML, on arrête
+    if (!startSelect || !targetSelect || !list) {
+        console.error("Erreur : Impossible de trouver les éléments HTML (impStartDay, impTargetDay ou importanceList).");
+        return;
+    }
+
+    const start = parseInt(startSelect.value);
+    const target = parseInt(targetSelect.value);
+
+    // 3. Vérification logique
+    if (start >= target) {
+        alert("La journée à analyser (Cible) doit être après le point de départ (Contexte).");
+        return;
+    }
+
+    // 4. Affichage du chargement
+    list.innerHTML = '<div class="loader"></div><p style="text-align:center">Calcul de l\'importance de tous les matchs...</p>';
+
+    try {
+        // 5. Appel au serveur
+        const response = await fetch('/api/importance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: start, target: target })
+        });
+
+        const data = await response.json();
+        
+        // 6. Gestion d'erreur renvoyée par Python
+        if (data.error) {
+            list.innerHTML = `<div style="color:red; text-align:center; padding:20px;">❌ Erreur : ${data.error}</div>`;
+            return;
+        }
+
+        // 7. Affichage des résultats
+        list.innerHTML = ""; // On vide le chargement
+        
+        if (data.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:20px;">Aucun match trouvé pour cette journée.</div>`;
+            return;
+        }
+
+        data.forEach((m, i) => {
+            // Calcul couleur (Rouge = Important, Gris = Pas important)
+            let cls = 'low';
+            if (m.score > 50) cls = 'high';
+            else if (m.score > 20) cls = 'medium';
+            
+            // HTML de la carte
+            list.innerHTML += `
+                <div class="match-card">
+                    <div class="match-info">
+                        <span class="rank">#${i+1}</span>
+                        <div class="teams">
+                            <img src="logos/${m.dom}.png" class="mini-logo" onerror="this.src='logos/default.png'"> 
+                            ${m.dom} 
+                            <span class="vs">vs</span> 
+                            ${m.ext} 
+                            <img src="logos/${m.ext}.png" class="mini-logo" onerror="this.src='logos/default.png'">
+                        </div>
+                        <div class="score-badge ${cls}">${m.score}</div>
+                    </div>
+                    
+                    <div class="hype-bar-bg">
+                        <div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score, 100)}%"></div>
+                    </div>
+                    
+                    <div class="match-details-text">
+                        Enjeu ${m.dom}: <strong>${m.details.dom_val}</strong> | 
+                        Enjeu ${m.ext}: <strong>${m.details.ext_val}</strong>
+                    </div>
+                </div>`;
+        });
+
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = `<div style="color:red; text-align:center;">❌ Erreur technique (Voir console F12)</div>`;
+    }
+}
+
+"""
+
+
+#===============================================================================================================================
+#style.css avant nettoyage
+
+"""
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+header {
+    background-color: #002f5f; /* Bleu nuit LDC */
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+h1 { margin: 0; font-size: 1.5rem; }
+
+nav button {
+    margin-left: 10px;
+    padding: 10px 15px;
+    cursor: pointer;
+    background-color: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    color: white;
+    transition: background 0.3s;
+}
+
+nav button:hover { background-color: rgba(255,255,255,0.25); }
+
+.page {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* Accueil */
+.hero { text-align: center; padding: 40px 0; }
+.actions { margin-top: 30px; }
+.big-btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 10px;
+}
+.big-btn.secondary { background-color: #6c757d; }
+
+/* Formulaire */
+.search-box { text-align: center; margin: 40px 0; }
+input[type="text"] {
+    padding: 10px;
+    width: 250px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+button[type="submit"] {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Résultats Stats Grid */
+.stats-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 20px 0;
+}
+.stat-box {
+    flex: 1;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    color: white;
+}
+.stat-box h4 { margin: 0 0 10px 0; opacity: 0.9; }
+.stat-box .percentage { font-size: 2rem; font-weight: bold; }
+.green { background-color: #28a745; }
+.yellow { background-color: #ffc107; color: #333; }
+.red { background-color: #dc3545; }
+
+/* Graphiques */
+.main-chart-container { position: relative; height: 400px; width: 100%; margin-top: 30px; }
+.charts-row { display: flex; flex-wrap: wrap; gap: 20px; }
+.chart-wrapper { flex: 1; min-width: 300px; background: #f9f9f9; padding: 15px; border-radius: 8px; height: 300px; }
+
+/* Liste Importance */
+.importance-list { list-style: none; padding: 0; }
+.importance-list li {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.rank { background: #002f5f; color: white; padding: 5px 10px; border-radius: 50%; font-size: 0.8rem; }
+.match-name { font-weight: bold; }
+.score { color: #555; }
+
+/* Loader */
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #0066cc;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+.loader.small { width: 20px; height: 20px; border-width: 3px; display: inline-block; vertical-align: middle; margin: 0 10px 0 0;}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.error-msg { color: #dc3545; text-align: center; padding: 20px; font-weight: bold; background: #ffe6e6; border-radius: 5px;}
+nav button:hover {
+    background-color: #0055aa;
+}
+
+.page {
+    padding: 20px;
+}
+
+form input {
+    padding: 5px;
+    margin-right: 10px;
+}
+
+
+
+/* --- GRILLE DES CLUBS: 19/12/2025 16:42 début MIR --- */
+
+.clubs-container {
+    margin-top: 40px;
+    text-align: center;
+    padding: 0 20px 40px 20px;
+}
+
+.clubs-container h3 {
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.clubs-grid {
+    display: grid;
+    /* Magie CSS : remplit la ligne avec autant de cartes que possible (min 110px de large) */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 15px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.club-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 120px; /* Hauteur fixe pour uniformité */
+}
+
+.club-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border-color: #002f5f;
+}
+
+.club-logo-wrapper {
+    height: 60px;
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.club-logo-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* L'image ne sera pas déformée */
+}
+
+.club-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis; /* ... si le nom est trop long */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Max 2 lignes de texte */
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* --- GRILLE DES CLUBS: 19/12/2025 16:42 fin MIR --- */
+
+
+/* --- SECTION DUEL: 19/12/2025 16:42 début MIR --- */
+.duel-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 40px 0;
+}
+
+.team-selector {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.team-selector select {
+    padding: 10px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 200px;
+}
+
+.vs-badge {
+    background: #002f5f;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+/* SCORE BOARD */
+.score-board {
+    background: #222;
+    color: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-family: 'Courier New', monospace; /* Style tableau d'affichage */
+    margin-top: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.score-digit {
+    font-size: 3rem;
+    color: #f1c40f; /* Jaune LED */
+    display: block;
+    font-weight: bold;
+}
+
+/* BARRE DE PROBAS */
+.proba-bar-container {
+    display: flex;
+    height: 30px;
+    margin-top: 20px;
+    border-radius: 15px;
+    overflow: hidden;
+    font-size: 0.8rem;
+    color: white;
+    line-height: 30px;
+    text-align: center;
+}
+
+.p-bar.win { background: #28a745; }
+.p-bar.draw { background: #6c757d; }
+.p-bar.loss { background: #dc3545; }
+
+
+/* --- SECTION CLASSEMENT 19/12/2025 MIR --- */
+
+/* La barre de choix J1 -> J8 */
+.controls-bar {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+.control-group select {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+}
+
+.action-btn {
+    background-color: #002f5f; /* Bleu LDC */
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+.action-btn:hover {
+    background-color: #004a93;
+}
+
+
+
+/* Le Tableau */
+.table-container {
+    overflow-x: auto; /* Permet de scroller si l'écran est petit */
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.ranking-table th {
+    background-color: #002f5f;
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.ranking-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+
+/* Style spécifique pour les stats secondaires (Extérieur) pour qu'elles soient moins voyantes */
+.secondary-stat {
+    color: #777;
+    font-size: 0.85rem;
+    background-color: #fcfcfc;
+}
+
+.points-cell {
+    font-weight: bold;
+    color: #002f5f;
+    font-size: 1.1rem;
+    background-color: #f0f8ff;
+}
+
+.mini-logo {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* Zones de qualification */
+.zone-top8 { background-color: rgba(46, 204, 113, 0.1); border-left: 4px solid #2ecc71; }
+.zone-barrage { background-color: rgba(243, 156, 18, 0.1); border-left: 4px solid #f39c12; }
+.zone-elim { background-color: rgba(231, 76, 60, 0.05); border-left: 4px solid #e74c3c; }
+
+/* Badges (Étiquettes colorées) */
+.badge {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.badge.zone-top8 { background: #d4edda; color: #155724; }
+.badge.zone-barrage { background: #fff3cd; color: #856404; }
+.badge.zone-elim { background: #f8d7da; color: #721c24; }
+
+
+/* --- GRAPHIQUES SIMULATION CLUB (VERTICAL & AÉRÉ) --- */
+
+.charts-column {
+    display: flex;
+    flex-direction: column; /* Empile les éléments verticalement */
+    gap: 50px; /* Grand espace entre les deux graphiques */
+    margin-top: 40px;
+}
+
+.chart-box {
+    background: white;
+    padding: 25px;       /* Espace interne confortable */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Ombre douce */
+    border: 1px solid #eee;
+    width: 100%;         /* Prend toute la largeur */
+    box-sizing: border-box; /* Empêche de dépasser */
+}
+
+.chart-box h4 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #002f5f;
+    font-size: 1.2rem;
+    text-align: center;
+    border-bottom: 2px solid #f4f7f6;
+    padding-bottom: 10px;
+}
+
+.chart-area {
+    position: relative;
+    height: 350px; /* Hauteur fixe confortable pour éviter l'écrasement */
+    width: 100%;
+}
+
+/* =========================================
+   BARRE DE CONTRÔLE (Date Selector)
+   ========================================= */
+.controls-bar {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap; /* Pour mobile */
+}
+
+.controls-bar label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.controls-bar select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.controls-bar .action-btn {
+    padding: 8px 15px;
+    background-color: #007bff; /* Bleu */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.controls-bar .action-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Petit style pour le chargement dans le tableau */
+.loading {
+    text-align: center;
+    font-style: italic;
+    color: #666;
+    padding: 20px;
+}
+
+/* --- BARRE DE CONTRÔLES (Double Select) --- */
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.controls-bar {
+    display: flex;
+    flex-wrap: wrap; /* Passe à la ligne sur mobile */
+    gap: 20px;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* --- TABLEAU --- */
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.ranking-table th {
+    background: #343a40;
+    color: white;
+    padding: 12px;
+    text-align: center;
+}
+.ranking-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+/* Aligner le nom du club à gauche */
+.ranking-table td.club-cell {
+    text-align: left;
+}
+
+/* --- COULEURS DE RANG --- */
+tr.qualif-direct { border-left: 5px solid #28a745; background: rgba(40, 167, 69, 0.05); }
+tr.barrage { border-left: 5px solid #ffc107; background: rgba(255, 193, 7, 0.05); }
+tr.elimine { border-left: 5px solid #dc3545; background: rgba(220, 53, 69, 0.05); }
+
+/* --- LÉGENDE --- */
+.legend {
+    margin-top: 15px;
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    justify-content: center;
+}
+.dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.dot.green { background: #28a745; }
+.dot.orange { background: #ffc107; }
+.dot.red { background: #dc3545; }
+
+/* --- RESPONSIVE : Cacher les stats secondaires sur mobile --- */
+@media (max-width: 768px) {
+    .secondary-stat {
+        display: none;
+    }
+}
+
+/* ========================================
+   STYLES IMPACT DES MATCHS
+   ======================================== */
+
+.impact-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background: #2c2c2c;
+    border: 2px solid #444;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    background: #0066cc;
+    border-color: #0066cc;
+}
+
+.tab-btn:hover {
+    background: #444;
+}
+
+.impact-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.impact-card h3 {
+    color: #0066cc;
+    margin-bottom: 5px;
+}
+
+.match-info {
+    color: #888;
+    margin-bottom: 20px;
+}
+
+.scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.scenario-box {
+    background: #2c2c2c;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid;
+}
+
+.scenario-box.victoire {
+    border-color: #22c55e;
+}
+
+.scenario-box.nul {
+    border-color: #fbbf24;
+}
+
+.scenario-box.defaite {
+    border-color: #ef4444;
+}
+
+.scenario-box h4 {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.stat-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #444;
+}
+
+.stat-line:last-child {
+    border-bottom: none;
+}
+
+.gains-box {
+    background: #2c2c2c;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #0066cc;
+}
+
+.gains-box h4 {
+    margin-bottom: 10px;
+    color: #0066cc;
+}
+
+.gains-box p {
+    margin: 8px 0;
+}
+/* Info box pour les onglets */
+.info-box {
+    background: #1a1a1a;
+    border-left: 4px solid #0066cc;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.info-box p {
+    margin: 5px 0;
+    color: #ccc;
+}
+
+.info-box strong {
+    color: #0066cc;
+}
+
+/* --- PROBAS SECTION --- */
+.probas-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.proba-column {
+    flex: 1;
+    min-width: 300px; /* Pour mobile */
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.proba-column h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.green-text { color: #28a745; }
+.orange-text { color: #fd7e14; }
+
+/* Badges de pourcentage */
+.score-badge.green-bg { background-color: #28a745; color: white; }
+.score-badge.orange-bg { background-color: #fd7e14; color: white; }
+
+/* Scroll si la liste est longue */
+.table-wrapper {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* --- SCENARIO DASHBOARD --- */
+.scenario-dashboard { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.stat-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; width: 30%; min-width: 150px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.stat-icon { font-size: 1.5rem; }
+.stat-big-number { font-size: 2rem; font-weight: bold; margin: 10px 0; }
+.green-text { color: #28a745; } .orange-text { color: #fd7e14; } .red-text { color: #dc3545; }
+.progress-bg { background: #eee; height: 6px; border-radius: 3px; overflow: hidden; }
+.progress-bar { height: 100%; transition: width 0.5s; }
+.progress-bar.green { background: #28a745; } .progress-bar.orange { background: #fd7e14; } .progress-bar.red { background: #dc3545; }
+.verdict-box { background: #f8f9fa; border-left: 5px solid #333; padding: 15px; text-align: center; font-weight: bold; }
+
+/* --- IMPORTANCE LIST --- */
+.matches-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+.match-card { background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+.match-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.score-badge { padding: 4px 8px; border-radius: 12px; color: white; font-weight: bold; font-size: 0.9rem; }
+.score-badge.high { background: #dc3545; } .score-badge.medium { background: #17a2b8; } .score-badge.low { background: #6c757d; }
+.hype-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+.hype-bar-fill { height: 100%; }
+.hype-bar-fill.high { background: linear-gradient(90deg, #ffc107, #dc3545); }
+.hype-bar-fill.medium { background: #17a2b8; } .hype-bar-fill.low { background: #adb5bd; }
+.match-details-text { font-size: 0.8rem; color: #777; text-align: right; }
+"""

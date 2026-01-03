@@ -1220,6 +1220,9 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
         "ranking_top8": liste_top8
     }
 
+# =============================================================================
+# WRAPPERS POUR "IMPACT MATCHS"
+# =============================================================================
 def get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=6):
     # Vérifications
     if club not in clubs_en_ldc:
@@ -1489,6 +1492,10 @@ def get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees
             "top8": impact["gain_victoire_vs_nul"]["top8"]
         }
     }
+
+# =============================================================================
+# WRAPPERS POUR LE NOUVEL ONGLET "SCÉNARIO & HYPE"
+# =============================================================================
 
 def get_web_importance(journee_cible, journee_depart=6, n_simulations=300):
     """
