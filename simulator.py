@@ -974,41 +974,51 @@ def get_web_importance_matchs(nb_simulations=500):
     return impacts[:10] # On renvoie le top 10
 
 # =============================================================================
-def get_web_simulation(club_cible, nb_simulations = 1000, journee_depart=1):
+def get_web_simulation(club_cible, nb_simulations=1000, journee_depart=0):
     """
     Fonction optimisée pour le web.
-    Accepte maintenant 'journee_depart' pour choisir les données sources.
+    Accepte maintenant 'journee_depart' (0 à 8) pour choisir les données sources.
     """
     if club_cible not in clubs_en_ldc:
         return {"error": f"Le club '{club_cible}' n'est pas dans la liste."}
 
-    # 1. MAPPING DES DONNÉES
-    # On crée un dictionnaire pour choisir facilement
-    # Assurez-vous que données_J5, J6, J7 sont bien définies plus haut dans votre fichier !
+    # 1. MAPPING DES DONNÉES (CORRECTION ICI : On ajoute J0, J1, J2...)
+    # Cela permet de gérer tout l'historique sans erreur.
     historique_donnees = {
+        0: etat_zero,   # J0 = Tout le monde à 0 points
+        1: données_J1,
+        2: données_J2,
+        3: données_J3, 
+        4: données_J4, 
         5: données_J5,
-        6: données_J6,
-        7: données_J7
-        # Ajoutez 8: données_J8 quand vous l'aurez
+        6: données_J6, 
+        7: données_J7, 
+        8: données_J8
     }
 
-    # On récupère les données demandées, ou J6 par défaut si introuvable
-    etat_actuel = historique_donnees.get(journee_depart, données_J6)
-    
-    # Si on part de la J5, on simule la fin (donc on commence à simuler J6)
-    # Si on part de la J6, on commence à simuler J7
-    debut_simulation = journee_depart + 1
+    # Sécurisation : on s'assure que c'est un entier
+    try:
+        j_dep = int(journee_depart)
+    except:
+        j_dep = 0
 
+    # On récupère les données demandées. 
+    # Si la journée n'existe pas, on prend J6 par défaut pour éviter le crash.
+    etat_actuel = historique_donnees.get(j_dep, etat_zero)
     
-    # On passe 'debut=debut_simulation'
+    # La simulation commence le lendemain de la journée de départ
+    debut_simulation = j_dep + 1
+    
+    # 2. SIMULATION
+    # On lance la simulation Monte Carlo avec l'état choisi
     distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=8)
     distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=8)
 
-    # 3. Extraction des stats (Le reste ne change pas)
+    # 3. EXTRACTION DES RÉSULTATS
     stats_points = distrib_points[club_cible]
     stats_rank = distrib_rank[club_cible]
     
-    # Calcul des probas via les fonctions globales (pour cohérence)
+    # Calcul des probas via les fonctions globales
     p_top8 = proba_top_8(club_cible, distrib_rank)
     p_qualif = proba_qualification(club_cible, distrib_rank)
     p_barrage = p_qualif - p_top8
@@ -1016,12 +1026,13 @@ def get_web_simulation(club_cible, nb_simulations = 1000, journee_depart=1):
     
     pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
 
+    # Nettoyage pour alléger le JSON
     clean_points = {k: v for k, v in stats_points.items() if v > 0.001}
     clean_ranks = {k: v for k, v in stats_rank.items() if v > 0.001}
 
     return {
         "club": club_cible,
-        "day_used": journee_depart, # On renvoie l'info pour confirmer
+        "day_used": j_dep, # On renvoie l'info pour l'affichage
         "points_moyens": round(pts_moyen, 2),
         "proba_top_8": round(p_top8 * 100, 1),
         "proba_barrage": round(p_barrage * 100, 1),
@@ -1557,8 +1568,10 @@ def get_web_importance(journee_cible, journee_depart=6, n_simulations=300):
 
 def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depart=6, n_simulations=500):
     """
-    Wrapper pour l'onglet 'Scénario'. Utilise 'distribution_position_par_club_match_fixe'.
+    Wrapper pour l'onglet 'Scénario'.
+    Compare la situation AVANT (Naturelle) et APRÈS (Match Fixé).
     """
+    # 1. Chargement des données historiques
     map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
                       4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
     etat_initial = map_historique.get(journee_depart, etat_zero)
@@ -1566,22 +1579,105 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
 
     if debut_simu > journee_cible: debut_simu = journee_cible
 
-    # Appel de VOTRE fonction de distribution
-    distrib = distribution_position_par_club_match_fixe(
-        N=n_simulations, club_fixed=club_cible, journee=journee_cible,
-        result_fixed=resultat_fixe, données=etat_initial, debut=debut_simu, fin=8
+    # ---------------------------------------------------------
+    # ÉTAPE 1 : SITUATION "AVANT" (Baseline sans forcer le match)
+    # ---------------------------------------------------------
+    # On utilise votre fonction existante qui simule la fin de saison normalement
+    distrib_avant = distribution_position_par_club(
+        N=n_simulations, 
+        données=etat_initial, 
+        debut=debut_simu, 
+        fin=8
     )
-
-    stats = distrib.get(club_cible, {})
     
-    # Agrégation des pourcentages
-    p_top8 = sum(stats.get(r, 0) for r in range(1, 9))
-    p_qualif = sum(stats.get(r, 0) for r in range(1, 25))
-    p_elim = 1.0 - p_qualif
+    # Calcul des probas Avant
+    stats_avant = distrib_avant.get(club_cible, {})
+    # Top 8 = Somme des probas de finir 1er à 8ème
+    top8_avant = sum(stats_avant.get(r, 0) for r in range(1, 9))
+    # Qualif = Somme des probas de finir 1er à 24ème
+    qualif_avant = sum(stats_avant.get(r, 0) for r in range(1, 25))
 
+    # ---------------------------------------------------------
+    # ÉTAPE 2 : SITUATION "APRÈS" (Avec le scénario forcé)
+    # ---------------------------------------------------------
+    # On utilise votre fonction existante qui force V, N ou D
+    distrib_apres = distribution_position_par_club_match_fixe(
+        N=n_simulations, 
+        club_fixed=club_cible, 
+        journee=journee_cible,
+        result_fixed=resultat_fixe, 
+        données=etat_initial, 
+        debut=debut_simu, 
+        fin=8
+    )
+    
+    # Calcul des probas Après
+    stats_apres = distrib_apres.get(club_cible, {})
+    top8_apres = sum(stats_apres.get(r, 0) for r in range(1, 9))
+    qualif_apres = sum(stats_apres.get(r, 0) for r in range(1, 25))
+
+    # ---------------------------------------------------------
+    # ÉTAPE 3 : FORMATAGE POUR LE WEB (Avec Delta)
+    # ---------------------------------------------------------
     return {
-        "club": club_cible, "scenario": resultat_fixe, "journee": journee_cible,
-        "proba_top8": round(p_top8 * 100, 1),
-        "proba_qualif": round(p_qualif * 100, 1),
-        "proba_elim": round(p_elim * 100, 1)
+        "club": club_cible,
+        "scenario": resultat_fixe,
+        "journee": journee_cible,
+        
+        # Situation Actuelle (Avant)
+        "avant": {
+            "top8": round(top8_avant * 100, 1),
+            "qualif": round(qualif_avant * 100, 1)
+        },
+        
+        # Nouvelle Projection (Après)
+        "apres": {
+            "top8": round(top8_apres * 100, 1),
+            "qualif": round(qualif_apres * 100, 1)
+        },
+        
+        # Différence (Gain/Perte)
+        "delta": {
+            "top8": round((top8_apres - top8_avant) * 100, 1),
+            "qualif": round((qualif_apres - qualif_avant) * 100, 1)
+        }
     }
+
+def get_web_evolution(club, journee_max=8, n_simulations=300):
+    """
+    Fonction SECONDAIRE : Calcule l'historique pour le graphique.
+    Ne renvoie PAS les distributions détaillées, juste la courbe.
+    """
+    historique = []
+    
+    # Mapping des données
+    map_historique = {
+        0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
+        4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
+    }
+    
+    # On boucle de J0 jusqu'à la journée choisie
+    for j in range(int(journee_max) + 1):
+        # 1. On charge l'état à l'époque (J0 si j=0)
+        etat = map_historique.get(j, etat_zero)
+        
+        # 2. On simule la fin de saison depuis ce point
+        distrib = distribution_position_par_club(
+            N=n_simulations, 
+            données=etat, 
+            debut=j + 1, 
+            fin=8
+        )
+        
+        # 3. Récupération des stats (Top 8 / Qualif)
+        stats = distrib.get(club, {})
+        p_top8 = sum(stats.get(r, 0) for r in range(1, 9))
+        p_qualif = sum(stats.get(r, 0) for r in range(1, 25))
+        
+        historique.append({
+            "journee": f"J{j}",
+            "top8": round(p_top8 * 100, 1),
+            "qualif": round(p_qualif * 100, 1)
+        })
+        
+    return historique

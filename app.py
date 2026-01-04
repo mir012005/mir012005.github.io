@@ -33,7 +33,7 @@ def run_simulation():
     try:
         data = request.json or {}
         club = data.get('club')
-        day = int(data.get('day', 6))
+        day = int(data.get('day', 0))
         
         if not club: return jsonify({"error": "Club manquant"}), 400
         
@@ -160,6 +160,22 @@ def get_importance_route():
         return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/evolution', methods=['POST'])
+def get_evolution():
+    try:
+        data = request.json
+        club = data.get('club')
+        # On récupère la journée max demandée (par défaut 0)
+        max_day = int(data.get('day', 0))
+        
+        # On appelle la fonction avec la limite
+        history = simulator.get_web_evolution(club, journee_max=max_day)
+        
+        return jsonify(history)
+    except Exception as e:
+        print(f"Erreur Evolution: {e}")
+        return jsonify([])
 
 # ==============================================================================
 # LANCEMENT DU SERVEUR

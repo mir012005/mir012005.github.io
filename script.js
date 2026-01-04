@@ -73,20 +73,39 @@ async function remplirDataListClubs() {
 // 3. SIMULATEUR INDIVIDUEL (MONTE CARLO)
 // =============================================================================
 
+// Variable globale pour le graphique
+let evolutionChartInstance = null;
+
+// 1. FONCTION PRINCIPALE DE SIMULATION
+// =============================================================================
+// FONCTION PRINCIPALE DE SIMULATION (STATS + GRAPHIQUE)
+// =============================================================================
+// =============================================================================
+// FONCTION PRINCIPALE DE SIMULATION (VOTRE VERSION + EVOLUTION)
+// =============================================================================
 async function simulate() {
-    const club = document.getElementById('club').value.trim();
+    // 1. On récupère le club (Input ou Placeholder si clic depuis l'accueil)
+    const clubInput = document.getElementById('club');
+    const club = clubInput.value.trim() || clubInput.placeholder;
+
+    // 2. On récupère la journée choisie (J0 par défaut)
+    const daySelect = document.getElementById('simDaySelect');
+    const selectedDay = daySelect ? parseInt(daySelect.value) : 0;
+    
     const container = document.getElementById('resultsContainer');
     
     if (!club) return alert("Veuillez entrer un nom de club.");
     
     showPage('results');
-    container.innerHTML = '<div class="loader"></div><p style="text-align:center">Simulation de 1000 saisons...</p>';
+    // On affiche quelle journée est simulée dans le loader
+    container.innerHTML = `<div class="loader"></div><p style="text-align:center">Simulation depuis J${selectedDay}...</p>`;
     
     try {
         const response = await fetch('/api/simulate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ club: club, day: 6 }) // Par défaut départ J6
+            // ICI : On envoie la journée choisie au lieu de 6
+            body: JSON.stringify({ club: club, day: selectedDay }) 
         });
         const data = await response.json();
 
@@ -95,12 +114,16 @@ async function simulate() {
             return;
         }
 
+        // 3. VOTRE HTML PRÉSERVÉ (Header + Stats Grid + Charts Column)
+        // J'ai juste ajouté le bloc "Evolution" tout en bas
         container.innerHTML = `
             <div class="club-header">
-                <img src="logos/${data.club}.png" class="medium-logo" onerror="this.src='logos/default.png'">
+                <div class="club-logo-wrapper" style="width:80px; height:80px;">
+                    <img src="logos/${data.club}.png" onerror="this.src='logos/default.png'" alt="${data.club}" style="max-width:100%; max-height:100%;">
+                </div>
                 <div>
                     <h3>${data.club}</h3>
-                    <p>Points Moyens prédits : <strong>${data.points_moyens}</strong></p>
+                    <p>Points Moyens prédits : <strong>${data.points_moyens}</strong> <span style="font-size:0.8em; color:#666;">(Base J${selectedDay})</span></p>
                 </div>
             </div>
             
@@ -128,17 +151,115 @@ async function simulate() {
                     <div class="chart-area"><canvas id="pointsChart"></canvas></div>
                 </div>
                 <div class="chart-box">
-                    <h4>Distribution du Classement Final</h4>
+                    <h4>Distribution du Classement</h4>
                     <div class="chart-area"><canvas id="rankChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-wrapper" style="margin-top: 30px;">
+                <h3 style="text-align:center; color:#002f5f;">📈 Historique & Trajectoire</h3>
+                <p style="text-align:center; color:#666; font-size:0.9rem;">
+                    Évolution des chances (J0 à J${selectedDay})
+                </p>
+                <div class="chart-area">
+                    <canvas id="chartEvolution"></canvas>
                 </div>
             </div>
         `;
         
+        // 4. LANCEMENT DES GRAPHIQUES
+        // Vos graphiques existants
         creerGraphique('pointsChart', data.distribution_points, 'Probabilité', '#007bff');
         creerGraphique('rankChart', data.distribution_rangs, 'Probabilité', '#6f42c1');
 
+        // Le nouveau graphique d'évolution
+        if (typeof chargerGraphiqueEvolution === "function") {
+            chargerGraphiqueEvolution(club, selectedDay);
+        }
+
     } catch (e) {
+        console.error(e);
         container.innerHTML = `<div class="error-msg">❌ Erreur serveur</div>`;
+    }
+}
+
+// 2. FONCTION DU GRAPHIQUE
+async function chargerGraphiqueEvolution(club, maxDay) {
+    try {
+        // On demande l'historique arrêté à maxDay
+        const res = await fetch('/api/evolution', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club: club, day: maxDay })
+        });
+        const historyData = await res.json();
+
+        const ctx = document.getElementById('chartEvolution').getContext('2d');
+
+        // Reset du graph précédent
+        if (evolutionChartInstance) {
+            evolutionChartInstance.destroy();
+        }
+
+        // Création du nouveau graph
+        evolutionChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: historyData.map(d => d.journee), // J0, J1...
+                datasets: [
+                    {
+                        label: 'Chance Qualification (Top 24)',
+                        data: historyData.map(d => d.qualif),
+                        borderColor: '#0066cc', // Bleu UEFA
+                        backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: 'white',
+                        pointBorderColor: '#0066cc',
+                        pointBorderWidth: 2,
+                        tension: 0.3, // Courbe lisse
+                        fill: true
+                    },
+                    {
+                        label: 'Chance Top 8 (Direct)',
+                        data: historyData.map(d => d.top8),
+                        borderColor: '#28a745', // Vert
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5], // Pointillés pour le Top 8
+                        pointRadius: 0, // Pas de points pour alléger
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 50,    // Marge en haut pour ne pas couper le point 100%
+                        bottom: 10,
+                        left: 10,
+                        right: 10
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100,
+                        suggestedMax: 105,
+                        title: { display: true, text: '% de Chances' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { mode: 'index', intersect: false }
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error("Erreur graph:", e);
     }
 }
 
@@ -440,13 +561,14 @@ async function lancerScenario() {
     const club = document.getElementById('scenarioClub').value;
     const start = document.getElementById('scenarioStartDay').value;
     const target = document.getElementById('scenarioTargetDay').value;
-    const resVal = document.getElementById('scenarioResult').value;
+    const resVal = document.getElementById('scenarioResult').value; // V, N ou D
     const box = document.getElementById('scenarioResultBox');
 
-    if(!club) return alert("Entrez un club");
+    if(!club) return alert("Veuillez choisir un club dans la liste.");
     
+    // Affichage temporaire (Loader)
     box.style.display = 'block';
-    document.getElementById('scenarioVerdict').innerHTML = '<div class="loader"></div>';
+    box.style.opacity = '0.5'; // Effet de chargement
 
     try {
         const res = await fetch('/api/scenario', {
@@ -456,31 +578,65 @@ async function lancerScenario() {
         const data = await res.json();
         
         if(data.error) {
-            document.getElementById('scenarioVerdict').innerText = data.error;
+            alert(data.error);
+            box.style.display = 'none';
             return;
         }
 
-        document.getElementById('scenarioTitle').innerHTML = `Si <strong>${data.club}</strong> fait <strong>${resVal}</strong> en J${target}`;
-        
-        // Mise à jour des barres
-        document.getElementById('dispTop8').innerText = data.proba_top8 + "%";
-        document.getElementById('barTop8').style.width = data.proba_top8 + "%";
-        
-        document.getElementById('dispQualif').innerText = data.proba_qualif + "%";
-        document.getElementById('barQualif').style.width = data.proba_qualif + "%";
-        
-        // Verdict
-        let vText = "❌ Éliminé probable";
-        let vColor = "red";
-        if (data.proba_qualif > 99) { vText = "✅ Qualifié (Top 24) Sûr"; vColor = "green"; }
-        else if (data.proba_qualif > 50) { vText = "⚖️ En ballotage favorable"; vColor = "orange"; }
-        
+        box.style.opacity = '1';
+
+        // 1. Mise à jour du Badge Central (Si Victoire...)
+        const badge = document.getElementById('resBadge');
+        let txtRes = resVal === 'V' ? 'Victoire' : (resVal === 'N' ? 'Nul' : 'Défaite');
+        badge.innerText = "Si " + txtRes;
+        badge.className = 'result-badge ' + (resVal === 'V' ? 'win' : (resVal === 'N' ? 'draw' : 'loss'));
+
+        // 2. Remplir la colonne AVANT
+        document.getElementById('beforeQualif').innerText = data.avant.qualif + '%';
+        document.getElementById('beforeTop8').innerText = data.avant.top8 + '%';
+
+        // 3. Remplir la colonne APRÈS
+        document.getElementById('afterQualif').innerText = data.apres.qualif + '%';
+        document.getElementById('afterTop8').innerText = data.apres.top8 + '%';
+
+        // 4. Gérer les badges de DIFFÉRENCE (+10%, -5%...)
+        updateDiffBadge('diffQualif', data.delta.qualif);
+        updateDiffBadge('diffTop8', data.delta.top8);
+
+        // 5. Verdict textuel en bas
         const vb = document.getElementById('scenarioVerdict');
+        let vText = "Pas de changement majeur";
+        let vColor = "#ccc";
+
+        // Logique simple pour le verdict
+        if (data.apres.qualif >= 99) { vText = "✅ Qualification quasi-assurée !"; vColor = "#28a745"; }
+        else if (data.apres.qualif <= 5) { vText = "❌ Élimination très probable"; vColor = "#dc3545"; }
+        else if (data.delta.qualif >= 15) { vText = "🚀 Bond énorme au classement !"; vColor = "#28a745"; }
+        else if (data.delta.qualif <= -15) { vText = "⚠️ Chute dangereuse"; vColor = "#dc3545"; }
+        else { vText = "Situation en évolution..."; vColor = "#ffc107"; }
+
         vb.innerText = vText;
         vb.style.borderLeftColor = vColor;
 
     } catch(e) { 
-        document.getElementById('scenarioVerdict').innerText = "Erreur serveur"; 
+        console.error(e);
+        alert("Erreur serveur lors de la simulation");
+        box.style.display = 'none';
+    }
+}
+
+// Fonction utilitaire pour colorer les + et -
+function updateDiffBadge(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (value > 0) {
+        el.innerText = "+" + value + "%";
+        el.className = "diff-badge positive";
+    } else if (value < 0) {
+        el.innerText = value + "%"; // Le moins est déjà dans la valeur
+        el.className = "diff-badge negative";
+    } else {
+        el.innerText = "=";
+        el.className = "diff-badge neutral";
     }
 }
 

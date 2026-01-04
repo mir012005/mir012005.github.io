@@ -141,7 +141,28 @@
 
         <section id="results" class="page" style="display:none;">
             <h2>Résultats de la simulation</h2>
+            
             <button onclick="showPage('home')" class="back-btn">← Choisir un autre club</button>
+            
+            <div class="controls-bar" style="margin: 0 0 20px 0; justify-content: center; background-color: #f0f7ff; border: 1px solid #cce5ff;">
+                <div class="control-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                    <label for="simDaySelect" style="font-weight:bold; color:#002f5f; margin:0;">
+                        📅 Simuler la fin de saison à partir de la :
+                    </label>
+                    <select id="simDaySelect" onchange="simulate()" style="padding:8px; border:2px solid #0066cc; border-radius:6px; font-weight:bold; color:#002f5f; cursor:pointer; background: white;">
+                        <option value="0" selected>J0 (Début de saison)</option>
+                        <option value="1">Journée 1</option>
+                        <option value="2">Journée 2</option>
+                        <option value="3">Journée 3</option>
+                        <option value="4">Journée 4</option>
+                        <option value="5">Journée 5</option>
+                        <option value="6">Journée 6</option>
+                        <option value="7">Journée 7</option>
+                        <option value="8">Journée 8</option>
+                    </select>
+                </div>
+            </div>
+            
             <div id="resultsContainer"></div>
         </section>
 
@@ -333,20 +354,45 @@
                 </div>
 
                 <div id="scenarioResultBox" style="margin-top:20px; display:none;">
-                    <h3 id="scenarioTitle" style="text-align:center;">Résultat</h3>
-                    <div class="scenario-dashboard">
-                        <div class="stat-card">
-                            <div class="stat-icon">🏆</div><div class="stat-label">Top 8</div>
-                            <div class="stat-big-number green-text" id="dispTop8">0%</div>
-                            <div class="progress-bg"><div id="barTop8" class="progress-bar green" style="width:0%"></div></div>
+                    <h3 id="scenarioTitle" style="text-align:center; color:#002f5f; margin-bottom:20px;">Analyse d'Impact</h3>
+                    
+                    <div class="impact-comparison-container">
+                        <div class="impact-col before">
+                            <h4>Situation Actuelle</h4>
+                            <div class="stat-row">
+                                <span>Qualif (Top 24)</span>
+                                <strong id="beforeQualif">--%</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Top 8</span>
+                                <strong id="beforeTop8">--%</strong>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🎟️</div><div class="stat-label">Qualif</div>
-                            <div class="stat-big-number orange-text" id="dispQualif">0%</div>
-                            <div class="progress-bg"><div id="barQualif" class="progress-bar orange" style="width:0%"></div></div>
+
+                        <div class="impact-arrow">
+                            <div id="resBadge" class="result-badge">Si Résultat</div>
+                        </div>
+
+                        <div class="impact-col after">
+                            <h4>Nouvelle Projection</h4>
+                            <div class="stat-row">
+                                <span>Qualif (Top 24)</span>
+                                <div style="display:flex; align-items:center;">
+                                    <strong id="afterQualif" class="big-number">--%</strong>
+                                    <span id="diffQualif" class="diff-badge">--</span>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <span>Top 8</span>
+                                <div style="display:flex; align-items:center;">
+                                    <strong id="afterTop8" class="big-number">--%</strong>
+                                    <span id="diffTop8" class="diff-badge">--</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div id="scenarioVerdict" class="verdict-box">...</div>
+
+                    <div id="scenarioVerdict" class="verdict-box" style="margin-top: 15px;">...</div>
                 </div>
             </div>
 
@@ -355,8 +401,8 @@
                     <div class="control-group">
                         <label>Contexte :</label>
                         <select id="impStartDay">
-                            <option value="0" selected>J0 (Début)</option>
-                            <option value="1">J1</option>
+                            <option value="0">J0 (Début)</option>
+                            <option value="1" selected>J1</option>
                             <option value="2">J2</option>
                             <option value="3">J3</option>
                             <option value="4">J4</option>

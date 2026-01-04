@@ -4248,3 +4248,77 @@ async function chargerAnalysesGlobales() {
 }
 
 """
+
+#===============================================================================================
+#script.js apres nettoyage version 2
+"""
+async function simulate() {
+    const club = document.getElementById('club').value.trim();
+    const container = document.getElementById('resultsContainer');
+    
+    if (!club) return alert("Veuillez entrer un nom de club.");
+    
+    showPage('results');
+    container.innerHTML = '<div class="loader"></div><p style="text-align:center">Simulation de 1000 saisons...</p>';
+    
+    try {
+        const response = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ club: club, day: 6 }) // Par défaut départ J6
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            container.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="club-header">
+                <img src="logos/${data.club}.png" class="medium-logo" onerror="this.src='logos/default.png'">
+                <div>
+                    <h3>${data.club}</h3>
+                    <p>Points Moyens prédits : <strong>${data.points_moyens}</strong></p>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box green">
+                    <h4>Top 8</h4>
+                    <span class="percentage">${data.proba_top_8}%</span>
+                    <span class="sub-label">Qualif Directe</span>
+                </div>
+                <div class="stat-box yellow">
+                    <h4>Barrage</h4>
+                    <span class="percentage">${data.proba_barrage}%</span>
+                    <span class="sub-label">9ème - 24ème</span>
+                </div>
+                <div class="stat-box red">
+                    <h4>Éliminé</h4>
+                    <span class="percentage">${data.proba_elimine}%</span>
+                    <span class="sub-label">> 24ème</span>
+                </div>
+            </div>
+
+            <div class="charts-column">
+                <div class="chart-box">
+                    <h4>Distribution des Points</h4>
+                    <div class="chart-area"><canvas id="pointsChart"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <h4>Distribution du Classement Final</h4>
+                    <div class="chart-area"><canvas id="rankChart"></canvas></div>
+                </div>
+            </div>
+        `;
+        
+        creerGraphique('pointsChart', data.distribution_points, 'Probabilité', '#007bff');
+        creerGraphique('rankChart', data.distribution_rangs, 'Probabilité', '#6f42c1');
+
+    } catch (e) {
+        container.innerHTML = `<div class="error-msg">❌ Erreur serveur</div>`;
+    }
+}
+
+"""
