@@ -9,7 +9,11 @@
 </head>
 <body>
     <header>
-        <h1>⚽ Simulation LDC</h1>
+        <h1>
+            <img src="logo_ldc_sans_texte.png" alt="Logo Champions League" class="header-logo">
+            
+            Champions League Simulation
+        </h1>
         <nav>
             <button onclick="showPage('home')">Accueil</button>
             <button onclick="showPage('analyses'); chargerAnalysesGlobales()">Analyses Globales</button>
@@ -18,6 +22,7 @@
             <button onclick="showPage('match-impact')">⚡ Impact Matchs</button>
             <button onclick="showPage('probas-zone')">📊 Probabilités</button>
             <button onclick="showPage('impact-zone')">🔮 Scénarios & Hype</button>
+            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"> 🌙 Mode Nuit</button>
         </nav>
     </header>
 
@@ -434,6 +439,37 @@
         </section>
         
     </main>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('theme-toggle');
+            
+            // Bascule la classe 'dark-mode'
+            body.classList.toggle('dark-mode');
+            
+            // Vérifie si le mode sombre est actif
+            const isDark = body.classList.contains('dark-mode');
+            
+            // Change le texte/icône du bouton
+            if (isDark) {
+                btn.innerHTML = "☀️ Mode Jour";
+                localStorage.setItem('theme', 'dark'); // Sauvegarde
+            } else {
+                btn.innerHTML = "🌙 Mode Nuit";
+                localStorage.setItem('theme', 'light'); // Sauvegarde
+            }
+        }
+
+        // Au chargement de la page : vérifier la préférence sauvegardée
+        window.onload = function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-toggle').innerHTML = "☀️ Mode Jour";
+            }
+        };
+    </script>
 
     <script src="script.js"></script>
 </body>
