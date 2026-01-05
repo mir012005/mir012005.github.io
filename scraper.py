@@ -3,7 +3,6 @@ import requests
 import io
 import re
 from bs4 import BeautifulSoup  # Nécessaire pour les scores précis
-from datetime import datetime, timedelta
 import time
 
 
@@ -742,6 +741,66 @@ def generer_historique_elo():
         time.sleep(0.5)
         
     return historique
+
+"""
+from scraper import scraper_matchs_wikipedia, organiser_par_journee, CLUBS_SIMULATOR
+from simulator import ajouter_matchs_donnés
+import copy
+
+def creer_etat_initial():
+    return {
+        "classement": sorted(CLUBS_SIMULATOR),
+        "points": {club: 0 for club in CLUBS_SIMULATOR},
+        "diff_buts": {club: 0 for club in CLUBS_SIMULATOR},
+        "buts": {club: 0 for club in CLUBS_SIMULATOR},
+        "buts_ext": {club: 0 for club in CLUBS_SIMULATOR},
+        "nb_victoires": {club: 0 for club in CLUBS_SIMULATOR},
+        "nb_victoires_ext": {club: 0 for club in CLUBS_SIMULATOR},
+    }
+
+url = "https://fr.wikipedia.org/wiki/Phase_de_championnat_de_la_Ligue_des_champions_de_l%27UEFA_2025-2026"
+tous_les_matchs = scraper_matchs_wikipedia(url)
+matchs_par_journee = organiser_par_journee(tous_les_matchs)
+données_J0 = creer_etat_initial()
+états = {0: données_J0}
+
+for j in range(1, 7):
+    matchs_j = matchs_par_journee.get(j, [])
+    if matchs_j:
+        états[j] = ajouter_matchs_donnés(états[j-1], matchs_j)
+
+with open('CODE_A_COPIER.py', 'w', encoding='utf-8') as f:
+    for j in range(1, 7):
+        if j in états:
+            d = états[j]
+            f.write(f"données_J{j} = {{\n")
+            f.write(f"    'classement': {d['classement']},\n")
+            f.write(f"    'points': {{\n")
+            for club in sorted(d['points'].keys()):
+                f.write(f"        '{club}': {d['points'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'diff_buts': {{\n")
+            for club in sorted(d['diff_buts'].keys()):
+                f.write(f"        '{club}': {d['diff_buts'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'buts': {{\n")
+            for club in sorted(d['buts'].keys()):
+                f.write(f"        '{club}': {d['buts'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'buts_ext': {{\n")
+            for club in sorted(d['buts_ext'].keys()):
+                f.write(f"        '{club}': {d['buts_ext'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'nb_victoires': {{\n")
+            for club in sorted(d['nb_victoires'].keys()):
+                f.write(f"        '{club}': {d['nb_victoires'][club]},\n")
+            f.write(f"    }},\n")
+            f.write(f"    'nb_victoires_ext': {{\n")
+            for club in sorted(d['nb_victoires_ext'].keys()):
+                f.write(f"        '{club}': {d['nb_victoires_ext'][club]},\n")
+            f.write(f"    }},\n")
+            f.write("}\n\n")
+"""
 
 # ==========================================
 # 4. EXÉCUTION
