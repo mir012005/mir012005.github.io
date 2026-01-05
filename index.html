@@ -2,9 +2,11 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulation Ligue des Champions</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -14,6 +16,7 @@
             
             Champions League Simulation
         </h1>
+        <!--
         <nav>
             <button onclick="showPage('home')">Accueil</button>
             <button onclick="showPage('analyses'); chargerAnalysesGlobales()">Analyses Globales</button>
@@ -23,6 +26,40 @@
             <button onclick="showPage('probas-zone')">📊 Probabilités</button>
             <button onclick="showPage('impact-zone')">🔮 Scénarios & Hype</button>
             <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"> 🌙 Mode Nuit</button>
+        </nav>
+        -->
+        <nav>
+            <button onclick="showPage('home')">
+                <i class="fa-solid fa-house"></i> Accueil
+            </button>
+            
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()">
+                <i class="fa-solid fa-chart-line"></i> Analyses
+            </button>
+            
+            <button onclick="showPage('duel')">
+                <i class="fa-solid fa-shield-halved"></i> Duel
+            </button>
+            
+            <button onclick="showPage('ranking'); chargerClassement()">
+                <i class="fa-solid fa-trophy"></i> Classement
+            </button>
+            
+            <button onclick="showPage('match-impact')">
+                <i class="fa-solid fa-bolt"></i> Impact
+            </button>
+            
+            <button onclick="showPage('probas-zone')">
+                <i class="fa-solid fa-chart-pie"></i> Probabilités
+            </button>
+            
+            <button onclick="showPage('impact-zone')">
+                <i class="fa-solid fa-flask"></i> Scénarios
+            </button>
+            
+            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon"></i> Mode Nuit
+            </button>
         </nav>
     </header>
 
@@ -439,6 +476,17 @@
         </section>
         
     </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>Simulateur Ligue des Champions &copy; 2024</p>
+            <div class="socials">
+                <a href="#"><i class="fa-brands fa-github"></i></a>
+                <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
 
     <script>
         function toggleTheme() {

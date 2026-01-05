@@ -720,3 +720,70 @@ body.dark-mode h2 {
     max-width: 800px;
     margin: 10px auto;
 }
+
+/* --- FOOTER (PIED DE PAGE) --- */
+footer {
+    text-align: center;
+    padding: 40px 20px;
+    margin-top: 60px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.socials {
+    display: flex;
+    gap: 20px;
+    font-size: 1.5rem;
+}
+
+.socials a {
+    color: var(--text-light);
+    transition: color 0.3s, transform 0.3s;
+}
+
+.socials a:hover {
+    color: var(--primary-color);
+    transform: translateY(-3px);
+}
+
+/* En mode nuit, on adapte la bordure du footer */
+body.dark-mode footer {
+    border-top-color: rgba(255,255,255,0.05);
+}
+
+nav button i {
+    margin-right: 8px;
+    font-size: 1.1em;
+}
+/* ==========================================================================
+   CORRECTION : SURVOL DE LA SOURIS (HOVER) EN MODE NUIT
+   ========================================================================== */
+
+/* Cible la ligne quand la souris est dessus */
+body.dark-mode .ranking-table tr:hover,
+body.dark-mode .ranking-table tr:hover td {
+    
+    /* Au lieu de Blanc, on met un gris très foncé transparent */
+    background-color: rgba(255, 255, 255, 0.1) !important; 
+    
+    /* On force le texte à rester BLANC */
+    color: #FFFFFF !important;
+    
+    /* Optionnel : change le curseur pour montrer que c'est interactif */
+    cursor: pointer;
+}
+
+/* Si jamais il y a une classe "active" ou "selected" qui met un fond blanc */
+body.dark-mode .ranking-table tr.active,
+body.dark-mode .ranking-table tr.selected {
+    background-color: rgba(0, 210, 190, 0.15) !important; /* Un léger Cyan sombre */
+    color: white !important;
+}
