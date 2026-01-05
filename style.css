@@ -305,20 +305,43 @@ select:focus, select:hover {
 }
 
 /* ==========================================================================
-   5. TABLEAUX (CLASSEMENT & PROBAS)
+   5. TABLEAUX & CLASSEMENTS (CORRECTION DU LOGO ÉNORME)
    ========================================================================== */
-.table-container { padding: 0; overflow: hidden; } /* On enlève le padding pour que le tableau colle aux bords */
+.table-container { padding: 0; overflow: hidden; } /* Colle les bords */
 
 .ranking-table { width: 100%; border-collapse: collapse; text-align: center; }
+
 .ranking-table th { 
-    background: #F8F9FA; padding: 15px; 
-    font-weight: 700; color: var(--text-light); text-transform: uppercase; font-size: 0.85rem;
+    background: #F8F9FA; padding: 15px; font-weight: 700; 
+    color: var(--text-light); text-transform: uppercase; font-size: 0.85rem;
 }
-.ranking-table td { padding: 12px; border-bottom: 1px solid #eee; font-weight: 500; }
-.ranking-table tr:last-child td { border-bottom: none; }
+
+.ranking-table td { 
+    padding: 12px 15px; 
+    border-bottom: 1px solid #eee; 
+    vertical-align: middle; 
+    font-weight: 500;
+}
+
+/* --- LE FIX IMPORTANT POUR LES IMAGES --- */
+.ranking-table img {
+    width: 30px !important;  /* Force la taille */
+    height: 30px !important; /* Force la taille */
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Alignement du nom du club à gauche */
+.ranking-table td:nth-child(2) {
+    text-align: left;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
 .ranking-table tr:hover { background-color: #f1f7ff; }
 
-/* Indicateurs couleur classement */
+/* Barres de couleur à gauche (Qualif/Barrage/Eliminé) */
 .qualif-direct { border-left: 5px solid var(--success-color); }
 .barrage { border-left: 5px solid var(--warning-color); }
 .elimine { border-left: 5px solid var(--danger-color); }
