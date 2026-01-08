@@ -2,7 +2,9 @@ import pandas as pd
 import math
 import random as rd
 import copy
-
+import requests
+import io               
+from datetime import datetime
 # On récupère d'abord les données concernant les clubs participant à la ligue des champions, à la veille du début de la compétition.
 from pathlib import Path
 
@@ -54,7 +56,7 @@ def get_clubs_list():
 
 elo_ldc = elo[elo["Club"].isin(clubs_en_ldc)]
 
-def elo_of(club):
+def elo_of_static(club):
     club_data = elo_ldc.loc[elo_ldc["Club"] == club, "Elo"]
     if len(club_data) == 0:
         print(f"Club non trouvé : {club}")
@@ -62,10 +64,153 @@ def elo_of(club):
         return None  # ou une valeur par défaut
     return club_data.values[0]
 
+# =============================================================================
+# GESTION DES ELO DYNAMIQUES
+# =============================================================================
+# =============================================================================
+# GESTION DES ELO DYNAMIQUES (SIMPLIFIÉE)
+# =============================================================================
+
+# Dates ajustées (veille des matchs) pour savoir si on tape dans l'historique ou le live
+calendrier_ldc = {
+    1: "2025-09-15",
+    2: "2025-09-29",
+    3: "2025-10-20",
+    4: "2025-11-03",
+    5: "2025-11-24",
+    6: "2025-12-08",
+    7: "2026-01-19",
+    8: "2026-01-27"
+}
+
+CACHE_ELO = {}
+CURRENT_ELO_DICT = {} 
+
+# On initialise CURRENT_ELO_DICT avec les valeurs statiques (CSV) au démarrage
+# IMPORTANT : Renommez votre ancienne fonction 'elo_of' en 'elo_of_static'
+for c in clubs_en_ldc:
+    CURRENT_ELO_DICT[c] = elo_of_static(c) 
+
+def fetch_elo_from_api(date_str=None):
+    """
+    Récupère les ELO depuis api.clubelo.com.
+    Comme les noms sont identiques, on fait une correspondance directe.
+    """
+    if date_str:
+        url = f"http://api.clubelo.com/{date_str}"
+        print(f"📡 Récupération ELO Historique ({date_str})...")
+    else:
+        today = datetime.today().strftime('%Y-%m-%d')
+        url = f"http://api.clubelo.com/{today}"
+        print(f"📡 Récupération ELO LIVE ({today})...")
+
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        
+        # Lecture CSV
+        df = pd.read_csv(io.StringIO(response.text))
+        df = df[['Club', 'Elo']]
+        
+        # Dictionnaire API : { "Real Madrid": 1950.5, ... }
+        raw_elos = dict(zip(df.Club.astype(str), df.Elo))
+        
+        mapped_elos = {}
+        
+        # Correspondance directe
+        for my_club in clubs_en_ldc:
+            if my_club in raw_elos:
+                mapped_elos[my_club] = raw_elos[my_club]
+            else:
+                # Sécurité si jamais une orthographe diffère légèrement
+                print(f"⚠️ Attention : '{my_club}' non trouvé dans l'API ClubElo ce jour-là.")
+                # On garde l'ancien ELO (statique) en secours
+                mapped_elos[my_club] = elo_of_static(my_club)
+
+        return mapped_elos
+
+    except Exception as e:
+        print(f"❌ Erreur API ELO: {e}")
+        return None
+
+def get_elo_context(journee_depart):
+    """
+    Gère le cache et le choix entre Live (Futur) et Historique (Passé).
+    Logique : Si on simule depuis J5 (5 journées jouées), on veut les ELOs
+    à la veille de la J6. Donc on cherche la date de J(depart + 1).
+    """
+    if journee_depart in CACHE_ELO:
+        return CACHE_ELO[journee_depart]
+
+    # CORRECTION ICI : On cherche la date de la PROCHAINE journée
+    date_cible_str = calendrier_ldc.get(journee_depart + 1)
+
+    if date_cible_str:
+        target_date = datetime.strptime(date_cible_str, "%Y-%m-%d")
+        today = datetime.now()
+        
+        # Si la date cible (J6) est dans le futur par rapport à aujourd'hui,
+        # cela signifie qu'on est en avance sur le calendrier réel -> On prend le Live.
+        # Sinon, si la date est passée, on prend l'historique de cette date précise.
+        if target_date > today:
+             elos = fetch_elo_from_api(None) # Futur -> Live
+        else:
+             elos = fetch_elo_from_api(date_cible_str) # Passé -> Historique
+    else:
+        # Si journee_depart + 1 n'existe pas (ex: J9) ou si J0, cas spéciaux
+        if journee_depart == 8: 
+            # Fin de saison, on prend le live pour voir l'état actuel
+            elos = fetch_elo_from_api(None)
+        elif journee_depart == 0:
+            # Début de saison, on garde le statique du CSV (ne rien faire renvoie None)
+            return None 
+        else:
+            elos = fetch_elo_from_api(None)
+
+    if elos:
+        CACHE_ELO[journee_depart] = elos
+        return elos
+    return None
+
+def elo_of_dynamic(club):
+    """ Nouvelle fonction à utiliser pour les calculs """
+    return CURRENT_ELO_DICT.get(club, 1500)
+
+def win_expectation(club1, club2):
+    """ Version modifiée qui utilise l'ELO dynamique """
+    e1 = elo_of_dynamic(club1)
+    e2 = elo_of_dynamic(club2)
+    return 1/(1+10**((e2-e1-100)/400))
+
+def update_simulation_context(journee_depart):
+    """
+    FONCTION CRITIQUE : Met à jour les ELOs ET recalcule les probas de Poisson.
+    À appeler au début de get_web_simulation.
+    """
+    global CURRENT_ELO_DICT, probas_par_matchs
+    
+    # Si on part de J0, on reste sur les données statiques du CSV (pré-saison)
+    if journee_depart == 0:
+        return
+
+    nouveaux_elos = get_elo_context(journee_depart)
+    
+    if nouveaux_elos:
+        CURRENT_ELO_DICT = nouveaux_elos
+        
+        # On recalcule TOUTES les probabilités de match avec les nouveaux niveaux
+        # dico_de_proba appelle win_expectation, qui appelle maintenant elo_of_dynamic
+        probas_par_matchs = dico_de_proba() 
+        # print(f"✅ Context updated for J{journee_depart}")
+    else:
+        print("⚠️ Pas de mise à jour ELO (conservation des valeurs précédentes)")
+
+"""
 def win_expectation(club1,club2):
     e1 = elo_of(club1) ; e2 = elo_of(club2)
     assert(type(e1) != str and type(e2) != str)
     return 1/(1+10**((e2-e1-100)/400))
+"""
 
 def coeff_poisson(club1,club2,s):
     # retourne le coeff de la loi de poisson donnant le nb de buts marqués par club1 si s='H' - ou club2 si s='A' - 
@@ -892,6 +1037,13 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0):
     Calcule la distribution des points du 8ème (Qualif) et du 24ème (Barrage).
     Permet de voyager dans le temps (J0 à J8).
     """
+    # 1. MISE À JOUR DU CONTEXTE
+    try:
+        j_dep = int(journee_depart)
+    except:
+        j_dep = 0
+    update_simulation_context(j_dep)
+
     # 1. MAPPING DES DONNÉES HISTORIQUES
     # Assurez-vous que toutes ces variables (données_J1...) existent bien en haut du fichier
     map_historique = {
@@ -994,6 +1146,9 @@ def get_web_simulation(club_cible, nb_simulations=1000, journee_depart=0):
     except:
         j_dep = 0
 
+    # je l'ai ajouté (a enlever)
+    update_simulation_context(j_dep)
+
     # On récupère les données demandées. 
     # Si la journée n'existe pas, on prend J6 par défaut pour éviter le crash.
     etat_actuel = historique_donnees.get(j_dep, etat_zero)
@@ -1038,6 +1193,8 @@ def get_match_prediction(home_team, away_team):
     Simule un match spécifique et renvoie le score moyen (prédiction)
     ainsi qu'une simulation de score typique.
     """
+    update_simulation_context(8)
+
     # 1. Vérification des équipes
     if home_team not in clubs_en_ldc or away_team not in clubs_en_ldc:
         return {"error": "Une des équipes n'est pas reconnue."}
@@ -1145,6 +1302,13 @@ if 'données_J7' not in globals(): données_J7 = etat_zero
 if 'données_J8' not in globals(): données_J8 = etat_zero
 
 def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
+
+    try:
+        sd = int(start_day)
+    except:
+        sd = 0
+    update_simulation_context(sd)
+
     if start_day == 0:
         etat_initial = {
             "classement": None, "points": None, "diff_buts": None, 
@@ -1232,6 +1396,12 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
     Génère les tableaux de PROBABILITÉS (Top 8 et Top 24) en fonction de la journée de départ.
     Logique similaire à get_simulation_flexible.
     """
+    try:
+        jd = int(journee_depart)
+    except:
+        jd = 0
+    update_simulation_context(jd)
+    
     if journee_depart == 0:
         etat_initial = {
             "classement": None, "points": None, "diff_buts": None, 
@@ -1305,6 +1475,9 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
 # WRAPPERS POUR "IMPACT MATCHS"
 # =============================================================================
 def get_web_match_impact(club, journee, nb_simulations=1000, journee_donnees=6):
+
+    update_simulation_context(int(journee_donnees))
+
     # Vérifications
     if club not in clubs_en_ldc:
         return {"error": f"Club '{club}' introuvable"}
@@ -1398,6 +1571,8 @@ def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
     """
     Retourne DEUX classements : un pour qualif, un pour top8
     """
+    update_simulation_context(int(journee_donnees))
+
     map_historique = {
         1: données_J1, 2: données_J2, 3: données_J3, 4: données_J4,
         5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
@@ -1485,6 +1660,9 @@ def get_web_all_matches_impact(journee, nb_simulations=500, journee_donnees=6):
     }
 
 def get_web_club_next_match_scenarios(club, nb_simulations=1000, journee_donnees=6):
+
+    update_simulation_context(int(journee_donnees))
+
     # Trouver le prochain match non joué
     journee_prochaine = None
     
@@ -1582,6 +1760,8 @@ def get_web_importance(journee_cible, journee_depart=6, n_simulations=300):
     """
     Wrapper pour l'onglet 'Importance'. Utilise la fonction 'enjeux'.
     """
+    update_simulation_context(int(journee_depart))
+
     map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
                       4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
     etat_initial = map_historique.get(journee_depart, etat_zero)
@@ -1624,6 +1804,8 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
     Wrapper pour l'onglet 'Scénario'.
     Compare la situation AVANT (Naturelle) et APRÈS (Match Fixé).
     """
+    update_simulation_context(int(journee_depart))
+
     # 1. Chargement des données historiques
     map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
                       4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
@@ -1711,6 +1893,9 @@ def get_web_evolution(club, journee_max=8, n_simulations=300):
     
     # On boucle de J0 jusqu'à la journée choisie
     for j in range(int(journee_max) + 1):
+
+        update_simulation_context(j)
+
         # 1. On charge l'état à l'époque (J0 si j=0)
         etat = map_historique.get(j, etat_zero)
         
