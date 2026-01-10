@@ -87,49 +87,6 @@ def get_probas():
     ))
 
 # ==============================================================================
-# 3. ROUTES ONGLET 1 : IMPACT MATCHS (DÉTAILLÉ)
-# ==============================================================================
-
-@app.route('/api/match-impact', methods=['POST'])
-def get_match_impact():
-    try:
-        data = request.json or {}
-        res = simulator.get_web_match_impact(
-            club=data.get('club'), 
-            journee=int(data.get('journee', 7)), 
-            nb_simulations=1000, 
-            journee_donnees=int(data.get('journee_donnees', 6))
-        )
-        if "error" in res: return jsonify(res), 404
-        return jsonify(res)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/all-matches-impact', methods=['POST'])
-def get_all_matches_impact():
-    try:
-        data = request.json or {}
-        return jsonify(simulator.get_web_all_matches_impact(
-            journee=int(data.get('journee', 7)), 
-            nb_simulations=500, 
-            journee_donnees=int(data.get('journee_donnees', 6))
-        ))
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/next-match-scenarios', methods=['POST'])
-def get_next_match_scenarios():
-    try:
-        data = request.json or {}
-        return jsonify(simulator.get_web_club_next_match_scenarios(
-            club=data.get('club'), 
-            nb_simulations=1000, 
-            journee_donnees=int(data.get('journee_donnees', 6))
-        ))
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ==============================================================================
 # 4. ROUTES ONGLET 2 : SCÉNARIO & HYPE (RAPIDE)
 # ==============================================================================
 
@@ -146,19 +103,23 @@ def run_scenario():
         )
         return jsonify(res)
     except Exception as e:
+        print(f"Erreur Scenario: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/importance', methods=['POST'])
-def get_importance_route():
+@app.route('/api/hypometre', methods=['POST'])
+def get_hypometre_route():
     try:
         data = request.json or {}
-        res = simulator.get_web_importance(
-            journee_cible=int(data.get('target', 7)), 
-            journee_depart=int(data.get('start', 6)), 
-            n_simulations=300
+        # Appel de la nouvelle fonction dans simulator.py
+        res = simulator.get_web_hypometre(
+            club_cible=data.get('club'), 
+            nb_simulations=300, 
+            journee_depart=int(data.get('day', 6))
         )
+        if "error" in res: return jsonify(res), 404
         return jsonify(res)
     except Exception as e:
+        print(f"Erreur Hypometre: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/evolution', methods=['POST'])

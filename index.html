@@ -29,37 +29,15 @@
         </nav>
         -->
         <nav>
-            <button onclick="showPage('home')">
-                <i class="fa-solid fa-house"></i> Accueil
-            </button>
+            <button onclick="showPage('home')"><i class="fa-solid fa-house"></i> Accueil</button>
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> Analyses</button>
+            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> Duel</button>
+            <button onclick="showPage('ranking'); chargerClassement()"><i class="fa-solid fa-trophy"></i> Classement</button>
+            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> Probabilités</button>
             
-            <button onclick="showPage('analyses'); chargerAnalysesGlobales()">
-                <i class="fa-solid fa-chart-line"></i> Analyses
-            </button>
+            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> Labo & Hype</button>
             
-            <button onclick="showPage('duel')">
-                <i class="fa-solid fa-shield-halved"></i> Duel
-            </button>
-            
-            <button onclick="showPage('ranking'); chargerClassement()">
-                <i class="fa-solid fa-trophy"></i> Classement
-            </button>
-            
-            <button onclick="showPage('match-impact')">
-                <i class="fa-solid fa-bolt"></i> Impact
-            </button>
-            
-            <button onclick="showPage('probas-zone')">
-                <i class="fa-solid fa-chart-pie"></i> Probabilités
-            </button>
-            
-            <button onclick="showPage('impact-zone')">
-                <i class="fa-solid fa-flask"></i> Scénarios
-            </button>
-            
-            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()">
-                <i class="fa-solid fa-moon"></i> Mode Nuit
-            </button>
+            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Mode Nuit</button>
         </nav>
     </header>
 
@@ -296,185 +274,127 @@
                 </div>
             </div>
         </section>
-
-        <section id="match-impact" class="page" style="display:none;">
-            <h2>⚡ Impact des Matchs</h2>
-            
-            <div class="impact-tabs">
-                <button class="tab-btn active" onclick="switchImpactTab('specific')">🔍 Match Spécifique</button>
-                <button class="tab-btn" onclick="switchImpactTab('qualif')">🎯 Qualification</button>
-                <button class="tab-btn" onclick="switchImpactTab('top8')">🏆 Top 8</button>
-            </div>
-
-            <div id="impact-specific" class="impact-tab-content" style="display: block;">
-                <div class="controls-bar">
-                    <input type="text" id="impactClub" placeholder="Ex: Arsenal" list="clubsList">
-                    <datalist id="clubsList"></datalist>
-                    <select id="impactJournee">
-                        <option value="1">J1</option>
-                        <option value="2">J2</option>
-                        <option value="3">J3</option>
-                        <option value="4">J4</option>
-                        <option value="5">J5</option>
-                        <option value="6">J6</option>
-                        <option value="7" selected>Journée 7</option>
-                        <option value="8">Journée 8</option>
-                    </select>
-                    <button class="action-btn" onclick="analyserImpactMatch()">🔍 Analyser</button>
-                </div>
-                <div id="impactResults"></div>
-            </div>
-
-            <div id="impact-qualif" class="impact-tab-content" style="display:none;">
-                <div class="info-box">
-                    <p><strong>📊 Classement des matchs par impact sur la QUALIFICATION</strong></p>
-                    <p>Ces matchs changent le plus les probabilités de finir dans le top 24.</p>
-                </div>
-                <button class="action-btn" onclick="chargerMatchsImportants('qualif')">🔄 Charger les matchs J7</button>
-                <div id="tableQualif"></div>
-            </div>
-
-            <div id="impact-top8" class="impact-tab-content" style="display:none;">
-                <div class="info-box">
-                    <p><strong>🏆 Classement des matchs par impact sur le TOP 8</strong></p>
-                    <p>Ces matchs changent le plus les probabilités de finir dans le top 8.</p>
-                </div>
-                <button class="action-btn" onclick="chargerMatchsImportants('top8')">🔄 Charger les matchs J7</button>
-                <div id="tableTop8"></div>
-            </div>
-        </section>
     
         <section id="impact-zone" class="page" style="display:none;">
-            <h2>💥 Analyse d'Impact & Enjeux</h2>
-            <p>Utilisez les fonctions de simulation avancées pour prédire l'avenir.</p>
+            <h2>💥 Laboratoire & Enjeux</h2>
+            <p>Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.</p>
 
-            <div class="tabs-container">
+            <div class="tabs-container" style="margin-bottom: 25px; display:flex; justify-content:center; gap:15px;">
                 <button class="tab-btn active" onclick="switchScenarioTab('scenario')">🔮 Scénario (What-If)</button>
-                <button class="tab-btn" onclick="switchScenarioTab('hype')">🔥 Hype-o-mètre</button>
+                <button class="tab-btn" onclick="switchScenarioTab('hypo')">🎯 Hypo-mètre (Nouveau)</button>
             </div>
 
-            <div id="scenario-tab" class="impact-tab-content">
-                <div class="search-box">
+            <div id="tab-scenario" class="tab-content" style="display:block;">
+                <div class="scenario-header">
+                    <h3>🧪 Simulateur de Résultat</h3>
+                    <p style="font-size:0.9em; color:#666;">Testez un résultat spécifique et voyez l'impact immédiat.</p>
+                </div>
+
+                <div class="controls-bar" style="justify-content: center; flex-wrap: wrap;">
                     <div class="control-group">
-                        <label>Départ (Historique) :</label>
+                        <label>Départ :</label>
                         <select id="scenarioStartDay">
-                            <option value="0" selected>J0 (Début)</option>
-                            <option value="1">J1</option>
-                            <option value="2">J2</option>
-                            <option value="3">J3</option>
-                            <option value="4">J4</option>
-                            <option value="5">J5</option>
-                            <option value="6">J6</option>
-                            <option value="7">J7</option>
+                            <option value="0" selected>J0 (Début de saison)</option>
+                            <option value="1">Journée 1</option>
+                            <option value="2">Journée 2</option>
+                            <option value="3">Journée 3</option>
+                            <option value="4">Journée 4</option>
+                            <option value="5">Journée 5</option>
+                            <option value="6">Journée 6</option>
+                            <option value="7">Journée 7</option>
                         </select>
                     </div>
+                    
                     <div class="control-group">
                         <label>Match en :</label>
                         <select id="scenarioTargetDay">
-                            <option value="1">J1</option>
-                            <option value="2">J2</option>
-                            <option value="3">J3</option>
-                            <option value="4">J4</option>
-                            <option value="5">J5</option>
-                            <option value="6">J6</option>
-                            <option value="7">J7</option>
-                            <option value="8" selected>J8</option>
+                            <option value="0" selected>J0 (Début de saison)</option>
+                            <option value="1">Journée 1</option>
+                            <option value="2">Journée 2</option>
+                            <option value="3">Journée 3</option>
+                            <option value="4">Journée 4</option>
+                            <option value="5">Journée 5</option>
+                            <option value="6">Journée 6</option>
+                            <option value="7">Journée 7</option>
+                            <option value="8">Journée 8</option>
                         </select>
                     </div>
-                    <div class="control-group">
-                        <label>Club & Résultat :</label>
-                        <select id="scenarioClub">
-                            <option value="" disabled selected>-- Choisir --</option>
-                        </select>
 
+                    <div class="control-group">
+                        <label>Hypothèse :</label>
+                        <select id="scenarioClub">
+                            <option value="" disabled selected>-- Club --</option>
+                            </select>
                         <select id="scenarioResult">
                             <option value="V">Victoire</option>
                             <option value="N">Nul</option>
                             <option value="D">Défaite</option>
                         </select>
                     </div>
+                    
                     <button class="action-btn" onclick="lancerScenario()">Simuler</button>
                 </div>
 
                 <div id="scenarioResultBox" style="margin-top:20px; display:none;">
-                    <h3 id="scenarioTitle" style="text-align:center; color:#002f5f; margin-bottom:20px;">Analyse d'Impact</h3>
-                    
                     <div class="impact-comparison-container">
                         <div class="impact-col before">
-                            <h4>Situation Actuelle</h4>
-                            <div class="stat-row">
-                                <span>Qualif (Top 24)</span>
-                                <strong id="beforeQualif">--%</strong>
-                            </div>
-                            <div class="stat-row">
-                                <span>Top 8</span>
-                                <strong id="beforeTop8">--%</strong>
-                            </div>
+                            <h4>Avant</h4>
+                            <div class="stat-row"><span>Qualif</span><strong id="beforeQualif">--%</strong></div>
+                            <div class="stat-row"><span>Top 8</span><strong id="beforeTop8">--%</strong></div>
                         </div>
-
-                        <div class="impact-arrow">
-                            <div id="resBadge" class="result-badge">Si Résultat</div>
-                        </div>
-
+                        <div class="impact-arrow"><div class="result-badge">SI RÉSULTAT</div></div>
                         <div class="impact-col after">
-                            <h4>Nouvelle Projection</h4>
+                            <h4>Après</h4>
                             <div class="stat-row">
-                                <span>Qualif (Top 24)</span>
-                                <div style="display:flex; align-items:center;">
-                                    <strong id="afterQualif" class="big-number">--%</strong>
-                                    <span id="diffQualif" class="diff-badge">--</span>
-                                </div>
+                                <span>Qualif</span>
+                                <div><strong id="afterQualif">--%</strong> <span id="diffQualif" class="diff-badge">--</span></div>
                             </div>
                             <div class="stat-row">
                                 <span>Top 8</span>
-                                <div style="display:flex; align-items:center;">
-                                    <strong id="afterTop8" class="big-number">--%</strong>
-                                    <span id="diffTop8" class="diff-badge">--</span>
-                                </div>
+                                <div><strong id="afterTop8">--%</strong> <span id="diffTop8" class="diff-badge">--</span></div>
                             </div>
                         </div>
                     </div>
-
-                    <div id="scenarioVerdict" class="verdict-box" style="margin-top: 15px;">...</div>
                 </div>
             </div>
 
-            <div id="hype-tab" class="impact-tab-content" style="display:none;">
-                <div class="controls-bar">
+            <div id="tab-hypo" class="tab-content" style="display:none;">
+                <div class="scenario-header">
+                    <h3>🎯 Analyse des Matchs Clés</h3>
+                    <p style="font-size:0.9em; color:#666;">Quels matchs des AUTRES devez-vous surveiller ?</p>
+                </div>
+
+                <div class="controls-bar" style="justify-content: center; max-width: 800px; margin: 0 auto 30px auto;">
                     <div class="control-group">
-                        <label>Contexte :</label>
-                        <select id="impStartDay">
-                            <option value="0">J0 (Début)</option>
-                            <option value="1" selected>J1</option>
-                            <option value="2">J2</option>
-                            <option value="3">J3</option>
-                            <option value="4">J4</option>
-                            <option value="5">J5</option>
-                            <option value="6">J6</option>
-                            <option value="7">J7</option>
+                        <label>Je supporte :</label>
+                        <select id="hypo-club-select" class="club-selector">
+                            </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Journée :</label>
+                        <select id="hypo-day-select">
+                            <option value="0" selected>J0 (Début de saison)</option>
+                            <option value="1">Journée 1</option>
+                            <option value="2">Journée 2</option>
+                            <option value="3">Journée 3</option>
+                            <option value="4">Journée 4</option>
+                            <option value="5">Journée 5</option>
+                            <option value="6">Journée 6</option>
+                            <option value="7">Journée 7</option>
+                            <option value="8">Journée 8</option>
                         </select>
                     </div>
-                    <div class="control-group">
-                        <label>Analyser :</label>
-                        <select id="impTargetDay">
-                            <option value="1">J1</option>
-                            <option value="2">J2</option>
-                            <option value="3">J3</option>
-                            <option value="4">J4</option>
-                            <option value="5">J5</option>
-                            <option value="6">J6</option>
-                            <option value="7">J7</option>
-                            <option value="8" selected>J8</option>
-                        </select>
-                    </div>
-                    <button class="action-btn" onclick="chargerImportance()">Calculer Hype</button>
+
+                    <button class="action-btn" onclick="lancerHypometre()">
+                        <i class="fa-solid fa-radar"></i> Analyser
+                    </button>
                 </div>
-                <div id="importanceList" class="matches-list">
-                    <div class="placeholder-text">Cliquez sur calculer pour voir les matchs importants...</div>
-                </div>
+
+                <div id="hypo-loading" class="loader" style="display:none; margin: 20px auto;"></div>
+                <div id="hypo-resultats" class="matches-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;"></div>
             </div>
         </section>
-        
     </main>
 
     <footer>

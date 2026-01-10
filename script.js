@@ -266,28 +266,24 @@ async function chargerGraphiqueEvolution(club, maxDay) {
 // =============================================================================
 // 4. DUEL (PRÉDICTEUR MATCH UNIQUE)
 // =============================================================================
-
 async function remplirTousLesMenus() {
     try {
         const res = await fetch('/api/clubs');
         const clubs = await res.json();
         
-        // Cibles : Duel (Home/Away) et Scénario (Club)
+        // Cibles : Duel, Scénario ET Hypo-mètre (Nouveau)
         const selHome = document.getElementById('selHome');
         const selAway = document.getElementById('selAway');
         const selScenario = document.getElementById('scenarioClub');
+        const selHypo = document.getElementById('hypo-club-select'); // <--- AJOUT IMPORTANT
 
-        // On remplit tout d'un coup
         clubs.forEach(c => {
-            // Pour le Duel
             if (selHome) selHome.add(new Option(c, c));
             if (selAway) selAway.add(new Option(c, c));
-            
-            // Pour le Scénario (NOUVEAU)
             if (selScenario) selScenario.add(new Option(c, c));
+            if (selHypo) selHypo.add(new Option(c, c)); // <--- AJOUT IMPORTANT
         });
 
-        // Petite astuce : sélectionner un club différent par défaut pour le Duel Away
         if (selAway) selAway.selectedIndex = 1; 
 
     } catch (e) {
@@ -450,125 +446,45 @@ async function chargerProbas() {
         tq.innerHTML = '<tr><td colspan="3">Erreur</td></tr>';
     }
 }
-
 // =============================================================================
-// 7. SECTION : IMPACT DES MATCHS (ANCIENNE / DÉTAILLÉE)
-// =============================================================================
-
-function switchImpactTab(tabName) {
-    // Masquer les contenus
-    document.querySelectorAll('#match-impact .impact-tab-content').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('#match-impact .tab-btn').forEach(btn => btn.classList.remove('active'));
-    
-    // Afficher le bon
-    document.getElementById('impact-' + tabName).style.display = 'block';
-    
-    // Activer le bon bouton (Astuce basée sur l'ordre)
-    const btns = document.querySelectorAll('#match-impact .tab-btn');
-    if (tabName === 'specific') btns[0].classList.add('active');
-    if (tabName === 'qualif') btns[1].classList.add('active');
-    if (tabName === 'top8') btns[2].classList.add('active');
-}
-
-async function analyserImpactMatch() {
-    const club = document.getElementById('impactClub').value;
-    const journee = document.getElementById('impactJournee').value;
-    const container = document.getElementById('impactResults');
-    
-    if(!club) return alert("Entrez un club");
-    container.innerHTML = '<div class="loader"></div> Calcul...';
-    
-    try {
-        const res = await fetch('/api/match-impact', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({club: club, journee: journee})
-        });
-        const data = await res.json();
-        
-        if(data.error) { container.innerHTML = `<div class="error-msg">${data.error}</div>`; return; }
-        
-        container.innerHTML = `
-            <div class="impact-card">
-                <h3>${data.club} ${data.domicile ? '🏠' : '✈️'} vs ${data.adversaire}</h3>
-                <div class="scenarios-grid">
-                    <div class="scenario-box victoire">
-                        <h4>Victoire</h4>
-                        <div>Qualif: <strong>${data.impact_victoire.proba_qualif}%</strong></div>
-                        <div>Top 8: <strong>${data.impact_victoire.proba_top8}%</strong></div>
-                    </div>
-                    <div class="scenario-box nul">
-                        <h4>Nul</h4>
-                        <div>Qualif: <strong>${data.impact_nul.proba_qualif}%</strong></div>
-                        <div>Top 8: <strong>${data.impact_nul.proba_top8}%</strong></div>
-                    </div>
-                    <div class="scenario-box defaite">
-                        <h4>Défaite</h4>
-                        <div>Qualif: <strong>${data.impact_defaite.proba_qualif}%</strong></div>
-                        <div>Top 8: <strong>${data.impact_defaite.proba_top8}%</strong></div>
-                    </div>
-                </div>
-                <div class="gains-box">
-                    <p>Enjeu Victoire vs Défaite (Qualif) : <strong style="color:blue">+${(data.impact_victoire.proba_qualif - data.impact_defaite.proba_qualif).toFixed(1)}%</strong></p>
-                </div>
-            </div>
-        `;
-    } catch(e) { container.innerHTML = "Erreur serveur"; }
-}
-
-async function chargerMatchsImportants(type) {
-    const container = document.getElementById(type === 'qualif' ? 'tableQualif' : 'tableTop8');
-    container.innerHTML = '<div class="loader"></div>';
-    
-    try {
-        const res = await fetch('/api/all-matches-impact', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({journee: 7}) // Par défaut J7 pour l'instant
-        });
-        const data = await res.json();
-        const list = type === 'qualif' ? data.par_qualif : data.par_top8;
-        
-        container.innerHTML = list.map((m, i) => `
-            <div class="match-card" style="margin-bottom:10px; display:flex; justify-content:space-between;">
-                <span><strong>#${i+1}</strong> ${m.match}</span>
-                <span class="score-badge high">Impact: ${type === 'qualif' ? m.impact_qualif.global : m.impact_top8.global}</span>
-            </div>
-        `).join('');
-    } catch(e) { container.innerHTML = "Erreur"; }
-}
-
-// =============================================================================
-// 8. SECTION : SCÉNARIOS & HYPE (NOUVELLE / RAPIDE)
+// 8. SECTION : LABO & HYPE (SCÉNARIOS + HYPO-MÈTRE)
 // =============================================================================
 
+// Gestion des onglets internes
 function switchScenarioTab(tabName) {
-    document.getElementById('scenario-tab').style.display = 'none';
-    document.getElementById('hype-tab').style.display = 'none';
-    
-    // Reset boutons
-    const btns = document.querySelectorAll('#impact-zone .tab-btn');
-    btns.forEach(b => b.classList.remove('active'));
-    
+    // Masquer les contenus
+    document.getElementById('tab-scenario').style.display = 'none';
+    document.getElementById('tab-hypo').style.display = 'none';
+
+    // Désactiver les boutons
+    const btnScen = document.getElementById('btn-tab-scenario');
+    const btnHypo = document.getElementById('btn-tab-hypo');
+    if(btnScen) btnScen.classList.remove('active');
+    if(btnHypo) btnHypo.classList.remove('active');
+
+    // Activer le bon onglet
     if (tabName === 'scenario') {
-        document.getElementById('scenario-tab').style.display = 'block';
-        btns[0].classList.add('active');
+        document.getElementById('tab-scenario').style.display = 'block';
+        if(btnScen) btnScen.classList.add('active');
     } else {
-        document.getElementById('hype-tab').style.display = 'block';
-        btns[1].classList.add('active');
+        document.getElementById('tab-hypo').style.display = 'block';
+        if(btnHypo) btnHypo.classList.add('active');
     }
 }
+
+// --- PARTIE A : SCÉNARIO (WHAT-IF) ---
 
 async function lancerScenario() {
     const club = document.getElementById('scenarioClub').value;
     const start = document.getElementById('scenarioStartDay').value;
     const target = document.getElementById('scenarioTargetDay').value;
-    const resVal = document.getElementById('scenarioResult').value; // V, N ou D
+    const resVal = document.getElementById('scenarioResult').value;
     const box = document.getElementById('scenarioResultBox');
 
-    if(!club) return alert("Veuillez choisir un club dans la liste.");
+    if(!club) return alert("Veuillez choisir un club.");
     
-    // Affichage temporaire (Loader)
     box.style.display = 'block';
-    box.style.opacity = '0.5'; // Effet de chargement
+    box.style.opacity = '0.5'; // Effet chargement
 
     try {
         const res = await fetch('/api/scenario', {
@@ -585,54 +501,34 @@ async function lancerScenario() {
 
         box.style.opacity = '1';
 
-        // 1. Mise à jour du Badge Central (Si Victoire...)
+        // Mise à jour de l'affichage
         const badge = document.getElementById('resBadge');
         let txtRes = resVal === 'V' ? 'Victoire' : (resVal === 'N' ? 'Nul' : 'Défaite');
         badge.innerText = "Si " + txtRes;
         badge.className = 'result-badge ' + (resVal === 'V' ? 'win' : (resVal === 'N' ? 'draw' : 'loss'));
 
-        // 2. Remplir la colonne AVANT
         document.getElementById('beforeQualif').innerText = data.avant.qualif + '%';
         document.getElementById('beforeTop8').innerText = data.avant.top8 + '%';
-
-        // 3. Remplir la colonne APRÈS
+        
         document.getElementById('afterQualif').innerText = data.apres.qualif + '%';
         document.getElementById('afterTop8').innerText = data.apres.top8 + '%';
 
-        // 4. Gérer les badges de DIFFÉRENCE (+10%, -5%...)
         updateDiffBadge('diffQualif', data.delta.qualif);
         updateDiffBadge('diffTop8', data.delta.top8);
 
-        // 5. Verdict textuel en bas
-        const vb = document.getElementById('scenarioVerdict');
-        let vText = "Pas de changement majeur";
-        let vColor = "#ccc";
-
-        // Logique simple pour le verdict
-        if (data.apres.qualif >= 99) { vText = "✅ Qualification quasi-assurée !"; vColor = "#28a745"; }
-        else if (data.apres.qualif <= 5) { vText = "❌ Élimination très probable"; vColor = "#dc3545"; }
-        else if (data.delta.qualif >= 15) { vText = "🚀 Bond énorme au classement !"; vColor = "#28a745"; }
-        else if (data.delta.qualif <= -15) { vText = "⚠️ Chute dangereuse"; vColor = "#dc3545"; }
-        else { vText = "Situation en évolution..."; vColor = "#ffc107"; }
-
-        vb.innerText = vText;
-        vb.style.borderLeftColor = vColor;
-
     } catch(e) { 
         console.error(e);
-        alert("Erreur serveur lors de la simulation");
         box.style.display = 'none';
     }
 }
 
-// Fonction utilitaire pour colorer les + et -
 function updateDiffBadge(elementId, value) {
     const el = document.getElementById(elementId);
     if (value > 0) {
         el.innerText = "+" + value + "%";
         el.className = "diff-badge positive";
     } else if (value < 0) {
-        el.innerText = value + "%"; // Le moins est déjà dans la valeur
+        el.innerText = value + "%";
         el.className = "diff-badge negative";
     } else {
         el.innerText = "=";
@@ -640,46 +536,75 @@ function updateDiffBadge(elementId, value) {
     }
 }
 
-async function chargerImportance() {
-    const start = document.getElementById('impStartDay').value;
-    const target = document.getElementById('impTargetDay').value;
-    const list = document.getElementById('importanceList');
+// --- PARTIE B : HYPO-MÈTRE (NOUVELLE VERSION) ---
+
+async function lancerHypometre() {
+    const club = document.getElementById('hypo-club-select').value;
+    const day = document.getElementById('hypo-day-select').value;
+    const container = document.getElementById('hypo-resultats');
+    const loader = document.getElementById('hypo-loading');
     
-    list.innerHTML = '<div style="text-align:center; padding:20px"><div class="loader"></div> Calcul des enjeux...</div>';
-    
+    container.innerHTML = '';
+    loader.style.display = 'block';
+
+    if(!club) {
+        alert("Veuillez choisir votre équipe.");
+        loader.style.display = 'none';
+        return;
+    }
+
     try {
-        const res = await fetch('/api/importance', {
+        // C'est ici qu'on appelle la nouvelle route Python
+        const res = await fetch('/api/hypometre', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({start: start, target: target})
+            body: JSON.stringify({club: club, day: day})
         });
         const data = await res.json();
-        
-        list.innerHTML = "";
-        if(data.length === 0) { list.innerHTML = "Aucun match trouvé."; return; }
-        
-        data.forEach((m, i) => {
-            let cls = m.score > 50 ? 'high' : (m.score > 20 ? 'medium' : 'low');
-            list.innerHTML += `
-                <div class="match-card">
-                    <div class="match-info">
-                        <span class="rank">#${i+1}</span>
-                        <div class="teams">
-                            <img src="logos/${m.dom}.png" class="mini-logo"> ${m.dom} 
-                            <span class="vs">vs</span> 
-                            ${m.ext} <img src="logos/${m.ext}.png" class="mini-logo">
-                        </div>
-                        <div class="score-badge ${cls}">${m.score}</div>
-                    </div>
-                    <div class="hype-bar-bg">
-                        <div class="hype-bar-fill ${cls}" style="width:${Math.min(m.score, 100)}%"></div>
-                    </div>
-                    <div class="match-details-text">
-                        Intérêt ${m.dom}: <strong>${m.details.dom_val}</strong> | 
-                        Intérêt ${m.ext}: <strong>${m.details.ext_val}</strong>
-                    </div>
-                </div>`;
+
+        loader.style.display = 'none';
+
+        if (data.error) {
+            container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+            return;
+        }
+
+        if (!data.liste || data.liste.length === 0) {
+            container.innerHTML = `<div class="placeholder-text">Aucun match de la prochaine journée n'a d'impact significatif.</div>`;
+            return;
+        }
+
+        // Création des cartes de matchs
+        data.liste.forEach(item => {
+            let isOwn = item.is_my_match;
+            let borderStyle = isOwn ? "border-left: 6px solid #00d2be;" : "border-left: 6px solid #555;";
+            let bgStyle = isOwn ? "background: rgba(0, 210, 190, 0.08);" : "background: rgba(255, 255, 255, 0.05);";
+            
+            let badge = isOwn 
+                ? `<span style="background:#00d2be; color:#000; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:8px;">VOTRE MATCH</span>` 
+                : `<span style="background:#555; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.7em; margin-left:8px;">RIVAL</span>`;
+
+            let barColor = item.score > 20 ? "#e74c3c" : (item.score > 10 ? "#f1c40f" : "#3498db");
+            let barWidth = Math.min(100, item.score * 3); 
+
+            let html = `
+            <div class="match-card" style="${borderStyle} ${bgStyle} padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:600; font-size:1.05rem;">${item.match} ${badge}</div>
+                    <div style="font-size:1.2rem; font-weight:800; color:${barColor};">${item.score}%</div>
+                </div>
+                <div style="font-size:0.85rem; color:#888; margin:5px 0;">Impact sur votre qualification</div>
+                <div style="width:100%; height:6px; background:rgba(0,0,0,0.2); border-radius:3px; overflow:hidden;">
+                    <div style="width:${barWidth}%; height:100%; background:${barColor}; transition: width 0.5s ease;"></div>
+                </div>
+            </div>`;
+            
+            container.innerHTML += html;
         });
-    } catch(e) { list.innerHTML = "Erreur serveur"; }
+
+    } catch (e) {
+        loader.style.display = 'none';
+        container.innerHTML = `<div class="error-msg">Erreur serveur : ${e}</div>`;
+    }
 }
 
 // =============================================================================
