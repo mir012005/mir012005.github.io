@@ -271,7 +271,7 @@ def generer_donnees_journee(journee_depart, n_simulations, generer_scenarios=Tru
     # -------------------------------------------------------------------------
     if generer_scenarios:
         # Nombre de simulations réduit pour les scénarios (sinon trop long)
-        n_scenarios = min(n_simulations, 100_000)
+        n_scenarios = min(n_simulations, 10_000)
         
         print(f"\n[SCÉNARIOS] Génération avec N={n_scenarios:,}...")
         
