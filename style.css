@@ -640,7 +640,14 @@ input:focus, select:focus {
 
 /* --- AMÉLIORATION 1 : FOND ANIMÉ --- */
 body {
-    /* On garde vos couleurs de base mais on ajoute un dégradé géant */
+    /* Mode jour : dégradé clair */
+    background: linear-gradient(-45deg, #F4F7F6, #d0e1f9, #e8f4f8, #b8d4e8);
+    background-size: 400% 400%;
+    animation: gradientBG 60s ease infinite;
+}
+
+body.dark-mode {
+    /* Mode nuit : dégradé foncé */
     background: linear-gradient(-45deg, var(--bg-color), #0a2e52, var(--bg-color), #001a3d);
     background-size: 400% 400%;
     animation: gradientBG 60s ease infinite;
@@ -786,4 +793,45 @@ body.dark-mode .ranking-table tr.active,
 body.dark-mode .ranking-table tr.selected {
     background-color: rgba(0, 210, 190, 0.15) !important; /* Un léger Cyan sombre */
     color: white !important;
+}
+
+/* Style de la page À Propos */
+.about-card {
+    background: var(--bg-card);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.about-card h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Ajustement pour le mode sombre */
+body.dark-mode .about-card {
+    background: #1e1e1e;
+    border-color: #333;
+}
+
+/* --- CORRECTION : TITRE HERO EN MODE JOUR --- */
+.hero h2 {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* En mode nuit, on garde l'effet dégradé cyan */
+body.dark-mode .hero h2 {
+    background: linear-gradient(90deg, #fff 0%, var(--accent-color) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: none;
 }

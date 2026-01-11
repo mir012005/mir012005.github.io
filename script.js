@@ -1,7 +1,170 @@
 // =============================================================================
 // 1. GESTION GLOBALE & NAVIGATION
 // =============================================================================
+// =============================================================================
+// SYSTÈME DE TRADUCTION FR/EN
+// =============================================================================
 
+const TRANSLATIONS = {
+    fr: {
+        // Accueil
+        welcome: "Bienvenue sur le Simulateur LDC",
+        description: "Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.",
+        choose_team: "Choisissez une équipe :",
+        
+        // Navigation
+        nav_home: "Accueil",
+        nav_analyses: "Analyses",
+        nav_duel: "Duel",
+        nav_ranking: "Classement",
+        nav_probas: "Probabilités",
+        nav_labo: "Labo & Hype",
+        nav_about: "A propos",
+        
+        // Duel
+        duel_title: "🔮 Prédicteur de Match",
+        duel_desc: "Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.",
+        home: "Domicile 🏠",
+        away: "Extérieur ✈️",
+        simulate_match: "Simuler le match",
+        
+        // Classement
+        ranking_title: "🏆 Classement Projeté (Moyenne)",
+        ranking_desc: "Simulez le classement sur une période précise.",
+        start_situation: "Situation de départ (Après) :",
+        simulate_until: "Simuler jusqu'à la :",
+        calculate: "🔄 Calculer",
+        
+        // Résultats
+        results_title: "Résultats de la simulation",
+        back_btn: "← Choisir un autre club",
+        avg_points: "Points Moyens prédits :",
+        top8: "Top 8",
+        playoff: "Barrage",
+        eliminated: "Éliminé",
+        direct_qualif: "Qualif Directe",
+        
+        // Labo
+        labo_title: "💥 Laboratoire & Enjeux",
+        labo_desc: "Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.",
+        scenario_tab: "🔮 Scénario (What-If)",
+        hypo_tab: "🎯 Hypo-mètre (Nouveau)",
+        start_day: "Départ :",
+        match_day: "Match en :",
+        hypothesis: "Hypothèse :",
+        simulate: "Simuler",
+        victory: "Victoire",
+        draw: "Nul",
+        defeat: "Défaite",
+        before: "Avant",
+        after: "Après",
+        qualif: "Qualif",
+        
+        // Analyses
+        analyses_title: "Analyses Globales (Monte Carlo)",
+        
+        // Probabilités
+        probas_title: "📊 Probabilités de Qualification",
+        probas_desc: "Estimation des chances de chaque club selon la journée de départ (Simulé 1000 fois).",
+        
+        // Footer
+        theme_night: " Mode Nuit",
+        theme_day: " Mode Jour"
+    },
+    en: {
+        // Home
+        welcome: "Welcome to the UCL Simulator",
+        description: "This project uses Monte Carlo method and Poisson distributions to predict the end of the season.",
+        choose_team: "Choose a team:",
+        
+        // Navigation
+        nav_home: "Home",
+        nav_analyses: "Analysis",
+        nav_duel: "Duel",
+        nav_ranking: "Ranking",
+        nav_probas: "Probabilities",
+        nav_labo: "Lab & Hype",
+        nav_about: "About",
+        
+        // Duel
+        duel_title: "🔮 Match Predictor",
+        duel_desc: "Simulate a specific match using the Elo + Poisson model.",
+        home: "Home 🏠",
+        away: "Away ✈️",
+        simulate_match: "Simulate match",
+        
+        // Ranking
+        ranking_title: "🏆 Projected Ranking (Average)",
+        ranking_desc: "Simulate the ranking over a specific period.",
+        start_situation: "Starting situation (After):",
+        simulate_until: "Simulate until:",
+        calculate: "🔄 Calculate",
+        
+        // Results
+        results_title: "Simulation Results",
+        back_btn: "← Choose another club",
+        avg_points: "Predicted Average Points:",
+        top8: "Top 8",
+        playoff: "Playoff",
+        eliminated: "Eliminated",
+        direct_qualif: "Direct Qualification",
+        
+        // Lab
+        labo_title: "💥 Lab & Stakes",
+        labo_desc: "Simulate scenarios or analyze crucial matches for your team.",
+        scenario_tab: "🔮 Scenario (What-If)",
+        hypo_tab: "🎯 Hypo-meter (New)",
+        start_day: "Start:",
+        match_day: "Match on:",
+        hypothesis: "Hypothesis:",
+        simulate: "Simulate",
+        victory: "Victory",
+        draw: "Draw",
+        defeat: "Defeat",
+        before: "Before",
+        after: "After",
+        qualif: "Qualif",
+        
+        // Analysis
+        analyses_title: "Global Analysis (Monte Carlo)",
+        
+        // Probabilities
+        probas_title: "📊 Qualification Probabilities",
+        probas_desc: "Estimated chances for each club based on the starting matchday (Simulated 1000 times).",
+        
+        // Footer
+        theme_night: " Night Mode",
+        theme_day: " Day Mode"
+    }
+};
+
+let currentLang = localStorage.getItem('lang') || 'fr';
+
+function toggleLanguage() {
+    currentLang = currentLang === 'fr' ? 'en' : 'fr';
+    localStorage.setItem('lang', currentLang);
+    applyLanguage();
+    updateLangButton();
+}
+
+function applyLanguage() {
+    const elements = document.querySelectorAll('[data-i18n]');
+    elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (TRANSLATIONS[currentLang][key]) {
+            el.textContent = TRANSLATIONS[currentLang][key];
+        }
+    });
+}
+
+function updateLangButton() {
+    const btn = document.getElementById('lang-toggle');
+    if (btn) {
+        btn.innerHTML = `<i class="fa-solid fa-globe"></i> ${currentLang === 'fr' ? 'EN' : 'FR'}`;
+    }
+}
+
+// =============================================================================
 // Stockage des instances de graphiques pour pouvoir les détruire avant redessin
 let charts = {};
 
@@ -12,6 +175,10 @@ document.addEventListener('DOMContentLoaded', () => {
     remplirDataListClubs();   // Remplit l'autocomplétion pour la recherche de match
 
     showPage('home');
+    
+    // Appliquer la langue sauvegardée
+    applyLanguage();
+    updateLangButton();
 });
 
 // Navigation entre les pages (Sections)

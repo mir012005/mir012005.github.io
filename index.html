@@ -29,29 +29,30 @@
         </nav>
         -->
         <nav>
-            <button onclick="showPage('home')"><i class="fa-solid fa-house"></i> Accueil</button>
-            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> Analyses</button>
-            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> Duel</button>
-            <button onclick="showPage('ranking'); chargerClassement()"><i class="fa-solid fa-trophy"></i> Classement</button>
-            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> Probabilités</button>
+            <button onclick="showPage('home')"><i class="fa-solid fa-house"></i> <span data-i18n="nav_home">Accueil</span></button>
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_analyses">Analyses</span></button>
+            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav_duel">Duel</span></button>
+            <button onclick="showPage('ranking'); chargerClassement()"><i class="fa-solid fa-trophy"></i> <span data-i18n="nav_ranking">Classement</span></button>
+            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_probas">Probabilités</span></button>    
+            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> <span data-i18n="nav_labo">Labo & Hype</span></button>
+            <button onclick="showPage('about')"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav_about">A propos</span></button>
             
-            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> Labo & Hype</button>
-            
-            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Mode Nuit</button>
+            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">Mode Nuit</span></button>
+            <button id="lang-toggle" class="theme-btn" onclick="toggleLanguage()"><i class="fa-solid fa-globe"></i> EN</button>
         </nav>
     </header>
 
     <main>
         <section id="home" class="page">
             <div class="hero">
-                <h2>Bienvenue sur le Simulateur LDC</h2>
-                <p>Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.</p>
-                
+                <h2 data-i18n="welcome">Bienvenue sur le Simulateur LDC</h2>
+                <p data-i18n="description">Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.</p>
+
                 <input type="hidden" id="club">
             </div>
 
             <div class="clubs-container">
-                <h3>Choisissez une équipe :</h3>
+                <h3 data-i18n="choose_team">Choisissez une équipe :</h3>
                 <div id="clubsGrid" class="clubs-grid">
                     <div class="loader"></div> Chargement...
                 </div>
@@ -59,23 +60,23 @@
         </section>
 
         <section id="duel" class="page" style="display:none;">
-            <h2>🔮 Prédicteur de Match</h2>
-            <p>Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.</p>
+            <h2 data-i18n="duel_title">🔮 Prédicteur de Match</h2>
+            <p data-i18n="duel_desc">Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.</p>
 
             <div class="duel-container">
                 <div class="team-selector">
-                    <label>Domicile 🏠</label>
+                    <label data-i18n="home">Domicile 🏠</label>
                     <select id="selHome"></select>
                 </div>
                 <div class="vs-badge">VS</div>
                 <div class="team-selector">
-                    <label>Extérieur ✈️</label>
+                    <label data-i18n="away">Extérieur ✈️</label>
                     <select id="selAway"></select>
                 </div>
             </div>
 
             <div style="text-align:center; margin-top:20px;">
-                <button class="big-btn" onclick="lancerDuel()">Simuler le match</button>
+                <button class="big-btn" onclick="lancerDuel()" data-i18n="simulate_match">Simuler le match</button>
             </div>
 
             <div id="duelResult" class="duel-result" style="display:none;">
@@ -99,8 +100,8 @@
         </section>
         
         <section id="ranking" class="page" style="display:none;">
-            <h2>🏆 Classement Projeté (Moyenne)</h2>
-            <p>Simulez le classement sur une période précise.</p>
+            <h2 data-i18n="ranking_title">🏆 Classement Projeté (Moyenne)</h2>
+            <p data-i18n="ranking_desc">Simulez le classement sur une période précise.</p>
             
             <div class="controls-bar">
                 <div class="control-group">
@@ -161,9 +162,9 @@
         </section>
 
         <section id="results" class="page" style="display:none;">
-            <h2>Résultats de la simulation</h2>
+            <h2 data-i18n="results_title">Résultats de la simulation</h2>
             
-            <button onclick="showPage('home')" class="back-btn">← Choisir un autre club</button>
+            <button onclick="showPage('home')" class="back-btn" data-i18n="back_btn">← Choisir un autre club</button>
             
             <div class="controls-bar" style="margin: 0 0 20px 0; justify-content: center; background-color: #f0f7ff; border: 1px solid #cce5ff;">
                 <div class="control-group" style="flex-direction: row; align-items: center; gap: 10px;">
@@ -276,8 +277,8 @@
         </section>
     
         <section id="impact-zone" class="page" style="display:none;">
-            <h2>💥 Laboratoire & Enjeux</h2>
-            <p>Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.</p>
+            <h2 data-i18n="labo_title">💥 Laboratoire & Enjeux</h2>
+            <p data-i18n="labo_desc">Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.</p>
 
             <div class="tabs-container" style="margin-bottom: 25px; display:flex; justify-content:center; gap:15px;">
                 <button id="btn-tab-scenario" class="tab-btn active" onclick="switchScenarioTab('scenario')">🔮 Scénario (What-If)</button>
@@ -395,15 +396,43 @@
                 <div id="hypo-resultats" class="matches-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;"></div>
             </div>
         </section>
+
+        <section id="about" class="page" style="display:none;">
+            <div class="about-container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+                <h2 style="text-align:center; margin-bottom: 30px;">Comment fonctionne ce simulateur ?</h2>
+                
+                <div class="about-card">
+                    <h3>🧠 La Méthodologie</h3>
+                    <p>Ce projet se base sur des modèles statistiques éprouvés :</p>
+                    <ul style="line-height: 1.6; margin-top: 10px;">
+                        <li><strong>Le Classement Elo :</strong> Chaque équipe possède un score de force (Elo) qui évolue après chaque match réel. C'est ce score qui détermine la probabilité de victoire.</li>
+                        <li><strong>La Loi de Poisson :</strong> Pour chaque match simulé, nous utilisons cette loi mathématique pour générer des scores réalistes (0-0, 2-1, etc.) basés sur les forces offensives et défensives.</li>
+                        <li><strong>La Méthode de Monte Carlo :</strong> Nous ne simulons pas la saison une seule fois, mais <strong>1000 à 10 000 fois</strong>. C'est la moyenne de ces milliers d'univers parallèles qui donne les probabilités affichées (ex: "PSG a 64% de chances de se qualifier").</li>
+                    </ul>
+                </div>
+
+                <div class="about-card" style="margin-top: 20px;">
+                    <h3>📅 Mise à jour Dynamique</h3>
+                    <p>Le simulateur est connecté à la réalité. Vous pouvez choisir de simuler la fin de saison depuis le début (J0) ou depuis la situation actuelle (ex: après la J6), en prenant en compte les points déjà acquis et la forme du moment.</p>
+                </div>
+
+                <div style="text-align:center; margin-top: 40px; color: var(--text-light);">
+                    <p>Développé par <strong>Idris Rayane MJIDI</strong>, <strong>Ilyas Zeriouel</strong>.</p>
+                    <p style="font-size: 0.9em;">Saison 2025/2026</p>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer>
         <div class="footer-content">
-            <p>Simulateur Ligue des Champions &copy; 2024</p>
+            <p>Simulateur Ligue des Champions &copy; 2025/2026</p>
+            
             <div class="socials">
-                <a href="#"><i class="fa-brands fa-github"></i></a>
-                <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.linkedin.com/in/idris-rayane-mjidi-17m01i2005r/" target="_blank" title="Mon Profil LinkedIn">
+                    <i class="fa-brands fa-linkedin"></i>
+                </a>
             </div>
         </div>
     </footer>
@@ -413,28 +442,30 @@
             const body = document.body;
             const btn = document.getElementById('theme-toggle');
             
-            // Bascule la classe 'dark-mode'
             body.classList.toggle('dark-mode');
             
-            // Vérifie si le mode sombre est actif
             const isDark = body.classList.contains('dark-mode');
+            const lang = localStorage.getItem('lang') || 'fr';
             
-            // Change le texte/icône du bouton
             if (isDark) {
-                btn.innerHTML = "☀️ Mode Jour";
-                localStorage.setItem('theme', 'dark'); // Sauvegarde
+                const text = lang === 'fr' ? 'Mode Jour' : 'Day Mode';
+                btn.innerHTML = '<i class="fa-solid fa-sun"></i> <span data-i18n="theme_day">' + text + '</span>';
+                localStorage.setItem('theme', 'dark');
             } else {
-                btn.innerHTML = "🌙 Mode Nuit";
-                localStorage.setItem('theme', 'light'); // Sauvegarde
+                const text = lang === 'fr' ? 'Mode Nuit' : 'Night Mode';
+                btn.innerHTML = '<i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">' + text + '</span>';
+                localStorage.setItem('theme', 'light');
             }
         }
 
         // Au chargement de la page : vérifier la préférence sauvegardée
         window.onload = function() {
             const savedTheme = localStorage.getItem('theme');
+            const lang = localStorage.getItem('lang') || 'fr';
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
-                document.getElementById('theme-toggle').innerHTML = "☀️ Mode Jour";
+                const text = lang === 'fr' ? 'Mode Jour' : 'Day Mode';
+                document.getElementById('theme-toggle').innerHTML = '<i class="fa-solid fa-sun"></i> <span data-i18n="theme_day">' + text + '</span>';
             }
         };
     </script>
