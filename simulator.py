@@ -10,13 +10,13 @@ from pathlib import Path
 
 # Import du module de données offline
 try:
-    import offline_data
+    import offline_data_v2 as offline_data
     offline_data.charger_toutes_les_donnees()
     OFFLINE_DISPONIBLE = offline_data.donnees_disponibles()
-    print(f"✅ Mode OFFLINE activé" if OFFLINE_DISPONIBLE else "⚠️ Mode LIVE")
+    print(f"✅ Mode OFFLINE V2 activé" if OFFLINE_DISPONIBLE else "⚠️ Mode LIVE")
 except ImportError:
     OFFLINE_DISPONIBLE = False
-    print("⚠️ Mode LIVE")
+    print("⚠️ Mode LIVE (offline_data_v2 non trouvé)")
 
 base_dir = Path(__file__).parent
 elo_rating = base_dir / "Elo_rating_pré_ldc.csv"
@@ -591,13 +591,6 @@ def proba_top_8(club,distribution_probas):
         s += distribution[i]
     return s
 
-def proba_qualification(club,distribution_probas):
-    distribution = distribution_probas[club]
-    s = 0
-    for i in range(25,37):
-        s += distribution[i]
-    return 1-s
-
 # On calcule maintenant la distribution de probas concernant le nombre de points nécessaires pour arriver à une certaine position, notamment 8è (top8) et 24è (qualification).
 def distribution_par_position(N=10000, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
                     "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1, fin=8, demi=False):
@@ -779,24 +772,23 @@ def distribution_position_par_club_match_fixe(N=10000,club_fixed=None,journee=No
 # =========================== Affichage Web ==================================================
 # =============================================================================
 
-def get_web_seuils(nb_simulations=1000, journee_depart=0):
+def get_web_seuils(nb_simulations=1000, journee_depart=0, journee_fin=8):
     """
     Calcule la distribution des points du 8ème et du 24ème.
-    Utilise les données OFFLINE si disponibles.
+    Utilise les données OFFLINE si disponibles pour la combinaison (start, end).
     """
     try:
         j_dep = int(journee_depart)
+        j_fin = int(journee_fin)
     except:
         j_dep = 0
+        j_fin = 8
 
-    # =========================================================================
     # MODE OFFLINE
-    # =========================================================================
-    if OFFLINE_DISPONIBLE:
-        distrib_pos = offline_data.get_distribution_par_position(j_dep)
+    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(j_dep, j_fin):
+        distrib_pos = offline_data.get_distribution_par_position(j_dep, j_fin)
         
         if distrib_pos:
-            # Conversion des clés string en int
             stats_8 = {int(k): v for k, v in distrib_pos.get("8", distrib_pos.get(8, {})).items()}
             stats_24 = {int(k): v for k, v in distrib_pos.get("24", distrib_pos.get(24, {})).items()}
             
@@ -805,24 +797,23 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0):
             
             return {
                 "journee_utilisee": j_dep,
+                "journee_fin": j_fin,
                 "mode": "OFFLINE",
                 "seuil_top8": clean_dict(stats_8),
                 "seuil_barrage": clean_dict(stats_24)
             }
 
-    # =========================================================================
     # MODE LIVE
-    # =========================================================================
     update_simulation_context(j_dep)
     
     map_historique = {
         0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
         4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
     }
-    etat = map_historique.get(journee_depart, etat_zero)
-    debut_simu = journee_depart + 1
+    etat = map_historique.get(j_dep, etat_zero)
+    debut_simu = j_dep + 1
     
-    distrib_pos = distribution_par_position(N=nb_simulations, données=etat, debut=debut_simu, fin=8)
+    distrib_pos = distribution_par_position(N=nb_simulations, données=etat, debut=debut_simu, fin=j_fin)
     
     stats_8 = distrib_pos.get(8, {})
     stats_24 = distrib_pos.get(24, {})
@@ -831,7 +822,8 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0):
         return {k: v for k, v in d.items() if v > 0.005}
 
     return {
-        "journee_utilisee": journee_depart,
+        "journee_utilisee": j_dep,
+        "journee_fin": j_fin,
         "mode": "LIVE",
         "seuil_top8": clean_dict(stats_8),
         "seuil_barrage": clean_dict(stats_24)
@@ -841,72 +833,68 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0):
 # FONCTION 1 : get_web_simulation (remplace lignes ~1123-1191)
 # -----------------------------------------------------------------------------
 
-def get_web_simulation(club_cible, nb_simulations=1000, journee_depart=0):
+def get_web_simulation(club_cible, nb_simulations=1000, journee_depart=0, journee_fin=8):
     """
     Fonction optimisée pour le web.
-    Utilise les données OFFLINE si disponibles, sinon fait une simulation LIVE.
+    Utilise les données OFFLINE si disponibles pour la combinaison (start, end).
     """
     if club_cible not in clubs_en_ldc:
         return {"error": f"Le club '{club_cible}' n'est pas dans la liste."}
 
     try:
         j_dep = int(journee_depart)
+        j_fin = int(journee_fin)
     except:
         j_dep = 0
+        j_fin = 8
 
-    # =========================================================================
-    # MODE OFFLINE (Données pré-calculées)
-    # =========================================================================
-    if OFFLINE_DISPONIBLE:
-        distrib_rank = offline_data.get_distribution_positions(j_dep)
-        distrib_points = offline_data.get_distribution_points(j_dep)
+    # MODE OFFLINE
+    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(j_dep, j_fin):
+        distrib_points = offline_data.get_distribution_points(j_dep, j_fin)
+        distrib_positions = offline_data.get_distribution_positions(j_dep, j_fin)
         
-        if distrib_rank and distrib_points:
-            # Extraction des stats pour le club
-            stats_rank = distrib_rank.get(club_cible, {})
+        if distrib_points and distrib_positions:
             stats_points = distrib_points.get(club_cible, {})
-            
-            # Conversion des clés string en int si nécessaire
-            stats_rank = {int(k): v for k, v in stats_rank.items()}
             stats_points = {int(k): v for k, v in stats_points.items()}
             
-            # Calculs
+            stats_rank = distrib_positions.get(club_cible, {})
+            stats_rank = {int(k): v for k, v in stats_rank.items()}
+            
             p_top8 = sum(stats_rank.get(r, 0) for r in range(1, 9))
             p_qualif = sum(stats_rank.get(r, 0) for r in range(1, 25))
             p_barrage = p_qualif - p_top8
             p_elimine = 1 - p_qualif
+            
             pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
             
-            # Nettoyage pour alléger le JSON
             clean_points = {k: v for k, v in stats_points.items() if v > 0.001}
             clean_ranks = {k: v for k, v in stats_rank.items() if v > 0.001}
             
             return {
                 "club": club_cible,
                 "day_used": j_dep,
+                "day_end": j_fin,
                 "mode": "OFFLINE",
                 "points_moyens": round(pts_moyen, 2),
                 "proba_top_8": round(min(p_top8, 1.0) * 100, 1),
-                "proba_barrage": round(max(min(p_barrage, 1.0), 0) * 100, 1),
-                "proba_elimine": round(max(min(p_elimine, 1.0), 0) * 100, 1),
+                "proba_barrage": round(min(p_barrage, 1.0) * 100, 1),
+                "proba_elimine": round(max(p_elimine, 0.0) * 100, 1),
                 "distribution_points": clean_points,
                 "distribution_rangs": clean_ranks
             }
 
-    # =========================================================================
-    # MODE LIVE (Fallback - Simulation en temps réel)
-    # =========================================================================
+    # MODE LIVE
     update_simulation_context(j_dep)
     
-    historique_donnees = {
+    map_historique = {
         0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
         4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
     }
-    etat_actuel = historique_donnees.get(j_dep, etat_zero)
+    etat_actuel = map_historique.get(j_dep, etat_zero)
     debut_simulation = j_dep + 1
     
-    distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=8)
-    distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=8)
+    distrib_points = distribution_points_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=j_fin)
+    distrib_rank = distribution_position_par_club(N=nb_simulations, données=etat_actuel, debut=debut_simulation, fin=j_fin)
     
     stats_points = distrib_points[club_cible]
     stats_rank = distrib_rank[club_cible]
@@ -915,6 +903,7 @@ def get_web_simulation(club_cible, nb_simulations=1000, journee_depart=0):
     p_qualif = proba_qualification(club_cible, distrib_rank)
     p_barrage = p_qualif - p_top8
     p_elimine = 1 - p_qualif
+    
     pts_moyen = sum(pt * prob for pt, prob in stats_points.items())
     
     clean_points = {k: v for k, v in stats_points.items() if v > 0.001}
@@ -923,14 +912,16 @@ def get_web_simulation(club_cible, nb_simulations=1000, journee_depart=0):
     return {
         "club": club_cible,
         "day_used": j_dep,
+        "day_end": j_fin,
         "mode": "LIVE",
         "points_moyens": round(pts_moyen, 2),
         "proba_top_8": round(min(p_top8, 1.0) * 100, 1),
-        "proba_barrage": round(max(min(p_barrage, 1.0), 0) * 100, 1),
-        "proba_elimine": round(max(min(p_elimine, 1.0), 0) * 100, 1),
+        "proba_barrage": round(min(max(p_barrage, 0), 1.0) * 100, 1),
+        "proba_elimine": round(min(max(p_elimine, 0), 1.0) * 100, 1),
         "distribution_points": clean_points,
         "distribution_rangs": clean_ranks
     }
+
 
 def get_match_prediction(home_team, away_team):
     """
@@ -1049,18 +1040,18 @@ if 'données_J8' not in globals(): données_J8 = etat_zero
 def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
     """
     Génère le classement projeté avec moyennes.
-    Utilise les données OFFLINE si disponibles ET si end_day=8.
+    Utilise les données OFFLINE si disponibles pour la combinaison (start, end).
     """
     try:
         sd = int(start_day)
+        ed = int(end_day)
     except:
         sd = 0
+        ed = 8
 
-    # =========================================================================
-    # MODE OFFLINE (seulement si on simule jusqu'à J8)
-    # =========================================================================
-    if OFFLINE_DISPONIBLE and int(end_day) == 8:
-        moyennes = offline_data.get_moyennes(sd)
+    # MODE OFFLINE - pour N'IMPORTE QUELLE combinaison disponible
+    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(sd, ed):
+        moyennes = offline_data.get_moyennes(sd, ed)
         
         if moyennes:
             ranking_data = []
@@ -1076,7 +1067,6 @@ def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
                     "victoires_ext": round(stats.get("victoires_ext", 0), 1),
                 })
             
-            # Tri UEFA
             ranking_data.sort(key=lambda x: (
                 x['points'], x['diff'], x['buts'], 
                 x['buts_ext'], x['victoires'], x['victoires_ext']
@@ -1088,12 +1078,10 @@ def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
             
             return ranking_data
 
-    # =========================================================================
     # MODE LIVE
-    # =========================================================================
     update_simulation_context(sd)
     
-    if start_day == 0:
+    if sd == 0:
         etat_initial = {
             "classement": None, "points": None, "diff_buts": None, 
             "buts": None, "buts_ext": None, "nb_victoires": None, "nb_victoires_ext": None
@@ -1103,7 +1091,7 @@ def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
             1: données_J1, 2: données_J2, 3: données_J3, 4: données_J4,
             5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
         }
-        etat_initial = map_historique.get(start_day, {
+        etat_initial = map_historique.get(sd, {
             "classement": None, "points": None, "diff_buts": None, 
             "buts": None, "buts_ext": None, "nb_victoires": None, "nb_victoires_ext": None
         })
@@ -1114,7 +1102,7 @@ def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
     }
 
     for _ in range(n_simulations):
-        resultats_simu = simulation_ligue(données=etat_initial, debut=start_day + 1, fin=end_day)
+        resultats_simu = simulation_ligue(données=etat_initial, debut=sd + 1, fin=ed)
         for club in clubs_en_ldc:
             total_stats[club]["points"] += resultats_simu["points"][club]
             total_stats[club]["diff_buts"] += resultats_simu["diff_buts"][club]
@@ -1145,33 +1133,33 @@ def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
 
     return ranking_data
 
-def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
+
+def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0, journee_fin=8):
     """
     Génère les tableaux de probabilités Top 8 et Top 24.
     Utilise les données OFFLINE si disponibles.
     """
     try:
         jd = int(journee_depart)
+        jf = int(journee_fin)
     except:
         jd = 0
+        jf = 8
 
-    # =========================================================================
     # MODE OFFLINE
-    # =========================================================================
-    if OFFLINE_DISPONIBLE:
-        distrib_clubs = offline_data.get_distribution_positions(jd)
+    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(jd, jf):
+        distrib_positions = offline_data.get_distribution_positions(jd, jf)
         
-        if distrib_clubs:
+        if distrib_positions:
             liste_qualif = []
             liste_top8 = []
             
             for club in clubs_en_ldc:
-                distrib = distrib_clubs.get(club, {})
-                # Conversion clés string -> int
-                distrib = {int(k): v for k, v in distrib.items()}
+                stats = distrib_positions.get(club, {})
+                stats = {int(k): v for k, v in stats.items()}
                 
-                p_qualif = sum(distrib.get(r, 0) for r in range(1, 25))
-                p_top8 = sum(distrib.get(r, 0) for r in range(1, 9))
+                p_top8 = sum(stats.get(r, 0) for r in range(1, 9))
+                p_qualif = sum(stats.get(r, 0) for r in range(1, 25))
                 
                 if p_qualif > 0.001:
                     liste_qualif.append({"club": club, "proba": round(min(p_qualif, 1.0) * 100, 1)})
@@ -1183,17 +1171,16 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
             
             return {
                 "day_used": jd,
+                "day_end": jf,
                 "mode": "OFFLINE",
                 "ranking_qualif": liste_qualif,
                 "ranking_top8": liste_top8
             }
 
-    # =========================================================================
     # MODE LIVE
-    # =========================================================================
     update_simulation_context(jd)
     
-    if journee_depart == 0:
+    if jd == 0:
         etat_initial = {
             "classement": None, "points": None, "diff_buts": None, 
             "buts": None, "buts_ext": None, "nb_victoires": None, "nb_victoires_ext": None
@@ -1203,13 +1190,13 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
             1: données_J1, 2: données_J2, 3: données_J3, 4: données_J4,
             5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
         }
-        etat_initial = map_historique.get(journee_depart, {
+        etat_initial = map_historique.get(jd, {
             "classement": None, "points": None, "diff_buts": None, 
             "buts": None, "buts_ext": None, "nb_victoires": None, "nb_victoires_ext": None
         })
 
-    debut_simu = journee_depart + 1
-    distrib_clubs = distribution_position_par_club(N=nb_simulations, données=etat_initial, debut=debut_simu, fin=8)
+    debut_simu = jd + 1
+    distrib_clubs = distribution_position_par_club(N=nb_simulations, données=etat_initial, debut=debut_simu, fin=jf)
     
     liste_qualif = []
     liste_top8 = []
@@ -1227,11 +1214,14 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0):
     liste_top8.sort(key=lambda x: x["proba"], reverse=True)
     
     return {
-        "day_used": journee_depart,
+        "day_used": jd,
+        "day_end": jf,
         "mode": "LIVE",
         "ranking_qualif": liste_qualif,
         "ranking_top8": liste_top8
     }
+
+
 
 # =============================================================================
 # 1. FONCTIONS UTILITAIRES (Indispensables pour les calculs)
@@ -1251,6 +1241,7 @@ def proba_qualification(club, distribution_rangs):
 # =============================================================================
 # 2. WRAPPERS WEB : SCÉNARIO & HYPO-MÈTRE
 # =============================================================================
+
 def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depart=6, n_simulations=500):
     """
     Simule la différence avant/après un résultat fixé.
@@ -1263,14 +1254,12 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
         jd = 6
         jc = 7
 
-    # =========================================================================
-    # MODE OFFLINE
-    # =========================================================================
-    if OFFLINE_DISPONIBLE:
+    # MODE OFFLINE (scénarios uniquement pour end=8)
+    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(jd, 8):
         # Distribution AVANT (simulation libre)
-        distrib_avant = offline_data.get_distribution_positions(jd)
+        distrib_avant = offline_data.get_distribution_positions(jd, 8)
         # Distribution APRÈS (scénario fixé)
-        distrib_apres = offline_data.get_scenario_distribution(jd, jc, club_cible, resultat_fixe)
+        distrib_apres = offline_data.get_scenario_distribution(jd, 8, jc, club_cible, resultat_fixe)
         
         if distrib_avant and distrib_apres:
             # Stats AVANT
@@ -1304,9 +1293,7 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
                 }
             }
 
-    # =========================================================================
     # MODE LIVE
-    # =========================================================================
     update_simulation_context(jd)
     
     map_historique = {
@@ -1376,18 +1363,15 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
 
     resultats_impact = []
     
-    # =========================================================================
-    # MODE OFFLINE
-    # =========================================================================
-    if OFFLINE_DISPONIBLE:
+    # MODE OFFLINE (scénarios uniquement pour end=8)
+    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(jd, 8):
         for (dom, ext) in matchs_a_tester:
             # MONDE A : Domicile gagne
-            distrib_dom_V = offline_data.get_scenario_distribution(jd, journee_suivante, dom, 'V')
-            # MONDE B : Extérieur gagne (= Domicile perd)
-            distrib_dom_D = offline_data.get_scenario_distribution(jd, journee_suivante, dom, 'D')
+            distrib_dom_V = offline_data.get_scenario_distribution(jd, 8, journee_suivante, dom, 'V')
+            # MONDE B : Extérieur gagne
+            distrib_dom_D = offline_data.get_scenario_distribution(jd, 8, journee_suivante, dom, 'D')
             
             if distrib_dom_V and distrib_dom_D:
-                # Proba qualif dans chaque monde pour NOTRE club
                 stats_A = distrib_dom_V.get(club_cible, {})
                 stats_A = {int(k): v for k, v in stats_A.items()}
                 p_qualif_A = sum(stats_A.get(r, 0) for r in range(1, 25))
@@ -1411,9 +1395,7 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
             resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score']), reverse=True)
             return {"club": club_cible, "journee": journee_suivante, "mode": "OFFLINE", "liste": resultats_impact}
 
-    # =========================================================================
     # MODE LIVE
-    # =========================================================================
     update_simulation_context(jd)
     
     map_historique = {
@@ -1450,22 +1432,23 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
     return {"club": club_cible, "journee": journee_suivante, "mode": "LIVE", "liste": resultats_impact}
 
 
+
 def get_web_evolution(club, journee_max=8, n_simulations=300):
     """
-    Calcule l'historique des chances pour le graphique d'évolution.
+    Retourne l'évolution des probabilités d'un club de J0 à journee_max.
     Utilise les données OFFLINE si disponibles.
     """
+    if club not in clubs_en_ldc:
+        return []
+    
     historique = []
     
-    for j in range(int(journee_max) + 1):
-        # =====================================================================
+    for j in range(journee_max + 1):
         # MODE OFFLINE
-        # =====================================================================
-        if OFFLINE_DISPONIBLE:
-            distrib = offline_data.get_distribution_positions(j)
-            
-            if distrib and club in distrib:
-                stats = distrib[club]
+        if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(j, 8):
+            distrib = offline_data.get_distribution_positions(j, 8)
+            if distrib:
+                stats = distrib.get(club, {})
                 stats = {int(k): v for k, v in stats.items()}
                 p_top8 = sum(stats.get(r, 0) for r in range(1, 9))
                 p_qualif = sum(stats.get(r, 0) for r in range(1, 25))
@@ -1476,10 +1459,8 @@ def get_web_evolution(club, journee_max=8, n_simulations=300):
                     "qualif": round(min(p_qualif, 1.0) * 100, 1)
                 })
                 continue
-
-        # =====================================================================
-        # MODE LIVE (fallback)
-        # =====================================================================
+        
+        # MODE LIVE
         update_simulation_context(j)
         
         map_historique = {

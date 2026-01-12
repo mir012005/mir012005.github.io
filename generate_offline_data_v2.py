@@ -1,32 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-GÉNÉRATEUR DE DONNÉES OFFLINE POUR LE SIMULATEUR LDC
-=====================================================
-Ce script génère toutes les données pré-calculées nécessaires au fonctionnement
-du site web, avec 1 million de simulations Monte Carlo pour une précision maximale.
+GÉNÉRATEUR DE DONNÉES OFFLINE V2 - TOUTES COMBINAISONS
+=======================================================
+Ce script génère les données pré-calculées pour TOUTES les combinaisons
+de journées (start → end), permettant un mode offline complet.
 
 Usage:
-    python generate_offline_data.py [--journee J] [--simulations N]
-
-Options:
-    --journee J      : Générer uniquement pour la journée J (0-7). Sans cette option, génère tout.
-    --simulations N  : Nombre de simulations (défaut: 1000000)
+    python generate_offline_data_v2.py [--simulations N] [--start X] [--end Y]
 
 Fichiers générés:
-    data/J0.json, data/J1.json, ..., data/J7.json
+    data/J0_to_J1.json, data/J0_to_J2.json, ..., data/J7_to_J8.json
+    Total: 36 fichiers pour toutes les combinaisons possibles
 """
 
 import json
 import os
 import sys
 import time
-import math
-import copy
 import argparse
 from datetime import datetime
 
-# Import du simulateur existant (on réutilise les fonctions de base)
+# Import du simulateur existant
 from simulator import (
     clubs_en_ldc, 
     calendrier,
@@ -61,20 +56,18 @@ HISTORIQUE = {
 }
 
 # =============================================================================
-# FONCTIONS DE SIMULATION (Versions optimisées pour génération massive)
+# FONCTIONS DE SIMULATION
 # =============================================================================
 
-def simuler_distribution_positions(N, données, debut, fin=8):
+def simuler_distribution_positions(N, données, debut, fin):
     """
     Simule N fois et retourne la distribution des positions pour chaque club.
-    Retourne: {club: {position: proba}}
     """
-    # Initialisation
     d = {club: {pos: 0 for pos in range(1, 37)} for club in clubs_en_ldc}
     
     for i in range(N):
         if i % 100000 == 0 and i > 0:
-            print(f"    ... {i:,} / {N:,} simulations ({100*i/N:.1f}%)")
+            print(f"    ... {i:,} / {N:,} ({100*i/N:.0f}%)")
         
         resultat = simulation_ligue(données, debut, fin)
         classement = resultat["classement"]
@@ -90,17 +83,15 @@ def simuler_distribution_positions(N, données, debut, fin=8):
     return d
 
 
-def simuler_distribution_points(N, données, debut, fin=8):
+def simuler_distribution_points(N, données, debut, fin):
     """
     Simule N fois et retourne la distribution des points pour chaque club.
-    Retourne: {club: {points: proba}}
     """
-    # Points max possibles = 3 * 8 journées = 24
     d = {club: {pts: 0 for pts in range(25)} for club in clubs_en_ldc}
     
     for i in range(N):
         if i % 100000 == 0 and i > 0:
-            print(f"    ... {i:,} / {N:,} simulations ({100*i/N:.1f}%)")
+            print(f"    ... {i:,} / {N:,} ({100*i/N:.0f}%)")
         
         resultat = simulation_ligue(données, debut, fin)
         points = resultat["points"]
@@ -118,17 +109,15 @@ def simuler_distribution_points(N, données, debut, fin=8):
     return d
 
 
-def simuler_distribution_par_position(N, données, debut, fin=8):
+def simuler_distribution_par_position(N, données, debut, fin):
     """
     Simule N fois et retourne la distribution des points pour chaque POSITION.
-    Utilisé pour les seuils (points du 8ème, points du 24ème).
-    Retourne: {position: {points: proba}}
     """
     d = {pos: {pts: 0 for pts in range(25)} for pos in range(1, 37)}
     
     for i in range(N):
         if i % 100000 == 0 and i > 0:
-            print(f"    ... {i:,} / {N:,} simulations ({100*i/N:.1f}%)")
+            print(f"    ... {i:,} / {N:,} ({100*i/N:.0f}%)")
         
         resultat = simulation_ligue(données, debut, fin)
         classement = resultat["classement"]
@@ -147,10 +136,9 @@ def simuler_distribution_par_position(N, données, debut, fin=8):
     return d
 
 
-def simuler_moyennes(N, données, debut, fin=8):
+def simuler_moyennes(N, données, debut, fin):
     """
     Simule N fois et retourne les statistiques moyennes pour chaque club.
-    Retourne: {club: {points, diff, buts, buts_ext, victoires, victoires_ext}}
     """
     totaux = {
         club: {
@@ -162,7 +150,7 @@ def simuler_moyennes(N, données, debut, fin=8):
     
     for i in range(N):
         if i % 100000 == 0 and i > 0:
-            print(f"    ... {i:,} / {N:,} simulations ({100*i/N:.1f}%)")
+            print(f"    ... {i:,} / {N:,} ({100*i/N:.0f}%)")
         
         resultat = simulation_ligue(données, debut, fin)
         
@@ -189,10 +177,9 @@ def simuler_moyennes(N, données, debut, fin=8):
     return moyennes
 
 
-def simuler_scenario(N, club_fixed, journee_cible, resultat, données, debut):
+def simuler_scenario(N, club_fixed, journee_cible, resultat, données, debut, fin):
     """
     Simule N fois avec un résultat forcé pour un club à une journée donnée.
-    Retourne: {club: {position: proba}}
     """
     d = {club: {pos: 0 for pos in range(1, 37)} for club in clubs_en_ldc}
     
@@ -220,12 +207,12 @@ def simuler_scenario(N, club_fixed, journee_cible, resultat, données, debut):
 # GÉNÉRATION PRINCIPALE
 # =============================================================================
 
-def generer_donnees_journee(journee_depart, n_simulations, generer_scenarios=True):
+def generer_donnees_combinaison(journee_depart, journee_fin, n_simulations, generer_scenarios=True):
     """
-    Génère toutes les données pour une journée de départ donnée.
+    Génère toutes les données pour une combinaison (start → end).
     """
     print(f"\n{'='*60}")
-    print(f"GÉNÉRATION JOURNÉE {journee_depart}")
+    print(f"GÉNÉRATION J{journee_depart} → J{journee_fin} (N={n_simulations:,})")
     print(f"{'='*60}")
     
     # Mise à jour du contexte Elo
@@ -237,6 +224,7 @@ def generer_donnees_journee(journee_depart, n_simulations, generer_scenarios=Tru
     
     data = {
         "journee_depart": journee_depart,
+        "journee_fin": journee_fin,
         "n_simulations": n_simulations,
         "generated_at": datetime.now().isoformat(),
         "base": {},
@@ -244,39 +232,38 @@ def generer_donnees_journee(journee_depart, n_simulations, generer_scenarios=Tru
     }
     
     # -------------------------------------------------------------------------
-    # 1. DISTRIBUTIONS DE BASE (simulation libre jusqu'à J8)
+    # 1. DISTRIBUTIONS DE BASE
     # -------------------------------------------------------------------------
-    print(f"\n[1/4] Distribution des positions (N={n_simulations:,})...")
+    print(f"\n[1/4] Distribution des positions...")
     t0 = time.time()
-    data["base"]["positions"] = simuler_distribution_positions(n_simulations, etat, debut_simu)
+    data["base"]["positions"] = simuler_distribution_positions(n_simulations, etat, debut_simu, journee_fin)
     print(f"      Terminé en {time.time()-t0:.1f}s")
     
-    print(f"\n[2/4] Distribution des points (N={n_simulations:,})...")
+    print(f"\n[2/4] Distribution des points...")
     t0 = time.time()
-    data["base"]["points"] = simuler_distribution_points(n_simulations, etat, debut_simu)
+    data["base"]["points"] = simuler_distribution_points(n_simulations, etat, debut_simu, journee_fin)
     print(f"      Terminé en {time.time()-t0:.1f}s")
     
-    print(f"\n[3/4] Distribution par position / seuils (N={n_simulations:,})...")
+    print(f"\n[3/4] Distribution par position / seuils...")
     t0 = time.time()
-    data["base"]["par_position"] = simuler_distribution_par_position(n_simulations, etat, debut_simu)
+    data["base"]["par_position"] = simuler_distribution_par_position(n_simulations, etat, debut_simu, journee_fin)
     print(f"      Terminé en {time.time()-t0:.1f}s")
     
-    print(f"\n[4/4] Moyennes statistiques (N={n_simulations:,})...")
+    print(f"\n[4/4] Moyennes statistiques...")
     t0 = time.time()
-    data["base"]["moyennes"] = simuler_moyennes(n_simulations, etat, debut_simu)
+    data["base"]["moyennes"] = simuler_moyennes(n_simulations, etat, debut_simu, journee_fin)
     print(f"      Terminé en {time.time()-t0:.1f}s")
     
     # -------------------------------------------------------------------------
-    # 2. SCÉNARIOS (matchs fixés)
+    # 2. SCÉNARIOS (matchs fixés) - seulement si journee_fin = 8
     # -------------------------------------------------------------------------
-    if generer_scenarios:
-        # Nombre de simulations réduit pour les scénarios (sinon trop long)
-        n_scenarios = min(n_simulations, 10_000)
+    if generer_scenarios and journee_fin == 8:
+        n_scenarios = min(n_simulations, 100_000)
         
         print(f"\n[SCÉNARIOS] Génération avec N={n_scenarios:,}...")
         
-        # Pour chaque journée cible possible (de debut_simu à 8)
-        for journee_cible in range(debut_simu, 9):
+        # Pour chaque journée cible possible (de debut_simu à journee_fin)
+        for journee_cible in range(debut_simu, journee_fin + 1):
             print(f"\n  Journée cible {journee_cible}:")
             data["scenarios"][str(journee_cible)] = {}
             
@@ -290,7 +277,7 @@ def generer_donnees_journee(journee_depart, n_simulations, generer_scenarios=Tru
                 # Pour chaque résultat possible
                 for resultat in ['V', 'N', 'D']:
                     distrib = simuler_scenario(
-                        n_scenarios, club, journee_cible, resultat, etat, debut_simu
+                        n_scenarios, club, journee_cible, resultat, etat, debut_simu, journee_fin
                     )
                     data["scenarios"][str(journee_cible)][club][resultat] = distrib
                 
@@ -302,7 +289,6 @@ def generer_donnees_journee(journee_depart, n_simulations, generer_scenarios=Tru
 def compresser_donnees(data):
     """
     Nettoie les données pour réduire la taille du JSON.
-    Supprime les probabilités nulles ou quasi-nulles.
     """
     seuil = 0.00001  # 0.001%
     
@@ -314,12 +300,12 @@ def compresser_donnees(data):
     return clean_dict(data)
 
 
-def sauvegarder_json(data, journee):
+def sauvegarder_json(data, journee_depart, journee_fin):
     """
     Sauvegarde les données dans un fichier JSON.
     """
     os.makedirs(DATA_DIR, exist_ok=True)
-    filepath = os.path.join(DATA_DIR, f"J{journee}.json")
+    filepath = os.path.join(DATA_DIR, f"J{journee_depart}_to_J{journee_fin}.json")
     
     # Compression des données
     data_clean = compresser_donnees(data)
@@ -339,10 +325,11 @@ def sauvegarder_json(data, journee):
 # =============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="Génère les données offline pour le simulateur LDC")
-    parser.add_argument('--journee', type=int, help="Journée spécifique (0-7)")
-    parser.add_argument('--max-journee', type=int, default=6, help="Dernière journée avec données réelles (défaut: 6)")
+    parser = argparse.ArgumentParser(description="Génère les données offline V2 (toutes combinaisons)")
     parser.add_argument('--simulations', type=int, default=DEFAULT_SIMULATIONS, help="Nombre de simulations")
+    parser.add_argument('--max-journee', type=int, default=6, help="Dernière journée avec données réelles (défaut: 6)")
+    parser.add_argument('--start', type=int, help="Générer uniquement à partir de cette journée")
+    parser.add_argument('--end', type=int, help="Générer uniquement jusqu'à cette journée")
     parser.add_argument('--no-scenarios', action='store_true', help="Ne pas générer les scénarios")
     args = parser.parse_args()
     
@@ -351,38 +338,53 @@ def main():
     max_j = args.max_journee
     
     print("=" * 60)
-    print("GÉNÉRATEUR DE DONNÉES OFFLINE - SIMULATEUR LDC")
+    print("GÉNÉRATEUR DE DONNÉES OFFLINE V2 - TOUTES COMBINAISONS")
     print("=" * 60)
-    print(f"Simulations de base: {n_sims:,}")
-    print(f"Scénarios: {'Oui (100k par config)' if generer_scenarios else 'Non'}")
+    print(f"Simulations: {n_sims:,}")
+    print(f"Scénarios: {'Oui (pour end=8 uniquement)' if generer_scenarios else 'Non'}")
     print(f"Journées avec données réelles: J0 à J{max_j}")
     print(f"Dossier de sortie: {DATA_DIR}/")
     
+    # Construire la liste des combinaisons à générer
+    combinaisons = []
+    
+    if args.start is not None and args.end is not None:
+        # Une seule combinaison spécifique
+        combinaisons = [(args.start, args.end)]
+    else:
+        # Toutes les combinaisons possibles
+        for start in range(max_j + 1):  # 0 à max_j
+            for end in range(start + 1, 9):  # start+1 à 8
+                combinaisons.append((start, end))
+    
+    print(f"\n📋 Combinaisons à générer: {len(combinaisons)}")
+    for start, end in combinaisons[:5]:
+        print(f"   J{start} → J{end}")
+    if len(combinaisons) > 5:
+        print(f"   ... et {len(combinaisons) - 5} autres")
+    
+    # Estimation du temps
+    n_avec_scenarios = sum(1 for _, end in combinaisons if end == 8)
+    n_sans_scenarios = len(combinaisons) - n_avec_scenarios
+    temps_estime = (n_avec_scenarios * 6 + n_sans_scenarios * 1.5)  # minutes approximatives
+    print(f"\n⏱️  Temps estimé: ~{temps_estime:.0f} minutes ({temps_estime/60:.1f}h)")
+    
+    input("\nAppuyez sur Entrée pour commencer...")
+    
     total_start = time.time()
     
-    if args.journee is not None:
-        # Génération d'une seule journée
-        if args.journee > max_j:
-            print(f"\n⚠️ ATTENTION: J{args.journee} n'a pas de données réelles (max = J{max_j})")
-            print("   Les simulations utiliseront des données vides, ce qui est probablement faux.")
-            confirm = input("   Continuer quand même ? (o/N) : ")
-            if confirm.lower() != 'o':
-                print("Annulé.")
-                return
-        journees = [args.journee]
-    else:
-        # Génération de J0 jusqu'à max_journee (inclus)
-        journees = list(range(max_j + 1))
-        print(f"\n📋 Journées à générer: {journees}")
-    
-    for j in journees:
-        data = generer_donnees_journee(j, n_sims, generer_scenarios)
-        sauvegarder_json(data, j)
+    for idx, (start, end) in enumerate(combinaisons):
+        print(f"\n[{idx+1}/{len(combinaisons)}] Génération J{start} → J{end}...")
+        
+        data = generer_donnees_combinaison(start, end, n_sims, generer_scenarios)
+        sauvegarder_json(data, start, end)
     
     total_time = time.time() - total_start
     print(f"\n{'='*60}")
-    print(f"TERMINÉ en {total_time/60:.1f} minutes")
+    print(f"✅ TERMINÉ en {total_time/60:.1f} minutes ({total_time/3600:.2f}h)")
+    print(f"   {len(combinaisons)} fichiers générés dans {DATA_DIR}/")
     print(f"{'='*60}")
+
 
 if __name__ == "__main__":
     main()
