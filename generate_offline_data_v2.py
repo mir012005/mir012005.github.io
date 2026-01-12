@@ -331,6 +331,7 @@ def main():
     parser.add_argument('--start', type=int, help="Générer uniquement à partir de cette journée")
     parser.add_argument('--end', type=int, help="Générer uniquement jusqu'à cette journée")
     parser.add_argument('--no-scenarios', action='store_true', help="Ne pas générer les scénarios")
+    parser.add_argument('--skip-to-j8', action='store_true', help="Ne pas générer les combinaisons →J8 (déjà faites)")
     args = parser.parse_args()
     
     n_sims = args.simulations
@@ -343,6 +344,7 @@ def main():
     print(f"Simulations: {n_sims:,}")
     print(f"Scénarios: {'Oui (pour end=8 uniquement)' if generer_scenarios else 'Non'}")
     print(f"Journées avec données réelles: J0 à J{max_j}")
+    print(f"Skip →J8: {'Oui' if args.skip_to_j8 else 'Non'}")
     print(f"Dossier de sortie: {DATA_DIR}/")
     
     # Construire la liste des combinaisons à générer
@@ -355,6 +357,9 @@ def main():
         # Toutes les combinaisons possibles
         for start in range(max_j + 1):  # 0 à max_j
             for end in range(start + 1, 9):  # start+1 à 8
+                # Skip les combinaisons →J8 si demandé
+                if args.skip_to_j8 and end == 8:
+                    continue
                 combinaisons.append((start, end))
     
     print(f"\n📋 Combinaisons à générer: {len(combinaisons)}")
