@@ -209,13 +209,6 @@ def update_simulation_context(journee_depart):
     else:
         print("⚠️ Pas de mise à jour ELO (conservation des valeurs précédentes)")
 
-"""
-def win_expectation(club1,club2):
-    e1 = elo_of(club1) ; e2 = elo_of(club2)
-    assert(type(e1) != str and type(e2) != str)
-    return 1/(1+10**((e2-e1-100)/400))
-"""
-
 def coeff_poisson(club1,club2,s):
     # retourne le coeff de la loi de poisson donnant le nb de buts marqués par club1 si s='H' - ou club2 si s='A' - 
     # club1 jouant à domicile
@@ -553,36 +546,6 @@ def simulation_ligue(données={"classement" : None, "points" : None, "diff_buts"
     d = dico_de_données(nclassement, points , diff_buts , buts , buts_exterieur , nb_victoires , nb_victoires_ext)
     return d | {"résultats" : resultats}
 
-def générer_classement(données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None, "buts_ext" : None,
-                              "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1, fin=8):
-    # retourne le classement sous forme de DataFrame
-    
-    ndonnées = simulation_ligue(données=données,debut=debut,fin=fin)
-    
-    if données["classement"] is None:
-        classement = clubs_en_ldc
-    else:
-        classement = données["classement"]
-
-    df = pd.DataFrame({
-    "Team": classement,
-    "Points": ndonnées["points"].values(),
-    "Goal average": ndonnées["diff_buts"].values(),
-    "Goals": ndonnées["buts"].values(),
-    "Away goals": ndonnées["buts_ext"].values(),
-    "Wins" : ndonnées["nb_victoires"].values(),
-    "Away wins" : ndonnées["nb_victoires_ext"].values()
-    })
-
-    df_classement = df.sort_values(
-    by=["Points", "Goal average", "Goals", "Away goals", "Wins", "Away wins"],
-    ascending=[False, False, False, False, False, False]
-    ).reset_index(drop=True)
-
-    df_classement = df_classement.style.hide(axis="index")
-
-    return df_classement
-
 # On essaie maintenant de déterminer les probabilités pour chaque équipe de finir à différentes positions:
 def distribution_position_par_club(N=10000, données={"classement" : None, "points" : None, "diff_buts" : None,
                 "buts" : None, "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1, fin=8, demi=False):
@@ -634,44 +597,6 @@ def proba_qualification(club,distribution_probas):
     for i in range(25,37):
         s += distribution[i]
     return 1-s
-
-def classement_par_proba_de_qualif(distribution_probas):
-    L = [proba_qualification(club,distribution_probas) for club in clubs_en_ldc]
-    df = pd.DataFrame({
-        "Team" : clubs_en_ldc,
-        "Proba de qualif (%)" : [round(100*proba,2) for proba in L]
-    })
-
-    ndf = df.sort_values(
-    by=["Proba de qualif (%)"],
-    ascending=[False]
-    ).reset_index(drop=True)
-
-    # Formater les probabilités pour supprimer les zéros inutiles
-    ndf["Proba de qualif (%)"] = ndf["Proba de qualif (%)"].apply(lambda x: f"{x:.2f}".rstrip('0').rstrip('.'))
-
-    return ndf.style.hide(axis="index")
-
-#classement_par_proba_de_qualif(distribution_probas_classement)
-
-def classement_par_proba_de_top8(distribution_probas):
-    L = [proba_top_8(club,distribution_probas) for club in clubs_en_ldc]
-    df = pd.DataFrame({
-        "Team" : clubs_en_ldc,
-        "Proba de top 8 (%)" : [round(100*proba,2) for proba in L]
-    })
-
-    ndf = df.sort_values(
-    by=["Proba de top 8 (%)"],
-    ascending=[False]
-    ).reset_index(drop=True)
-
-    # Formater les probabilités pour supprimer les zéros inutiles
-    ndf["Proba de top 8 (%)"] = ndf["Proba de top 8 (%)"].apply(lambda x: f"{x:.2f}".rstrip('0').rstrip('.'))
-
-    return ndf.style.hide(axis="index")
-
-#classement_par_proba_de_top8(distribution_probas_classement)
 
 # On calcule maintenant la distribution de probas concernant le nombre de points nécessaires pour arriver à une certaine position, notamment 8è (top8) et 24è (qualification).
 def distribution_par_position(N=10000, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
@@ -848,193 +773,8 @@ def distribution_position_par_club_match_fixe(N=10000,club_fixed=None,journee=No
         for _ in range(N):
             nclassement = simuler_match_nul(club_fixed,journee,données=données,debut=debut)["classement"]
             for i in range(len(nclassement)):
-                d[nclassement[i]][i+1] += 1/N
-    """
-    for club in d.keys():
-        for x in d[club].keys():
-            d[club][x] = round(d[club][x],int(math.log10(N)))
-    
-    """            
+                d[nclassement[i]][i+1] += 1/N           
     return d
-
-
-def distribution_points_par_club_match_fixe(N=10000,club_fixed=None,journee=None,result_fixed=None, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
-                        "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1, fin=8, demi=False):
-    # retourne pour chaque équipe ses probas d'inscrire chaque nombre de points (distribution de probas), sur la base de N simulations
-
-    assert(result_fixed in ['D','V','N',None])
-
-    distrib = {
-        club: {points: 0 for points in range(3*fin+1)}
-        for club in clubs_en_ldc
-    }   
-
-    if result_fixed == 'D':
-
-        for _ in range(N):
-            npoints = simuler_defaite(club_fixed,journee,données=données, debut=debut)["points"]
-            for club in npoints.keys():
-                distrib[club][npoints[club]] += round(1/N,int(math.log10(N)))
-    
-    if result_fixed == 'V':
-
-        for _ in range(N):
-            npoints = simuler_victoire(club_fixed,journee,données=données, debut=debut)["points"]
-            for club in npoints.keys():
-                distrib[club][npoints[club]] += round(1/N,int(math.log10(N)))
-
-    else:
-        for _ in range(N):
-            npoints = simuler_match_nul(club_fixed,journee,données=données, debut=debut)["points"]
-            for club in npoints.keys():
-                distrib[club][npoints[club]] += round(1/N,int(math.log10(N)))
-                
-    for club in distrib.keys():
-        for x in distrib[club].keys():
-            distrib[club][x] = round(distrib[club][x],int(math.log10(N)))
-    
-    return distrib
-
-def classement_club(club,classement):
-    x = classement[0] ; i = 1
-    while x!=club and i<len(classement):
-        x = classement[i]
-        i += 1
-    assert(x == club)
-    return i
-
-def importance(club,journee, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
-                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1,N=10000):
-    # retourne une mesure de l'importance du match en journée j pour club selon à quel point sa proba d'atteindre position 
-    # est modifiée selon qu'il gagne, fasse match nul, ou perde (quotient proba si victoire / proba si défaite)
-    # retourne aussi l'écart de classement selon qu'il y ait victoire ou défaite
-    p1 = [0 for _ in range(len(données["classement"]))] ; p2 = [0 for _ in range(len(données["classement"]))] ; p3 = [0 for _ in range(len(données["classement"]))]
-    gain_classement_v = 0 ; gain_classement_nul = 0
-    for _ in range(N):
-        nclassement_v = simuler_victoire(club,journee,données,debut=debut)["classement"]
-        nclassement_nul = simuler_match_nul(club,journee,données,debut=debut)["classement"]
-        nclassement_d = simuler_defaite(club,journee,données,debut=debut)["classement"]
-        cv = classement_club(club,nclassement_v)
-        cnul = classement_club(club,nclassement_nul)
-        cd = classement_club(club,nclassement_d)
-        for position in range(len(données["classement"])):
-            if cv <= position+1:
-                p1[position] += 1/N
-            if cd <= position+1:
-                p2[position] += 1/N
-            if cnul <= position+1:
-                p3[position] += 1/N
-        gain_classement_v += (cnul - cv)/N ; gain_classement_nul += (cd - cnul)/N
-    
-    return [round(p1[pos],int(math.log10(N))) for pos in range(len(p1))] , [round(p2[pos],int(math.log10(N))) for pos in range(len(p2))] , [round(p3[pos],int(math.log10(N))) for pos in range(len(p3))] , round(gain_classement_v,int(math.log10(N))) , round(gain_classement_nul,int(math.log10(N)))
-
-def différence_importance_par_position(club,journee,données={"classement" : None, "points" : None, "diff_buts" : None,
-                "buts" : None, "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1,N=10000):
-    p1 , p2 , p3 , diff1, diff2 = importance(club,journee,données,
-                                debut=debut,N=N)
-    return [round(p1[pos]-p3[pos],int(math.log10(N))) for pos in range(len(p1))] , [round(p3[pos]-p2[pos],int(math.log10(N))) for pos in range(len(p1))]
-
-def importance_qualif_et_top8(club,journee,données={"classement" : None, "points" : None, "diff_buts" : None,
-                "buts" : None, "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None},debut=1,N=10000):
-    p1 , p2 , p3 , diff1 , diff2 = importance(club,journee,données,
-                                debut=debut,N=N)
-    return (p1[23],p1[7]),(p2[23],p2[7]),(p3[23],p3[7])
-
-def différence_qualif_et_top8(club,journee,données={"classement" : None, "points" : None, "diff_buts" : None,
-                "buts" : None, "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None},debut=1,N=10000):
-    p1 , p2 = différence_importance_par_position(club,journee,données,debut=debut,N=N)
-    return {"qualif" : (p1[23],p2[23]), "top_8" : (p1[7],p2[7])}
-
-def enjeux(club,journee,données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
-                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None},debut=1,N=1000):
-    p1 , p2 , p3 , diff1 , diff2 = importance(club,journee,données,debut=debut,N=N)
-
-    qualif_club = (p1[23]-p3[23],p3[23]-p2[23])
-    top8_club = (p1[7]-p3[7],p3[7]-p2[7])
-    
-    enjeu = qualif_club+top8_club
-    
-    return (round(enjeu[0],int(math.log10(N))),round(enjeu[1],int(math.log10(N)))) , diff1 , diff2
-    
-def importance_pour(club,match,journee, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
-                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1,N=10000):
-    # retourne l'importance de match (joué en journée journee) pour club, selon les mêmes critères que la fonction importance
-    p1 = [0 for _ in range(len(données["classement"]))] ; p2 = [0 for _ in range(len(données["classement"]))]
-    gain_classement = 0
-    for _ in range(N):
-        nclassement_v = simuler_victoire(match[0],journee,données,debut=debut)["classement"]
-        nclassement_d = simuler_defaite(match[0],journee,données,debut=debut)["classement"]
-        cv = classement_club(club,nclassement_v)
-        cd = classement_club(club,nclassement_d)
-        for position in range(len(données["classement"])):
-            if cv <= position+1:
-                p1[position] += 1/N
-            if cd <= position+1:
-                p2[position] += 1/N
-        gain_classement += (cd - cv)/N
-    
-    return [round(p1[pos],int(math.log10(N))) for pos in range(len(p1))] , [round(p2[pos],int(math.log10(N))) for pos in range(len(p2))] , round(gain_classement,int(math.log10(N)))
-
-def enjeux_pour(club,match,journee,données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
-                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None},debut=1,N=1000):
-    p1 , p2 , diff = importance_pour(club,match,journee,données,debut=debut,N=N)
-
-    qualif_club = p1[23] - p2[23]
-    top8_club = p1[7] - p2[7]
-    
-    enjeu = qualif_club+top8_club
-    
-    return round(enjeu,int(math.log10(N))) , diff
-
-#version code plus compacte, pour simuler tout une ligue directement et extraite les résultats intéressants
-def simulation_pour_enjeux(journee,données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
-                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None},debut=1,demi=False,N=10000):
-    if demi:
-        ind = len(calendrier["Journée 7"])//2
-    else:
-        ind = 0
-    enjeux_ = {club : 
-                {match :
-                  {issue : {
-                      "proba_qualif" : 0 ,
-                      "proba_top8" : 0 ,
-                      "classement" : 0 ,
-                      "nb_occurences" : 0}
-                    for issue in ["domicile","nul","exterieur"]}
-                for match in calendrier["Journée "+str(journee)][ind:] + calendrier["Journée "+str(journee+1)]}
-            for club in clubs_en_ldc
-          }
-    for _ in range(N):
-        ndonnées = simulation_ligue(données=données,debut=debut,demi=demi)
-        résultats = {match : ndonnées["résultats"][match] for match in calendrier["Journée "+str(journee)][ind:]+calendrier["Journée "+str(journee+1)]}
-        classement = ndonnées["classement"]
-        for match in résultats.keys():
-            (i,j) = résultats[match]
-            if i < j:
-                issue = "exterieur"
-            elif i == j:
-                issue = "nul"
-            else:
-                issue = "domicile"
-            for club in clubs_en_ldc:
-                enjeux_[club][match][issue]["nb_occurences"] += 1
-                c = classement_club(club,classement)
-                if c <= 24:
-                    enjeux_[club][match][issue]["proba_qualif"] += 1
-                if c <= 8:
-                    enjeux_[club][match][issue]["proba_top8"] += 1
-                enjeux_[club][match][issue]["classement"] += c
-
-    # On normalise correctement      
-    for club in clubs_en_ldc:
-        for match in enjeux_[club].keys():
-            for issue in ["domicile","nul","exterieur"]:
-                d = enjeux_[club][match][issue]
-                for x in d.keys():
-                  if x!="nb_occurences":
-                    d[x] = round(d[x]/d["nb_occurences"],int(math.log10(N)))
-    
-    return enjeux_
 
 # =========================== Affichage Web ==================================================
 # =============================================================================
@@ -1096,41 +836,6 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0):
         "seuil_top8": clean_dict(stats_8),
         "seuil_barrage": clean_dict(stats_24)
     }
-
-def get_web_importance_matchs(nb_simulations=500):
-    """
-    Identifie les matchs les plus impactants de la prochaine journée.
-    Répond à l'exigence (3) du projet.
-    Attention : N réduit à 500 car c'est très gourmand en calcul !
-    """
-    # On utilise la fonction optimisée que vous avez fournie
-    enjeux = simulation_pour_enjeux(journee=7, données=données_J6, debut=7, demi=True, N=nb_simulations)
-    
-    # Calcul de l'impact cumulé (votre logique 'afficher_max_cumulé' adaptée)
-    impacts = []
-    enjeux_matchs = {}
-    
-    # On récupère la liste des matchs de la J7
-    matchs_J7 = calendrier["Journée 7"]
-    
-    for match in matchs_J7:
-        score_cumule = 0
-        for club in enjeux.keys():
-            if match in enjeux[club]:
-                 # On prend l'enjeu 'qualif' ou 'top8' ou une moyenne des deux
-                 # Ici on additionne les probas de changement
-                 score_cumule += enjeux[club][match]["domicile"]["proba_qualif"] 
-                 # C'est une simplification pour l'exemple, vous pouvez affiner le calcul
-        
-        impacts.append({
-            "match": f"{match[0]} vs {match[1]}",
-            "score": round(score_cumule, 2)
-        })
-
-    # On trie pour avoir les plus importants en premier
-    impacts.sort(key=lambda x: x['score'], reverse=True)
-    
-    return impacts[:10] # On renvoie le top 10
 
 # -----------------------------------------------------------------------------
 # FONCTION 1 : get_web_simulation (remplace lignes ~1123-1191)
