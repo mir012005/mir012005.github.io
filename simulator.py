@@ -1342,8 +1342,8 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
 
 def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
     """
-    Analyse quels matchs de la prochaine journée impactent le plus la qualification.
-    Utilise les données OFFLINE si disponibles.
+    Analyse quels matchs de la prochaine journée impactent le plus la qualification ET le Top 8.
+    Renvoie les deux scores distincts pour affichage, mais trie par la somme des deux.
     """
     try:
         jd = int(journee_depart)
@@ -1363,75 +1363,94 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
 
     resultats_impact = []
     
-    # MODE OFFLINE (scénarios uniquement pour end=8)
-    if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(jd, 8):
-        for (dom, ext) in matchs_a_tester:
-            # MONDE A : Domicile gagne
+    # Fonction interne pour calculer les deltas et formater le résultat
+    def calculer_impact(match, dom, ext, etat_actuel=None, mode="LIVE"):
+        delta_qualif = 0
+        delta_top8 = 0
+        
+        # LOGIQUE DE SIMULATION (OFFLINE ou LIVE)
+        if mode == "OFFLINE":
+             # MONDE A : Domicile gagne
             distrib_dom_V = offline_data.get_scenario_distribution(jd, 8, journee_suivante, dom, 'V')
             # MONDE B : Extérieur gagne
             distrib_dom_D = offline_data.get_scenario_distribution(jd, 8, journee_suivante, dom, 'D')
             
             if distrib_dom_V and distrib_dom_D:
+                # Stats Monde A
                 stats_A = distrib_dom_V.get(club_cible, {})
                 stats_A = {int(k): v for k, v in stats_A.items()}
                 p_qualif_A = sum(stats_A.get(r, 0) for r in range(1, 25))
+                p_top8_A = sum(stats_A.get(r, 0) for r in range(1, 9))
                 
+                # Stats Monde B
                 stats_B = distrib_dom_D.get(club_cible, {})
                 stats_B = {int(k): v for k, v in stats_B.items()}
                 p_qualif_B = sum(stats_B.get(r, 0) for r in range(1, 25))
+                p_top8_B = sum(stats_B.get(r, 0) for r in range(1, 9))
                 
-                impact = abs(p_qualif_A - p_qualif_B) * 100
-                is_own = (dom == club_cible or ext == club_cible)
-                
-                if impact > 0.5 or is_own:
-                    resultats_impact.append({
-                        "match": f"{dom} vs {ext}",
-                        "dom": dom, "ext": ext,
-                        "score": round(impact, 1),
-                        "is_my_match": is_own
-                    })
-        
-        if resultats_impact:
-            resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score']), reverse=True)
-            return {"club": club_cible, "journee": journee_suivante, "mode": "OFFLINE", "liste": resultats_impact}
+                delta_qualif = abs(p_qualif_A - p_qualif_B) * 100
+                delta_top8 = abs(p_top8_A - p_top8_B) * 100
 
-    # MODE LIVE
-    update_simulation_context(jd)
-    
-    map_historique = {
-        0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
-        4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
-    }
-    etat_actuel = map_historique.get(jd, données_J6)
-    
-    for (dom, ext) in matchs_a_tester:
-        distrib_dom = distribution_position_par_club_match_fixe(
-            N=nb_simulations, club_fixed=dom, journee=journee_suivante, result_fixed='V',
-            données=etat_actuel, debut=journee_suivante, fin=8
-        )
-        p_qualif_1 = proba_qualification(club_cible, distrib_dom)
-        
-        distrib_ext = distribution_position_par_club_match_fixe(
-            N=nb_simulations, club_fixed=dom, journee=journee_suivante, result_fixed='D',
-            données=etat_actuel, debut=journee_suivante, fin=8
-        )
-        p_qualif_2 = proba_qualification(club_cible, distrib_ext)
-        
-        impact = abs(p_qualif_1 - p_qualif_2) * 100
+        else: # MODE LIVE
+            # Simulation Monde A (Dom gagne)
+            distrib_dom = distribution_position_par_club_match_fixe(
+                N=nb_simulations, club_fixed=dom, journee=journee_suivante, result_fixed='V',
+                données=etat_actuel, debut=journee_suivante, fin=8
+            )
+            p_qualif_1 = proba_qualification(club_cible, distrib_dom)
+            p_top8_1 = proba_top_8(club_cible, distrib_dom)
+            
+            # Simulation Monde B (Dom perd)
+            distrib_ext = distribution_position_par_club_match_fixe(
+                N=nb_simulations, club_fixed=dom, journee=journee_suivante, result_fixed='D',
+                données=etat_actuel, debut=journee_suivante, fin=8
+            )
+            p_qualif_2 = proba_qualification(club_cible, distrib_ext)
+            p_top8_2 = proba_top_8(club_cible, distrib_ext)
+            
+            delta_qualif = abs(p_qualif_1 - p_qualif_2) * 100
+            delta_top8 = abs(p_top8_1 - p_top8_2) * 100
+
+        # CALCUL DU SCORE CUMULÉ (Pour le tri uniquement)
+        score_cumule = delta_qualif + delta_top8
         is_own = (dom == club_cible or ext == club_cible)
         
-        if impact > 0.5 or is_own:
-            resultats_impact.append({
+        # On garde si l'impact cumulé est significatif OU si c'est le match du club
+        if score_cumule > 0.5 or is_own:
+            return {
                 "match": f"{dom} vs {ext}",
                 "dom": dom, "ext": ext,
-                "score": round(impact, 1),
+                "score_cumule": round(score_cumule, 1), # Sert au tri
+                "score_qualif": round(delta_qualif, 1), # À afficher (Impact Top 24)
+                "score_top8": round(delta_top8, 1),     # À afficher (Impact Top 8)
                 "is_my_match": is_own
-            })
+            }
+        return None
 
-    resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score']), reverse=True)
-    return {"club": club_cible, "journee": journee_suivante, "mode": "LIVE", "liste": resultats_impact}
+    # =========================================================================
+    # EXÉCUTION (OFFLINE PRIORITAIRE)
+    # =========================================================================
+    if OFFLINE_DISPONIBLE and hasattr(offline_data, 'combinaison_disponible') and offline_data.combinaison_disponible(jd, 8):
+        mode = "OFFLINE"
+        etat = None
+    else:
+        mode = "LIVE"
+        update_simulation_context(jd)
+        map_historique = {
+            0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
+            4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
+        }
+        etat = map_historique.get(jd, données_J6)
 
+    for (dom, ext) in matchs_a_tester:
+        res = calculer_impact(f"{dom} vs {ext}", dom, ext, etat_actuel=etat, mode=mode)
+        if res:
+            resultats_impact.append(res)
 
+    # Tri par "score_cumule" (la somme), mais l'objet contient bien les détails
+    resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score_cumule']), reverse=True)
+    
+    return {"club": club_cible, "journee": journee_suivante, "mode": mode, "liste": resultats_impact}
 
 def get_web_evolution(club, journee_max=8, n_simulations=300):
     """
