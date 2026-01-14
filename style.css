@@ -835,3 +835,90 @@ body.dark-mode .hero h2 {
     color: transparent;
     text-shadow: none;
 }
+
+/* ==========================================================================
+   STYLE GALERIE ÉQUIPE (4 COLLABORATEURS)
+   ========================================================================== */
+
+/* Conteneur de la grille */
+.team-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap; /* Permet de passer à la ligne sur petit écran */
+    gap: 30px;       /* Espace entre les membres */
+    margin-top: 20px;
+}
+
+/* Carte individuelle d'un membre */
+.team-member {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 160px; /* Largeur fixe pour que tout soit bien aligné */
+}
+
+/* Le cercle de la photo */
+.member-photo {
+    width: 100px;  
+    height: 100px;
+    border-radius: 50%; /* Rend l'image ronde */
+    overflow: hidden;
+    border: 3px solid var(--primary-color);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, border-color 0.3s;
+    background-color: #f0f0f0; /* Fond gris clair de sécurité */
+}
+
+/* L'image à l'intérieur du cercle */
+.member-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Recadre l'image sans la déformer */
+}
+
+/* Effet au survol de la souris */
+.team-member:hover .member-photo {
+    transform: scale(1.1); /* Zoom léger */
+    border-color: var(--accent-color); /* La bordure change de couleur */
+}
+
+/* Nom du collaborateur */
+.team-member h4 {
+    margin: 5px 0;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Le petit bouton LinkedIn */
+.linkedin-pill {
+    text-decoration: none;
+    background-color: #0077b5; /* Bleu officiel LinkedIn */
+    color: white !important;
+    padding: 4px 12px;
+    border-radius: 20px; /* Bords très arrondis */
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: opacity 0.2s, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.linkedin-pill:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+}
+
+/* --- AJUSTEMENTS MODE NUIT --- */
+body.dark-mode .member-photo {
+    border-color: var(--accent-color); /* Bordure brillante en mode nuit */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+body.dark-mode .team-member h4 {
+    color: var(--text-main); /* Texte blanc en mode nuit */
+}
