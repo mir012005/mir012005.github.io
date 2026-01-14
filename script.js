@@ -7,10 +7,8 @@
 
 const TRANSLATIONS = {
     fr: {
-        // Accueil
-        welcome: "Bienvenue sur le Simulateur LDC",
-        description: "Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.",
-        choose_team: "Choisissez une équipe :",
+        // Global
+        main_title: "Simulation Ligue des Champions",
         
         // Navigation
         nav_home: "Accueil",
@@ -19,13 +17,20 @@ const TRANSLATIONS = {
         nav_ranking: "Classement",
         nav_probas: "Probabilités",
         nav_labo: "Labo & Hype",
-        nav_about: "A propos",
+        nav_about: "À propos",
+        theme_night: " Mode Nuit",
+        theme_day: " Mode Jour",
+
+        // Accueil
+        welcome: "Bienvenue sur le Simulateur LDC",
+        description: "Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.",
+        choose_team: "Choisissez une équipe :",
         
         // Duel
         duel_title: "🔮 Prédicteur de Match",
         duel_desc: "Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.",
-        home: "Domicile 🏠",
-        away: "Extérieur ✈️",
+        home_label: "Domicile 🏠",
+        away_label: "Extérieur ✈️",
         simulate_match: "Simuler le match",
         
         // Classement
@@ -34,49 +39,67 @@ const TRANSLATIONS = {
         start_situation: "Situation de départ (Après) :",
         simulate_until: "Simuler jusqu'à la :",
         calculate: "🔄 Calculer",
+        legend_direct: "Qualif Directe (1-8)",
+        legend_playoff: "Barrages (9-24)",
+        legend_eliminated: "Éliminé (25-36)",
         
         // Résultats
         results_title: "Résultats de la simulation",
         back_btn: "← Choisir un autre club",
+        sim_from_label: "📅 Simuler la fin de saison à partir de la :",
         avg_points: "Points Moyens prédits :",
-        top8: "Top 8",
-        playoff: "Barrage",
-        eliminated: "Éliminé",
-        direct_qualif: "Qualif Directe",
-        
-        // Labo
-        labo_title: "💥 Laboratoire & Enjeux",
-        labo_desc: "Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.",
-        scenario_tab: "🔮 Scénario (What-If)",
-        hypo_tab: "🎯 Hypo-mètre (Nouveau)",
-        start_day: "Départ :",
-        match_day: "Match en :",
-        hypothesis: "Hypothèse :",
-        simulate: "Simuler",
-        victory: "Victoire",
-        draw: "Nul",
-        defeat: "Défaite",
-        before: "Avant",
-        after: "Après",
-        qualif: "Qualif",
         
         // Analyses
         analyses_title: "Analyses Globales (Monte Carlo)",
-        
-        // Probabilités
+        analyses_subtitle: "Combien de points faut-il pour se qualifier ?",
+        top8_chart_title: "Pour le Top 8 (Qualif Directe)",
+        top24_chart_title: "Pour le Top 24 (Barrages)",
+        refresh: "🔄 Actualiser",
+
+        // Probas
         probas_title: "📊 Probabilités de Qualification",
-        probas_desc: "Estimation des chances de chaque club selon la journée de départ (Simulé 1000 fois).",
-        
-        // Footer
-        theme_night: " Mode Nuit",
-        theme_day: " Mode Jour"
+        probas_desc: "Estimation des chances de chaque club (Simulé 1000 fois).",
+        favoris_top8: "🏆 Favoris Top 8",
+        favoris_top24: "🎟️ Favoris Top 24",
+
+        // Labo
+        labo_title: "💥 Laboratoire & Enjeux",
+        labo_desc: "Simulez des scénarios ou analysez les matchs cruciaux.",
+        scenario_tab: "🔮 Scénario (What-If)",
+        hypo_tab: "🎯 Hypo-mètre",
+        labo_subtitle: "🧪 Simulateur de Résultat",
+        labo_subdesc: "Testez un résultat spécifique et voyez l'impact immédiat.",
+        hypo_subtitle: "🎯 Analyse des Matchs Clés",
+        hypo_subdesc: "Quels matchs des AUTRES devez-vous surveiller ?",
+        start_label: "Départ :",
+        match_on_label: "Match en :",
+        hypo_label: "Hypothèse :",
+        support_label: "Je supporte :",
+        after_day_label: "Après la journée :",
+        simulate_btn: "Simuler",
+        analyze_btn: "Analyser",
+        win: "Victoire",
+        draw: "Nul",
+        loss: "Défaite",
+
+        // About
+        about_main_title: "Comment fonctionne ce simulateur ?",
+        about_method_title: "🧠 La Méthodologie",
+        about_method_text: "Ce projet se base sur un modèle statistique développé dans le cadre d'un projet de département IMI par Paul Vandercoilden et Oscar Pécoud-Gatti sous la supervision de Julien Guyon :",
+        about_elo_title: "Le Classement Elo :",
+        about_elo_text: "Chaque équipe possède un score de force (Elo) qui évolue après chaque match réel. C'est ce score qui influence le plus sur la probabilité de victoire.",
+        about_poisson_title: "Loi mathématique :",
+        about_poisson_text: "Nous utilisons la loi de Poisson pour générer des scores réalistes basés sur les forces offensives et défensives.",
+        about_montecarlo_title: "Méthode de Monte Carlo :",
+        about_montecarlo_text: "Nous simulons la saison 10 000 fois. La moyenne de ces univers parallèles donne les probabilités affichées.",
+        about_update_title: "📅 Mise à jour Dynamique",
+        about_update_text: "Le simulateur est connecté à la réalité et prend en compte les résultats réels au fur et à mesure de la saison.",
+        about_dev_by: "Développé par",
     },
     en: {
-        // Home
-        welcome: "Welcome to the UCL Simulator",
-        description: "This project uses Monte Carlo method and Poisson distributions to predict the end of the season.",
-        choose_team: "Choose a team:",
-        
+        // Global
+        main_title: "Champions League Simulation",
+
         // Navigation
         nav_home: "Home",
         nav_analyses: "Analysis",
@@ -85,58 +108,101 @@ const TRANSLATIONS = {
         nav_probas: "Probabilities",
         nav_labo: "Lab & Hype",
         nav_about: "About",
-        
+        theme_night: " Night Mode",
+        theme_day: " Day Mode",
+
+        // Home
+        welcome: "Welcome to the UCL Simulator",
+        description: "This project uses the Monte Carlo method and Poisson distributions to predict the end of the season.",
+        choose_team: "Choose a team:",
+
         // Duel
         duel_title: "🔮 Match Predictor",
         duel_desc: "Simulate a specific match using the Elo + Poisson model.",
-        home: "Home 🏠",
-        away: "Away ✈️",
-        simulate_match: "Simulate match",
-        
+        home_label: "Home 🏠",
+        away_label: "Away ✈️",
+        simulate_match: "Simulate Match",
+
         // Ranking
         ranking_title: "🏆 Projected Ranking (Average)",
         ranking_desc: "Simulate the ranking over a specific period.",
-        start_situation: "Starting situation (After):",
-        simulate_until: "Simulate until:",
+        start_situation: "Starting Situation (After):",
+        simulate_until: "Simulate Until:",
         calculate: "🔄 Calculate",
-        
+        legend_direct: "Direct Qualif (1-8)",
+        legend_playoff: "Playoffs (9-24)",
+        legend_eliminated: "Eliminated (25-36)",
+
         // Results
         results_title: "Simulation Results",
         back_btn: "← Choose another club",
+        sim_from_label: "📅 Simulate season end from matchday:",
         avg_points: "Predicted Average Points:",
-        top8: "Top 8",
-        playoff: "Playoff",
-        eliminated: "Eliminated",
-        direct_qualif: "Direct Qualification",
-        
-        // Lab
-        labo_title: "💥 Lab & Stakes",
-        labo_desc: "Simulate scenarios or analyze crucial matches for your team.",
-        scenario_tab: "🔮 Scenario (What-If)",
-        hypo_tab: "🎯 Hypo-meter (New)",
-        start_day: "Start:",
-        match_day: "Match on:",
-        hypothesis: "Hypothesis:",
-        simulate: "Simulate",
-        victory: "Victory",
-        draw: "Draw",
-        defeat: "Defeat",
-        before: "Before",
-        after: "After",
-        qualif: "Qualif",
-        
+
         // Analysis
         analyses_title: "Global Analysis (Monte Carlo)",
-        
-        // Probabilities
+        analyses_subtitle: "How many points are needed to qualify?",
+        top8_chart_title: "For Top 8 (Direct Qualif)",
+        top24_chart_title: "For Top 24 (Playoffs)",
+        refresh: "🔄 Refresh",
+
+        // Probas
         probas_title: "📊 Qualification Probabilities",
-        probas_desc: "Estimated chances for each club based on the starting matchday (Simulated 1000 times).",
-        
-        // Footer
-        theme_night: " Night Mode",
-        theme_day: " Day Mode"
+        probas_desc: "Estimated chances for each club (1000 simulations).",
+        favoris_top8: "🏆 Top 8 Favorites",
+        favoris_top24: "🎟️ Top 24 Favorites",
+
+        // Lab
+        labo_title: "💥 Lab & Stakes",
+        labo_desc: "Simulate scenarios or analyze crucial matches.",
+        scenario_tab: "🔮 Scenario (What-If)",
+        hypo_tab: "🎯 Hypo-meter",
+        labo_subtitle: "🧪 Result Simulator",
+        labo_subdesc: "Test a specific result and see the immediate impact.",
+        hypo_subtitle: "🎯 Key Match Analysis",
+        hypo_subdesc: "Which matches of OTHERS should you watch?",
+        start_label: "Start:",
+        match_on_label: "Match on:",
+        hypo_label: "Hypothesis:",
+        support_label: "I support:",
+        after_day_label: "After matchday:",
+        simulate_btn: "Simulate",
+        analyze_btn: "Analyze",
+        win: "Win",
+        draw: "Draw",
+        loss: "Loss",
+
+        // About
+        about_main_title: "How does this simulator work?",
+        about_method_title: "🧠 Methodology",
+        about_method_text: "This project is based on a statistical model developed as part of an IMI department project by Paul Vandercoilden and Oscar Pécoud-Gatti under the supervision of Julien Guyon:",
+        about_elo_title: "Elo Ranking:",
+        about_elo_text: "Each team has a strength score (Elo) that evolves after each real match. This score has the greatest influence on the probability of victory.",
+        about_poisson_title: "Mathematical Law:",
+        about_poisson_text: "We use Poisson's law to generate realistic scores based on offensive and defensive strengths.",
+        about_montecarlo_title: "Monte Carlo Method:",
+        about_montecarlo_text: "We simulate the season 10,000 times. The average of these parallel universes gives the displayed probabilities.",
+        about_update_title: "📅 Dynamic Update",
+        about_update_text: "The simulator is connected to reality and takes real results into account as the season progresses.",
+        about_dev_by: "Developed by",
     }
 };
+
+// Modifiez la fonction applyLanguage pour qu'elle soit plus robuste
+function applyLanguage() {
+    const elements = document.querySelectorAll('[data-i18n]');
+    elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (TRANSLATIONS[currentLang][key]) {
+            // Si c'est un input ou un select, on peut vouloir traduire la valeur ou le placeholder
+            if (el.tagName === 'INPUT' && el.placeholder) {
+                el.placeholder = TRANSLATIONS[currentLang][key];
+            } else {
+                el.textContent = TRANSLATIONS[currentLang][key];
+            }
+        }
+    });
+}
 
 let currentLang = localStorage.getItem('lang') || 'fr';
 
@@ -145,16 +211,6 @@ function toggleLanguage() {
     localStorage.setItem('lang', currentLang);
     applyLanguage();
     updateLangButton();
-}
-
-function applyLanguage() {
-    const elements = document.querySelectorAll('[data-i18n]');
-    elements.forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (TRANSLATIONS[currentLang][key]) {
-            el.textContent = TRANSLATIONS[currentLang][key];
-        }
-    });
 }
 
 function updateLangButton() {
