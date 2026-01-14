@@ -1,4 +1,51 @@
 // =============================================================================
+// GESTION DE LA NAVIGATION (ONGLETS)
+// =============================================================================
+
+function showPage(pageId) {
+    // 1. Cacher toutes les sections qui ont la classe "page"
+    const pages = document.querySelectorAll('.page');
+    pages.forEach(page => {
+        page.style.display = 'none';
+    });
+
+    // 2. Afficher la section demandée
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+        targetPage.style.display = 'block';
+        
+        // Optionnel : remonter en haut de page
+        window.scrollTo(0, 0);
+    } else {
+        console.error("La page n'existe pas : " + pageId);
+    }
+
+    // 3. Mettre à jour l'état "actif" des boutons de navigation
+    const navButtons = document.querySelectorAll('nav button');
+    navButtons.forEach(btn => {
+        // On retire une classe active si vous en avez une dans votre CSS
+        btn.classList.remove('active');
+        
+        // Si le bouton correspond à la page, on peut l'allumer
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(pageId)) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// =============================================================================
+// INITIALISATION AU CHARGEMENT
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Afficher la page d'accueil par défaut au démarrage
+    showPage('home');
+    
+    // Charger la liste des clubs (si votre fonction existe)
+    if (typeof chargerListeClubs === 'function') {
+        chargerListeClubs();
+    }
+});// =============================================================================
 // 1. GESTION GLOBALE & NAVIGATION
 // =============================================================================
 // =============================================================================
