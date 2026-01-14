@@ -12,20 +12,38 @@
 <body>
     <header>
         <h1>
-            <img src="logo_ldc_sans_texte.png" alt="Logo Champions League" class="header-logo">
+            <img src="logo_ldc_sans_texte.png" alt="Logo LDC" class="header-logo">
             <span data-i18n="header_title">Champions League Simulation</span>
         </h1>
         <nav>
-            <button onclick="showPage('home')"><i class="fa-solid fa-house"></i> <span data-i18n="nav_home">Accueil</span></button>
-            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_analyses">Analyses</span></button>
-            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav_duel">Duel</span></button>
-            <button onclick="showPage('ranking'); chargerClassement()"><i class="fa-solid fa-trophy"></i> <span data-i18n="nav_ranking">Classement</span></button>
-            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_probas">Probabilités</span></button>    
-            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> <span data-i18n="nav_labo">Labo & Hype</span></button>
-            <button onclick="showPage('about')"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav_about">A propos</span></button>
+            <button onclick="showPage('home')">
+                <i class="fa-solid fa-house"></i> <span data-i18n="nav_home">Accueil</span>
+            </button>
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()">
+                <i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_analyses">Analyses</span>
+            </button>
+            <button onclick="showPage('duel')">
+                <i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav_duel">Duel</span>
+            </button>
+            <button onclick="showPage('ranking'); chargerClassement()">
+                <i class="fa-solid fa-trophy"></i> <span data-i18n="nav_ranking">Classement</span>
+            </button>
+            <button onclick="showPage('match-impact')">
+                <i class="fa-solid fa-bolt"></i> <span data-i18n="nav_impact">Impact</span>
+            </button>
+            <button onclick="showPage('probas-zone')">
+                <i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_probas">Probabilités</span>
+            </button>
+            <button onclick="showPage('impact-zone')">
+                <i class="fa-solid fa-flask"></i> <span data-i18n="nav_labo">Scénarios</span>
+            </button>
             
-            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">Mode Nuit</span></button>
-            <button id="lang-toggle" class="theme-btn" onclick="toggleLanguage()"><i class="fa-solid fa-globe"></i> EN</button>
+            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">Mode Nuit</span>
+            </button>
+            <button id="lang-toggle" class="theme-btn" onclick="toggleLanguage()">
+                <i class="fa-solid fa-globe"></i> EN
+            </button>
         </nav>
     </header>
 
@@ -48,7 +66,6 @@
         <section id="duel" class="page" style="display:none;">
             <h2 data-i18n="duel_title">🔮 Prédicteur de Match</h2>
             <p data-i18n="duel_desc">Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.</p>
-
             <div class="duel-container">
                 <div class="team-selector">
                     <label data-i18n="home_label">Domicile 🏠</label>
@@ -60,11 +77,9 @@
                     <select id="selAway"></select>
                 </div>
             </div>
-
             <div style="text-align:center; margin-top:20px;">
                 <button class="big-btn" onclick="lancerDuel()" data-i18n="simulate_match">Simuler le match</button>
             </div>
-
             <div id="duelResult" class="duel-result" style="display:none;">
                 <div class="score-board">
                     <div class="team-score">
@@ -84,11 +99,10 @@
                 </div>
             </div>
         </section>
-        
+
         <section id="ranking" class="page" style="display:none;">
             <h2 data-i18n="ranking_title">🏆 Classement Projeté (Moyenne)</h2>
             <p data-i18n="ranking_desc">Simulez le classement sur une période précise.</p>
-            
             <div class="controls-bar">
                 <div class="control-group">
                     <label data-i18n="start_day_label">Situation de départ (Après) :</label>
@@ -105,7 +119,6 @@
                 </div>
                 <button class="action-btn" onclick="chargerClassement()" data-i18n="calculate_btn">🔄 Calculer</button>
             </div>
-
             <div class="table-container">
                 <table class="ranking-table">
                     <thead>
@@ -115,7 +128,7 @@
                             <th data-i18n="col_pts">Pts</th>
                             <th data-i18n="col_diff">Diff.</th>
                             <th data-i18n="col_goals">Buts</th>
-                            <th class="secondary-stat" data-i18n="col_away_goals">Buts Ext.</th>
+                            <th data-i18n="col_vic">Vic.</th>
                         </tr>
                     </thead>
                     <tbody id="rankingBody">
@@ -125,158 +138,129 @@
             </div>
         </section>
 
-        <section id="impact-zone" class="page" style="display:none;">
-            <h2 data-i18n="labo_title">💥 Laboratoire & Enjeux</h2>
-            <p data-i18n="labo_desc">Simulez des scénarios ou analysez les matchs cruciaux.</p>
-
-            <div class="tabs-container" style="margin-bottom: 25px; display:flex; justify-content:center; gap:15px;">
-                <button id="btn-tab-scenario" class="tab-btn active" onclick="switchScenarioTab('scenario')" data-i18n="tab_scenario">🔮 Scénario</button>
-                <button id="btn-tab-hypo" class="tab-btn" onclick="switchScenarioTab('hypo')" data-i18n="tab_hypo">🎯 Hypo-mètre</button>
+        <section id="analyses" class="page" style="display:none;">
+            <h2 data-i18n="nav_analyses">Analyses Globales</h2>
+            <div class="controls-bar" style="justify-content: center; margin-bottom: 20px;">
+                <div class="control-group">
+                    <label data-i18n="start_day_label">Situation de départ :</label>
+                    <select id="analysesStartDay"><option value="0">J0</option><option value="6" selected>J6</option></select>
+                </div>
+                <button class="action-btn" onclick="chargerAnalysesGlobales()" data-i18n="update_btn">🔄 Actualiser</button>
             </div>
-
-            <div id="tab-scenario" class="tab-content">
-                <div class="controls-bar" style="justify-content: center;">
-                    <div class="control-group">
-                        <label data-i18n="hypothesis_label">Hypothèse :</label>
-                        <select id="scenarioClub"></select>
-                        <select id="scenarioResult">
-                            <option value="V" data-i18n="res_v">Victoire</option>
-                            <option value="N" data-i18n="res_n">Nul</option>
-                            <option value="D" data-i18n="res_d">Défaite</option>
-                        </select>
-                    </div>
-                    <button class="action-btn" onclick="lancerScenario()" data-i18n="simulate_btn">Simuler</button>
+            <div class="charts-row">
+                <div class="chart-wrapper">
+                    <h4 data-i18n="chart_top8">Seuils Top 8</h4>
+                    <div class="chart-area"><canvas id="chartTop8"></canvas></div>
+                </div>
+                <div class="chart-wrapper">
+                    <h4 data-i18n="chart_top24">Seuils Top 24</h4>
+                    <div class="chart-area"><canvas id="chartBarrage"></canvas></div>
                 </div>
             </div>
         </section>
 
-        <section id="about" class="page" style="display:none;">
-            <div class="about-container">
-                <h2 data-i18n="about_main_title">Comment fonctionne ce simulateur ?</h2>
-                <div class="about-card">
-                    <h3 data-i18n="about_method_title">🧠 La Méthodologie</h3>
-                    <p data-i18n="about_method_text">Ce projet se base sur un modèle statistique de Monte Carlo et la loi de Poisson...</p>
+        <section id="probas-zone" class="page" style="display:none;">
+            <h2 data-i18n="nav_probas">Probabilités de Qualification</h2>
+            <div class="probas-container">
+                <div class="proba-column">
+                    <h3 class="green-text" data-i18n="fav_top8">🏆 Favoris Top 8</h3>
+                    <tbody id="tbodyTop8"></tbody>
                 </div>
-                <div class="about-card">
-                    <h3 data-i18n="about_dev_title">👥 Développeurs</h3>
-                    <p>Idris Rayane MJIDI, Ilyas Zeriouel, Houssam Ehmimed, Naim El Ouassaidi.</p>
+                <div class="proba-column">
+                    <h3 class="orange-text" data-i18n="fav_top24">🎟️ Favoris Qualif</h3>
+                    <tbody id="tbodyQualif"></tbody>
+                </div>
+            </div>
+        </section>
+
+        <section id="match-impact" class="page" style="display:none;">
+            <h2 data-i18n="impact_match_title">⚡ Impact : Le Match Décisif</h2>
+            <div id="impactGrid" class="clubs-grid"></div>
+            <div id="impactResultArea" style="display:none;">
+                <button onclick="resetImpactSelection()" class="back-btn" data-i18n="back_btn">← Retour</button>
+                <div id="bestMatchContainer"></div>
+            </div>
+        </section>
+
+        <section id="impact-zone" class="page" style="display:none;">
+            <h2 data-i18n="labo_title">💥 Analyse d'Impact & Enjeux</h2>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchScenarioTab('scenario')" data-i18n="tab_scenario">🔮 Scénario</button>
+                <button class="tab-btn" onclick="switchScenarioTab('hype')" data-i18n="tab_hype">🔥 Hype-o-mètre</button>
+            </div>
+            <div id="scenario-tab" class="impact-tab-content">
+                <div class="search-box">
+                    <select id="scenarioClub"></select>
+                    <select id="scenarioResult">
+                        <option value="V" data-i18n="res_v">Victoire</option>
+                        <option value="N" data-i18n="res_n">Nul</option>
+                        <option value="D" data-i18n="res_d">Défaite</option>
+                    </select>
+                    <button class="action-btn" onclick="lancerScenario()" data-i18n="simulate_btn">Simuler</button>
+                </div>
+                <div id="scenarioResultBox" style="display:none;">
+                    <div id="scenarioVerdict" class="verdict-box"></div>
                 </div>
             </div>
         </section>
     </main>
 
     <footer>
-        <div class="footer-content">
-            <p>Simulateur Ligue des Champions &copy; 2025/2026</p>
-        </div>
+        <p>Simulateur Ligue des Champions &copy; 2025</p>
     </footer>
 
     <script>
-        // 1. Dictionnaire de traduction
+        // --- DICTIONNAIRE DE TRADUCTION ---
         const i18n = {
             fr: {
-                page_title: "Simulation Ligue des Champions",
+                page_title: "Simulation LDC",
                 header_title: "Champions League Simulation",
-                nav_home: "Accueil",
-                nav_analyses: "Analyses",
-                nav_duel: "Duel",
-                nav_ranking: "Classement",
-                nav_probas: "Probabilités",
-                nav_labo: "Labo & Hype",
-                nav_about: "A propos",
-                theme_night: "Mode Nuit",
-                theme_day: "Mode Jour",
+                nav_home: "Accueil", nav_analyses: "Analyses", nav_duel: "Duel",
+                nav_ranking: "Classement", nav_impact: "Impact", nav_probas: "Probabilités",
+                nav_labo: "Scénarios", theme_night: "Mode Nuit", theme_day: "Mode Jour",
                 welcome: "Bienvenue sur le Simulateur LDC",
                 description: "Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.",
-                choose_team: "Choisissez une équipe :",
-                loading: "Chargement...",
-                duel_title: "🔮 Prédicteur de Match",
-                duel_desc: "Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.",
-                home_label: "Domicile 🏠",
-                away_label: "Extérieur ✈️",
-                simulate_match: "Simuler le match",
-                win: "Victoire",
-                draw: "Nul",
-                loss: "Défaite",
-                ranking_title: "🏆 Classement Projeté",
-                ranking_desc: "Simulez le classement sur une période précise.",
-                start_day_label: "Situation de départ :",
-                end_day_label: "Jusqu'à la :",
-                j0: "J0 (Début)",
-                calculate_btn: "🔄 Calculer",
-                col_club: "Club",
-                col_pts: "Pts",
-                col_diff: "Diff.",
-                col_goals: "Buts",
-                col_away_goals: "Buts Ext.",
-                click_calc: "Cliquez sur Calculer...",
-                labo_title: "💥 Labo & Enjeux",
-                labo_desc: "Simulez des scénarios ou analysez les matchs cruciaux.",
-                tab_scenario: "🔮 Scénario",
-                tab_hypo: "🎯 Hypo-mètre",
-                hypothesis_label: "Hypothèse :",
-                res_v: "Victoire",
-                res_n: "Nul",
-                res_d: "Défaite",
-                simulate_btn: "Simuler",
-                about_main_title: "Comment ça marche ?",
-                about_method_title: "🧠 Méthodologie",
-                about_method_text: "Ce projet se base sur un modèle statistique de Monte Carlo...",
-                about_dev_title: "👥 Équipe"
+                choose_team: "Choisissez une équipe :", loading: "Chargement...",
+                duel_title: "🔮 Prédicteur de Match", duel_desc: "Simulez une rencontre spécifique.",
+                home_label: "Domicile 🏠", away_label: "Extérieur ✈️", simulate_match: "Simuler le match",
+                win: "Victoire", draw: "Nul", loss: "Défaite",
+                ranking_title: "🏆 Classement Projeté", ranking_desc: "Simulez le classement final.",
+                start_day_label: "Situation de départ :", end_day_label: "Jusqu'à :",
+                calculate_btn: "🔄 Calculer", update_btn: "🔄 Actualiser", back_btn: "← Retour",
+                col_club: "Club", col_pts: "Pts", col_diff: "Diff.", col_goals: "Buts", col_vic: "Vic.",
+                click_calc: "Cliquez sur Calculer...", labo_title: "💥 Analyse & Enjeux",
+                tab_scenario: "🔮 Scénario", tab_hype: "🔥 Hype-o-mètre",
+                res_v: "Victoire", res_n: "Nul", res_d: "Défaite", simulate_btn: "Simuler",
+                chart_top8: "Seuils Top 8", chart_top24: "Seuils Top 24",
+                fav_top8: "🏆 Favoris Top 8", fav_top24: "🎟️ Favoris Qualif",
+                impact_match_title: "⚡ Match Décisif"
             },
             en: {
                 page_title: "UCL Simulator",
                 header_title: "Champions League Simulation",
-                nav_home: "Home",
-                nav_analyses: "Analyses",
-                nav_duel: "Duel",
-                nav_ranking: "Ranking",
-                nav_probas: "Probabilities",
-                nav_labo: "Lab & Hype",
-                nav_about: "About",
-                theme_night: "Night Mode",
-                theme_day: "Day Mode",
-                welcome: "Welcome to the UCL Simulator",
-                description: "This project uses Monte Carlo methods and Poisson laws to predict the season end.",
-                choose_team: "Choose a team:",
-                loading: "Loading...",
-                duel_title: "🔮 Match Predictor",
-                duel_desc: "Simulate a specific match using Elo + Poisson model.",
-                home_label: "Home 🏠",
-                away_label: "Away ✈️",
-                simulate_match: "Simulate match",
-                win: "Win",
-                draw: "Draw",
-                loss: "Loss",
-                ranking_title: "🏆 Projected Ranking",
-                ranking_desc: "Simulate ranking over a specific period.",
-                start_day_label: "Starting from:",
-                end_day_label: "Until:",
-                j0: "W0 (Start)",
-                calculate_btn: "🔄 Calculate",
-                col_club: "Club",
-                col_pts: "Pts",
-                col_diff: "GD",
-                col_goals: "Goals",
-                col_away_goals: "Away Goals",
-                click_calc: "Click Calculate...",
-                labo_title: "💥 Lab & Hype",
-                labo_desc: "Simulate scenarios or analyze crucial matches.",
-                tab_scenario: "🔮 Scenario",
-                tab_hypo: "🎯 Hypo-meter",
-                hypothesis_label: "Hypothesis:",
-                res_v: "Win",
-                res_n: "Draw",
-                res_d: "Loss",
-                simulate_btn: "Simulate",
-                about_main_title: "How does it work?",
-                about_method_title: "🧠 Methodology",
-                about_method_text: "This project is based on a Monte Carlo statistical model...",
-                about_dev_title: "👥 Team"
+                nav_home: "Home", nav_analyses: "Analyses", nav_duel: "Duel",
+                nav_ranking: "Ranking", nav_impact: "Impact", nav_probas: "Probabilities",
+                nav_labo: "Scenarios", theme_night: "Night Mode", theme_day: "Day Mode",
+                welcome: "Welcome to UCL Simulator",
+                description: "This project uses Monte Carlo and Poisson laws to predict the season end.",
+                choose_team: "Choose a team:", loading: "Loading...",
+                duel_title: "🔮 Match Predictor", duel_desc: "Simulate a specific match.",
+                home_label: "Home 🏠", away_label: "Away ✈️", simulate_match: "Simulate Match",
+                win: "Win", draw: "Draw", loss: "Loss",
+                ranking_title: "🏆 Projected Ranking", ranking_desc: "Simulate final standings.",
+                start_day_label: "Start Situation:", end_day_label: "Until:",
+                calculate_btn: "🔄 Calculate", update_btn: "🔄 Refresh", back_btn: "← Back",
+                col_club: "Club", col_pts: "Pts", col_diff: "GD", col_goals: "Goals", col_vic: "Wins",
+                click_calc: "Click Calculate...", labo_title: "💥 Lab & Stakes",
+                tab_scenario: "🔮 Scenario", tab_hype: "🔥 Hype-o-meter",
+                res_v: "Win", res_n: "Draw", res_d: "Loss", simulate_btn: "Simulate",
+                chart_top8: "Top 8 Thresholds", chart_top24: "Top 24 Thresholds",
+                fav_top8: "🏆 Top 8 Favorites", fav_top24: "🎟️ Qualif Favorites",
+                impact_match_title: "⚡ Decisive Match"
             }
         };
 
-        // 2. Gestion de la langue
+        // --- GESTION LANGUE ---
         function toggleLanguage() {
             let lang = localStorage.getItem('lang') === 'fr' ? 'en' : 'fr';
             localStorage.setItem('lang', lang);
@@ -287,28 +271,24 @@
             const lang = localStorage.getItem('lang') || 'fr';
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                const translation = i18n[lang][key];
-                if (translation) {
+                if (i18n[lang][key]) {
                     // Si l'élément contient une icône, on la préserve
                     const icon = el.querySelector('i');
                     if (icon) {
-                        el.innerHTML = '';
-                        el.appendChild(icon);
-                        el.innerHTML += ' ' + translation;
+                        el.innerHTML = icon.outerHTML + ' ' + i18n[lang][key];
                     } else {
-                        el.textContent = translation;
+                        el.textContent = i18n[lang][key];
                     }
                 }
             });
             document.getElementById('lang-toggle').innerHTML = `<i class="fa-solid fa-globe"></i> ${lang === 'fr' ? 'EN' : 'FR'}`;
-            updateThemeButton(); // Pour traduire le texte du bouton thème aussi
+            updateThemeButton();
         }
 
-        // 3. Gestion du thème (nuit/jour)
+        // --- GESTION THÈME ---
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
             updateThemeButton();
         }
 
@@ -321,7 +301,6 @@
             btn.innerHTML = `<i class="fa-solid ${icon}"></i> <span data-i18n="${textKey}">${i18n[lang][textKey]}</span>`;
         }
 
-        // 4. Initialisation
         window.onload = () => {
             if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
             applyLanguage();
