@@ -790,17 +790,21 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0, journee_fin=8):
         
         if distrib_pos:
             stats_8 = {int(k): v for k, v in distrib_pos.get("8", distrib_pos.get(8, {})).items()}
+            stats_9 = {int(k): v for k, v in distrib_pos.get("9", distrib_pos.get(9, {})).items()}
             stats_24 = {int(k): v for k, v in distrib_pos.get("24", distrib_pos.get(24, {})).items()}
-            
+            stats_25 = {int(k): v for k, v in distrib_pos.get("25", distrib_pos.get(25, {})).items()}
+
             def clean_dict(d):
                 return {k: v for k, v in d.items() if v > 0.005}
-            
+
             return {
                 "journee_utilisee": j_dep,
                 "journee_fin": j_fin,
                 "mode": "OFFLINE",
                 "seuil_top8": clean_dict(stats_8),
-                "seuil_barrage": clean_dict(stats_24)
+                "seuil_9eme": clean_dict(stats_9),
+                "seuil_barrage": clean_dict(stats_24),
+                "seuil_25eme": clean_dict(stats_25)
             }
 
     # MODE LIVE
@@ -816,8 +820,10 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0, journee_fin=8):
     distrib_pos = distribution_par_position(N=nb_simulations, données=etat, debut=debut_simu, fin=j_fin)
     
     stats_8 = distrib_pos.get(8, {})
+    stats_9 = distrib_pos.get(9, {})
     stats_24 = distrib_pos.get(24, {})
-    
+    stats_25 = distrib_pos.get(25, {})
+
     def clean_dict(d):
         return {k: v for k, v in d.items() if v > 0.005}
 
@@ -826,7 +832,9 @@ def get_web_seuils(nb_simulations=1000, journee_depart=0, journee_fin=8):
         "journee_fin": j_fin,
         "mode": "LIVE",
         "seuil_top8": clean_dict(stats_8),
-        "seuil_barrage": clean_dict(stats_24)
+        "seuil_9eme": clean_dict(stats_9),
+        "seuil_barrage": clean_dict(stats_24),
+        "seuil_25eme": clean_dict(stats_25)
     }
 
 # -----------------------------------------------------------------------------
@@ -1036,6 +1044,21 @@ etat_zero = {
 if 'données_J7' not in globals(): données_J7 = etat_zero
 if 'données_J8' not in globals(): données_J8 = etat_zero
 
+def get_max_journee_disponible():
+    """
+    Retourne la dernière journée avec des données réelles (non vides).
+    """
+    map_donnees = {
+        1: données_J1, 2: données_J2, 3: données_J3, 4: données_J4,
+        5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
+    }
+    
+    max_j = 0
+    for j in range(1, 9):
+        if map_donnees[j].get('points') is not None:
+            max_j = j
+    
+    return max_j
 
 def get_simulation_flexible(n_simulations=1000, start_day=0, end_day=8):
     """
@@ -1161,10 +1184,8 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0, journee_fin=8)
                 p_top8 = sum(stats.get(r, 0) for r in range(1, 9))
                 p_qualif = sum(stats.get(r, 0) for r in range(1, 25))
                 
-                if p_qualif > 0.001:
-                    liste_qualif.append({"club": club, "proba": round(min(p_qualif, 1.0) * 100, 1)})
-                if p_top8 > 0.001:
-                    liste_top8.append({"club": club, "proba": round(min(p_top8, 1.0) * 100, 1)})
+                liste_qualif.append({"club": club, "proba": round(min(p_qualif, 1.0) * 100, 1)})
+                liste_top8.append({"club": club, "proba": round(min(p_top8, 1.0) * 100, 1)})
             
             liste_qualif.sort(key=lambda x: x["proba"], reverse=True)
             liste_top8.sort(key=lambda x: x["proba"], reverse=True)
@@ -1205,10 +1226,8 @@ def get_probas_top8_qualif(nb_simulations=1000, journee_depart=0, journee_fin=8)
         p_qualif = proba_qualification(club, distrib_clubs)
         p_top8 = proba_top_8(club, distrib_clubs)
         
-        if p_qualif > 0.001:
-            liste_qualif.append({"club": club, "proba": round(p_qualif * 100, 1)})
-        if p_top8 > 0.001:
-            liste_top8.append({"club": club, "proba": round(p_top8 * 100, 1)})
+        liste_qualif.append({"club": club, "proba": round(p_qualif * 100, 1)})
+        liste_top8.append({"club": club, "proba": round(p_top8 * 100, 1)})
     
     liste_qualif.sort(key=lambda x: x["proba"], reverse=True)
     liste_top8.sort(key=lambda x: x["proba"], reverse=True)

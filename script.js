@@ -14,11 +14,11 @@ const TRANSLATIONS = {
         
         // Navigation
         nav_home: "Accueil",
-        nav_analyses: "Analyses",
+        nav_analyses: "Seuils qualif",
         nav_duel: "Duel",
         nav_ranking: "Classement",
         nav_probas: "Probabilités",
-        nav_labo: "Labo & Hype",
+        nav_labo: "Scénarios",
         nav_about: "A propos",
         
         // Duel
@@ -45,10 +45,10 @@ const TRANSLATIONS = {
         direct_qualif: "Qualif Directe",
         
         // Labo
-        labo_title: "💥 Laboratoire & Enjeux",
+        labo_title: "💥 Scénarios & Enjeux",
         labo_desc: "Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.",
         scenario_tab: "🔮 Scénario (What-If)",
-        hypo_tab: "🎯 Hypo-mètre (Nouveau)",
+        hypo_tab: "🎯 Importance",
         start_day: "Départ :",
         match_day: "Match en :",
         hypothesis: "Hypothèse :",
@@ -65,7 +65,7 @@ const TRANSLATIONS = {
         
         // Probabilités
         probas_title: "📊 Probabilités de Qualification",
-        probas_desc: "Estimation des chances de chaque club selon la journée de départ (Simulé 1000 fois).",
+        probas_desc: "Estimation des chances de chaque club selon la journée de départ (Simulé 1 000 000 fois).",
         
         // Footer
         theme_night: " Mode Nuit",
@@ -83,7 +83,7 @@ const TRANSLATIONS = {
         nav_duel: "Duel",
         nav_ranking: "Ranking",
         nav_probas: "Probabilities",
-        nav_labo: "Lab & Hype",
+        nav_labo: "Scenarios",
         nav_about: "About",
         
         // Duel
@@ -110,10 +110,10 @@ const TRANSLATIONS = {
         direct_qualif: "Direct Qualification",
         
         // Lab
-        labo_title: "💥 Lab & Stakes",
+        labo_title: "💥 Scenarios & Stakes",
         labo_desc: "Simulate scenarios or analyze crucial matches for your team.",
         scenario_tab: "🔮 Scenario (What-If)",
-        hypo_tab: "🎯 Hypo-meter (New)",
+        hypo_tab: "🎯 Importance",
         start_day: "Start:",
         match_day: "Match on:",
         hypothesis: "Hypothesis:",
@@ -130,7 +130,7 @@ const TRANSLATIONS = {
         
         // Probabilities
         probas_title: "📊 Qualification Probabilities",
-        probas_desc: "Estimated chances for each club based on the starting matchday (Simulated 1000 times).",
+        probas_desc: "Estimated chances for each club based on the starting matchday (Simulated 1 000 000 times).",
         
         // Footer
         theme_night: " Night Mode",
@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chargerListeClubs();      // Remplit la grille d'accueil
     remplirTousLesMenus();      // Remplit les sélecteurs des clubs
     remplirDataListClubs();   // Remplit l'autocomplétion pour la recherche de match
+    filtrerJourneesDisponibles();
 
     showPage('home');
     
@@ -180,6 +181,32 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLanguage();
     updateLangButton();
 });
+
+async function filtrerJourneesDisponibles() {
+    try {
+        const response = await fetch('/api/max-journee');
+        const data = await response.json();
+        const maxJ = data.max_journee;
+        
+        const dropdowns = ['startDay', 'simDaySelect', 'analysesStartDay', 
+                          'probaStartDay', 'scenarioStartDay', 'hypo-day-select'];
+        
+        dropdowns.forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                Array.from(select.options).forEach(option => {
+                    if (parseInt(option.value) > maxJ) {
+                        option.disabled = true;
+                        option.style.color = '#ccc';
+                    }
+                });
+                if (parseInt(select.value) > maxJ) select.value = maxJ.toString();
+            }
+        });
+    } catch (error) {
+        console.error('Erreur filtrage journées:', error);
+    }
+}
 
 // Navigation entre les pages (Sections)
 function showPage(pageId) {
@@ -324,9 +351,9 @@ async function simulate() {
             </div>
 
             <div class="chart-wrapper" style="margin-top: 30px;">
-                <h3 style="text-align:center; color:#002f5f;">📈 Historique & Trajectoire</h3>
+                <h3 style="text-align:center; color:#002f5f;">📈 Historique</h3>
                 <p style="text-align:center; color:#666; font-size:0.9rem;">
-                    Évolution des chances (J0 à J${selectedDay})
+                    
                 </p>
                 <div class="chart-area">
                     <canvas id="chartEvolution"></canvas>
@@ -573,7 +600,9 @@ async function chargerAnalysesGlobales() {
 
         // 3. Mise à jour des graphiques
         creerGraphique('chartTop8', data.seuil_top8, `Points du 8ème (Base J${data.journee_utilisee})`, '#4bc0c0');
+        creerGraphique('chart9eme', data.seuil_9eme, `Points du 9ème (Base J${data.journee_utilisee})`, '#b19cd9');
         creerGraphique('chartBarrage', data.seuil_barrage, `Points du 24ème (Base J${data.journee_utilisee})`, '#ffcd56');
+        creerGraphique('chart25eme', data.seuil_25eme, `Points du 25ème (Base J${data.journee_utilisee})`, '#e74c3c');
     } catch (e) {
         console.error("Erreur seuils", e);
     }
@@ -649,6 +678,7 @@ async function lancerScenario() {
     const box = document.getElementById('scenarioResultBox');
 
     if(!club) return alert("Veuillez choisir un club.");
+    if(parseInt(start) >= parseInt(target)) return alert("La journée de départ doit être avant la journée du match.");
     
     box.style.display = 'block';
     box.style.opacity = '0.5'; // Effet chargement
@@ -811,9 +841,18 @@ function creerGraphique(canvasId, distributionData, label, color) {
         charts[canvasId].destroy();
     }
     
-    // Trier les clés (x-axis) numériquement
-    const labels = Object.keys(distributionData).sort((a, b) => parseFloat(a) - parseFloat(b));
-    const values = labels.map(k => distributionData[k] * 100); // Conversion en %
+
+    // Créer un range CONTINU du min au max (même si certaines valeurs ont proba=0)
+    const keys = Object.keys(distributionData).map(k => parseInt(k));
+    const minVal = Math.min(...keys);
+    const maxVal = Math.max(...keys);
+    
+    const labels = [];
+    const values = [];
+    for (let i = minVal; i <= maxVal; i++) {
+        labels.push(i.toString());
+        values.push((distributionData[i] || distributionData[i.toString()] || 0) * 100);
+    }
 
     charts[canvasId] = new Chart(ctx, {
         type: 'bar',

@@ -27,6 +27,13 @@ def get_clubs():
         return jsonify(simulator.get_clubs_list())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/max-journee', methods=['GET'])
+def get_max_journee():
+    try:
+        return jsonify({"max_journee": simulator.get_max_journee_disponible()})
+    except Exception as e:
+        return jsonify({"error": str(e), "max_journee": 6}), 500
 
 @app.route('/api/simulate', methods=['POST'])
 def run_simulation():

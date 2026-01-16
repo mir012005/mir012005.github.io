@@ -30,15 +30,14 @@
         -->
         <nav>
             <button onclick="showPage('home')"><i class="fa-solid fa-house"></i> <span data-i18n="nav_home">Accueil</span></button>
-            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_analyses">Analyses</span></button>
-            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav_duel">Duel</span></button>
+            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_probas">Probabilités</span></button>
             <button onclick="showPage('ranking'); chargerClassement()"><i class="fa-solid fa-trophy"></i> <span data-i18n="nav_ranking">Classement</span></button>
-            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_probas">Probabilités</span></button>    
-            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> <span data-i18n="nav_labo">Labo & Hype</span></button>
-            <button onclick="showPage('about')"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav_about">A propos</span></button>
-            
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_analyses">Seuils qualif</span></button>
+            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> <span data-i18n="nav_labo">Scénarios</span></button>
+            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav_duel">Duel</span></button>
             <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">Mode Nuit</span></button>
             <button id="lang-toggle" class="theme-btn" onclick="toggleLanguage()"><i class="fa-solid fa-globe"></i> EN</button>
+            <button onclick="showPage('about')"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav_about">A propos</span></button>
         </nav>
     </header>
 
@@ -189,7 +188,7 @@
         </section>
 
         <section id="analyses" class="page" style="display:none;">
-            <h2>Analyses Globales (Monte Carlo)</h2>
+            <h2>Seuils de qualification</h2>
             
             <div class="analysis-section">
                 <div class="controls-bar" style="margin-bottom: 20px; justify-content: center;">
@@ -209,7 +208,7 @@
                     <button class="action-btn" onclick="chargerAnalysesGlobales()">🔄 Actualiser</button>
                 </div>
 
-                <h3>1. Les Seuils de Qualification</h3>
+                
                 <p>Combien de points faut-il pour se qualifier ?</p>
                 <div class="charts-row">
                     <div class="chart-wrapper">
@@ -217,8 +216,18 @@
                         <div class="chart-area"><canvas id="chartTop8"></canvas></div>
                     </div>
                     <div class="chart-wrapper">
-                        <h4>Pour le Top 24 (Barrages)</h4>
+                        <h4>Pour le 9ème (Premier Barragiste)</h4>
+                        <div class="chart-area"><canvas id="chart9eme"></canvas></div>
+                    </div>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 24 (Dernier Qualifié)</h4>
                         <div class="chart-area"><canvas id="chartBarrage"></canvas></div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Pour le 25ème (Premier Éliminé)</h4>
+                        <div class="chart-area"><canvas id="chart25eme"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -226,7 +235,7 @@
 
         <section id="probas-zone" class="page" style="display:none;">
             <h2>📊 Probabilités de Qualification</h2>
-            <p>Estimation des chances de chaque club selon la journée de départ (Simulé 1000 fois).</p>
+            <p>Estimation des chances de chaque club selon la journée de départ (Simulé 1 000 000 fois).</p>
 
             <div class="controls-bar">
                 <div class="control-group">
@@ -277,12 +286,12 @@
         </section>
     
         <section id="impact-zone" class="page" style="display:none;">
-            <h2 data-i18n="labo_title">💥 Laboratoire & Enjeux</h2>
+            <h2 data-i18n="labo_title">💥 Scénarios & Enjeux</h2>
             <p data-i18n="labo_desc">Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.</p>
 
             <div class="tabs-container" style="margin-bottom: 25px; display:flex; justify-content:center; gap:15px;">
                 <button id="btn-tab-scenario" class="tab-btn active" onclick="switchScenarioTab('scenario')">🔮 Scénario (What-If)</button>
-                <button id="btn-tab-hypo" class="tab-btn" onclick="switchScenarioTab('hypo')">🎯 Hypo-mètre (Nouveau)</button>
+                <button id="btn-tab-hypo" class="tab-btn" onclick="switchScenarioTab('hypo')">🎯 Importance</button>
             </div>
 
             <div id="tab-scenario" class="tab-content" style="display:block;">
