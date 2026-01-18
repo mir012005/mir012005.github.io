@@ -1394,7 +1394,7 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
             "qualif": round((qualif_apres - qualif_avant) * 100, 1)
         }
     }
-def get_web_hypometre(club_cible, nb_simulations=200, journee_depart=6):
+def get_web_hypometre(club_cible, nb_simulations=10000, journee_depart=6):
     try: jd = int(journee_depart)
     except: jd = 0
 
