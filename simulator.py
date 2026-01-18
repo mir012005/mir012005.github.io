@@ -769,6 +769,43 @@ def distribution_position_par_club_match_fixe(N=10000,club_fixed=None,journee=No
                 d[nclassement[i]][i+1] += 1/N           
     return d
 
+def classement_club(club,classement):
+    x = classement[0] ; i = 1
+    while x!=club and i<len(classement):
+        x = classement[i]
+        i += 1
+    assert(x == club)
+    return i
+
+def importance_pour(club,match,journee, données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
+                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None}, debut=1,N=10000):
+    # retourne l'importance de match (joué en journée journee) pour club, selon les mêmes critères que la fonction importance
+    p1 = [0 for _ in range(len(données["classement"]))] ; p2 = [0 for _ in range(len(données["classement"]))]
+    gain_classement = 0
+    for _ in range(N):
+        nclassement_v = simuler_victoire(match[0],journee,données,debut=debut)["classement"]
+        nclassement_d = simuler_defaite(match[0],journee,données,debut=debut)["classement"]
+        cv = classement_club(club,nclassement_v)
+        cd = classement_club(club,nclassement_d)
+        for position in range(len(données["classement"])):
+            if cv <= position+1:
+                p1[position] += 1/N
+            if cd <= position+1:
+                p2[position] += 1/N
+        gain_classement += (cd - cv)/N
+    
+    return [round(p1[pos],int(math.log10(N))) for pos in range(len(p1))] , [round(p2[pos],int(math.log10(N))) for pos in range(len(p2))] , round(gain_classement,int(math.log10(N)))
+
+def enjeux_pour(club,match,journee,données={"classement" : None, "points" : None, "diff_buts" : None, "buts" : None,
+                    "buts_ext" : None, "nb_victoires" : None, "nb_victoires_ext" : None},debut=1,N=1000):
+    p1 , p2 , diff = importance_pour(club,match,journee,données,debut=debut,N=N)
+
+    qualif_club = p1[23] - p2[23]
+    top8_club = p1[7] - p2[7]
+    
+    enjeu = qualif_club+top8_club
+    
+    return round(enjeu,int(math.log10(N))) , diff
 # =========================== Affichage Web ==================================================
 # =============================================================================
 
@@ -1357,11 +1394,185 @@ def get_scenario_analysis(club_cible, journee_cible, resultat_fixe, journee_depa
             "qualif": round((qualif_apres - qualif_avant) * 100, 1)
         }
     }
+def get_web_hypometre(club_cible, nb_simulations=200, journee_depart=6):
+    try: jd = int(journee_depart)
+    except: jd = 0
 
+    if club_cible not in clubs_en_ldc:
+        return {"error": f"Club {club_cible} introuvable"}
+    
+    resultats_impact = []
+    
+    # Contexte
+    update_simulation_context(jd)
+    map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 
+                      4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
+    etat_actuel = map_historique.get(jd, données_J6)
+    debut_simu = jd + 1
 
-def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
+    # Boucle sur les journées
+    for j_test in range(jd + 1, 9):
+        matchs_a_tester = calendrier.get(f"Journée {j_test}", [])
+        if not matchs_a_tester: matchs_a_tester = calendrier.get(j_test, [])
+        if not matchs_a_tester: continue
+
+        for (dom, ext) in matchs_a_tester:
+            # Variables pour stocker les probas brutes
+            p_qualif_V = p_qualif_D = p_top8_V = p_top8_D = None
+            data_found = False
+
+            # --- ÉTAPE 1 : TENTATIVE OFFLINE ---
+            if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(jd, 8):
+                try:
+                    distrib_dom_V = offline_data.get_scenario_distribution(jd, 8, j_test, dom, 'V')
+                    distrib_dom_D = offline_data.get_scenario_distribution(jd, 8, j_test, dom, 'D')
+                    
+                    if distrib_dom_V and distrib_dom_D:
+                        stats_A = {int(k): v for k, v in distrib_dom_V.get(club_cible, {}).items()}
+                        p_qualif_V = sum(stats_A.get(r, 0) for r in range(1, 25))
+                        p_top8_V = sum(stats_A.get(r, 0) for r in range(1, 9))
+                        
+                        stats_B = {int(k): v for k, v in distrib_dom_D.get(club_cible, {}).items()}
+                        p_qualif_D = sum(stats_B.get(r, 0) for r in range(1, 25))
+                        p_top8_D = sum(stats_B.get(r, 0) for r in range(1, 9))
+                        data_found = True
+                except:
+                    pass
+
+            # --- ÉTAPE 2 : TENTATIVE LIVE (Si Offline a échoué) ---
+            if not data_found:
+                p1, p2, _ = importance_pour(club_cible, (dom, ext), j_test, données=etat_actuel, debut=debut_simu, N=nb_simulations)
+                # p1 = Victoire Dom, p2 = Défaite Dom
+                p_qualif_V = p1[23]
+                p_qualif_D = p2[23]
+                p_top8_V = p1[7]
+                p_top8_D = p2[7]
+
+            # --- ÉTAPE 3 : CALCUL ET STOCKAGE (UNE SEULE FOIS) ---
+            delta_qualif = (p_qualif_V - p_qualif_D) * 100
+            delta_top8 = (p_top8_V - p_top8_D) * 100
+            score_total = delta_qualif + delta_top8
+            
+            is_own = (dom == club_cible or ext == club_cible)
+            
+            if abs(score_total) > 0.0 or is_own:
+                resultats_impact.append({
+                    "journee": j_test,
+                    "match": f"{dom} vs {ext}",
+                    "dom": dom, "ext": ext,
+                    "score": round(abs(score_total), 1),
+                    "score_raw": round(score_total, 1),
+                    "score_qualif": round(delta_qualif, 1),
+                    "score_top8": round(delta_top8, 1),
+                    "is_my_match": is_own
+                })
+
+    resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score']), reverse=True)
+    return {"club": club_cible, "journee": jd, "mode": "MIXTE", "liste": resultats_impact}
+
+def get_web_hypometre_avant_apres(club_cible, nb_simulations=200, journee_depart=6):
     """
-    Analyse quels matchs de la prochaine journée impactent le plus la qualification ET le Top 8.
+    Analyse les enjeux sur TOUTES les journées restantes (J+1 à J8).
+    Trie par importance globale.
+    """
+    try: jd = int(journee_depart)
+    except: jd = 0
+
+    if club_cible not in clubs_en_ldc:
+        return {"error": f"Club {club_cible} introuvable"}
+    
+    resultats_impact = []
+    
+    # On prépare le contexte une seule fois pour le mode LIVE
+    update_simulation_context(jd)
+    map_historique = {0: etat_zero, 1: données_J1, 2: données_J2, 3: données_J3, 4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8}
+    etat_actuel = map_historique.get(jd, données_J6)
+    debut_simu = jd + 1
+
+    # === BOUCLE SUR TOUTES LES JOURNÉES FUTURES (ex: J7, J8) ===
+    for j_test in range(jd + 1, 9):
+        
+        matchs_a_tester = calendrier.get(f"Journée {j_test}", [])
+        if not matchs_a_tester: matchs_a_tester = calendrier.get(j_test, [])
+        if not matchs_a_tester: continue
+
+        # 1. MODE OFFLINE (Si dispo pour cette journée cible)
+        # Note : Il faut que votre générateur offline ait généré les scénarios pour J_test
+        if OFFLINE_DISPONIBLE and offline_data.combinaison_disponible(jd, 8):
+            # Vérification rapide si les scénarios pour cette journée existent dans le fichier JSON
+            # (Cela dépend de votre script generate_offline_data)
+            try:
+                # Test d'accès pour voir si ça plante pas
+                _ = offline_data.get_scenario_distribution(jd, 8, j_test, matchs_a_tester[0][0], 'V')
+                
+                for (dom, ext) in matchs_a_tester:
+                    distrib_dom_V = offline_data.get_scenario_distribution(jd, 8, j_test, dom, 'V')
+                    distrib_dom_D = offline_data.get_scenario_distribution(jd, 8, j_test, dom, 'D')
+                    
+                    if distrib_dom_V and distrib_dom_D:
+                        stats_A = {int(k): v for k, v in distrib_dom_V.get(club_cible, {}).items()}
+                        p1_qualif = sum(stats_A.get(r, 0) for r in range(1, 25))
+                        p1_top8 = sum(stats_A.get(r, 0) for r in range(1, 9))
+                        
+                        stats_B = {int(k): v for k, v in distrib_dom_D.get(club_cible, {}).items()}
+                        p2_qualif = sum(stats_B.get(r, 0) for r in range(1, 25))
+                        p2_top8 = sum(stats_B.get(r, 0) for r in range(1, 9))
+                        
+                        delta_qualif = (p1_qualif - p2_qualif) * 100
+                        delta_top8 = (p1_top8 - p2_top8) * 100
+                        enjeu = delta_qualif + delta_top8
+                        
+                        is_own = (dom == club_cible or ext == club_cible)
+                        
+                        if abs(enjeu) > 0.0 or is_own:
+                            resultats_impact.append({
+                                "journee": j_test, # Ajout du numéro de journée
+                                "match": f"{dom} vs {ext}",
+                                "dom": dom, "ext": ext,
+                                "score": round(abs(enjeu), 1),
+                                "score_raw": round(enjeu, 1),
+                                "score_qualif": round(delta_qualif, 1),
+                                "score_top8": round(delta_top8, 1),
+                                "is_my_match": is_own
+                            })
+                continue # Si Offline a marché pour cette journée, on passe à la suivante
+            except:
+                pass # Si pas de données offline pour J_test, on tombe en mode LIVE ci-dessous
+
+        # 2. MODE LIVE (Calcul via moteur Po pour la journée j_test)
+        for (dom, ext) in matchs_a_tester:
+            # Appel Po avec la journée spécifique (j_test)
+            #score_enjeu, _ = enjeux_pour(club_cible, (dom, ext), j_test, données=etat_actuel, debut=debut_simu, N=nb_simulations)
+            
+            p1, p2, _ = importance_pour(club_cible, (dom, ext), j_test, données=etat_actuel, debut=debut_simu, N=nb_simulations)
+            
+            delta_qualif = (p1[23] - p2[23]) * 100
+            delta_top8 = (p1[7] - p2[7]) * 100
+            score_total = (p1[23] - p2[23] + p1[7] - p2[7]) * 100
+            
+            is_own = (dom == club_cible or ext == club_cible)
+            
+            if abs(score_total) > 0.0 or is_own:
+                resultats_impact.append({
+                    "journee": j_test, # Ajout du numéro de journée
+                    "match": f"{dom} vs {ext}",
+                    "dom": dom, "ext": ext,
+                    "score": round(abs(score_total), 1),
+                    "score_raw": round(score_total, 1),
+                    "score_qualif": round(delta_qualif, 1),
+                    "score_top8": round(delta_top8, 1),
+                    "is_my_match": is_own
+                })
+
+    # Tri global : D'abord MON match (peu importe la journée), puis les plus gros scores
+    resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score']), reverse=True)
+    
+    # On renvoie journee_depart dans "journee" pour info, mais la liste contient le détail
+    return {"club": club_cible, "journee": jd, "mode": "MIXTE", "liste": resultats_impact}
+
+def get_web_hypometre_avant(club_cible, nb_simulations=300, journee_depart=6):
+    """
+    Analyse quels matchs de TOUTES les journées restantes (J+1 à J8) impactent le plus la qualification ET le Top 8.
     Renvoie les deux scores distincts pour affichage, mais trie par la somme des deux.
     """
     try:
@@ -1381,7 +1592,7 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
         return {"error": f"Pas de matchs trouvés pour J{journee_suivante}"}
 
     resultats_impact = []
-    
+
     # Fonction interne pour calculer les deltas et formater le résultat
     def calculer_impact(match, dom, ext, etat_actuel=None, mode="LIVE"):
         delta_qualif = 0
@@ -1411,6 +1622,27 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
                 delta_top8 = abs(p_top8_A - p_top8_B) * 100
 
         else: # MODE LIVE
+            p1, p2, _ = importance_pour(club_cible, (dom, ext), journee_suivante, données=etat, debut=jd + 1, N=nb_simulations)
+        
+            # Formule Po : Victoire - Défaite (Peut être négatif)
+            delta_qualif = (p1[23] - p2[23]) * 100
+            delta_top8 = (p1[7] - p2[7]) * 100
+            
+        score_total = delta_qualif + delta_top8
+        is_own = (dom == club_cible or ext == club_cible)
+            
+        if abs(score_total) > 0.0 or is_own:
+            resultats_impact.append({
+                "match": f"{dom} vs {ext}",
+                "dom": dom, "ext": ext,
+                "score": round(abs(score_total), 1), # Valeur absolue pour le tri visuel
+                "score_raw": round(score_total, 1),  # Vraie valeur (positive ou négative)
+                "score_qualif": round(delta_qualif, 1),
+                "score_top8": round(delta_top8, 1),
+                "is_my_match": is_own
+            })
+            
+        """
             # Simulation Monde A (Dom gagne)
             distrib_dom = distribution_position_par_club_match_fixe(
                 N=nb_simulations, club_fixed=dom, journee=journee_suivante, result_fixed='V',
@@ -1444,6 +1676,7 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
                 "score_top8": round(delta_top8, 1),     # À afficher (Impact Top 8)
                 "is_my_match": is_own
             }
+        """
         return None
 
     # =========================================================================
@@ -1460,11 +1693,38 @@ def get_web_hypometre(club_cible, nb_simulations=300, journee_depart=6):
             4: données_J4, 5: données_J5, 6: données_J6, 7: données_J7, 8: données_J8
         }
         etat = map_historique.get(jd, données_J6)
-
+    
     for (dom, ext) in matchs_a_tester:
         res = calculer_impact(f"{dom} vs {ext}", dom, ext, etat_actuel=etat, mode=mode)
         if res:
             resultats_impact.append(res)
+    """
+    for (dom, ext) in matchs_a_tester:
+        # Appel direct à la fonction Po
+        #score_enjeu, _ = enjeux_pour(club_cible, (dom, ext), journee_suivante, données=etat, debut=jd + 1, N=nb_simulations)
+        
+        # Recalcul des détails pour l'affichage (car enjeux_pour donne juste le total)
+        p1, p2, _ = importance_pour(club_cible, (dom, ext), journee_suivante, données=etat, debut=jd + 1, N=nb_simulations)
+        
+        # Formule Po : Victoire - Défaite (Peut être négatif)
+        delta_qualif = (p1[23] - p2[23]) * 100
+        delta_top8 = (p1[7] - p2[7]) * 100
+        #score_total = score_enjeu * 100
+        score_total = (p1[23] - p2[23] + p1[7] - p2[7]) * 100
+
+        is_own = (dom == club_cible or ext == club_cible)
+        
+        if abs(score_total) > 0.5 or is_own:
+            resultats_impact.append({
+                "match": f"{dom} vs {ext}",
+                "dom": dom, "ext": ext,
+                "score": round(abs(score_total), 1), # Valeur absolue pour le tri visuel
+                "score_raw": round(score_total, 1),  # Vraie valeur (positive ou négative)
+                "score_qualif": round(delta_qualif, 1),
+                "score_top8": round(delta_top8, 1),
+                "is_my_match": is_own
+            })
+    """
 
     # Tri par "score_cumule" (la somme), mais l'objet contient bien les détails
     resultats_impact.sort(key=lambda x: (x['is_my_match'], x['score_cumule']), reverse=True)

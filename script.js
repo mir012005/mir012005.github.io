@@ -779,7 +779,10 @@ async function lancerHypometre() {
             let badge = isOwn 
                 ? `<span style="background:#00d2be; color:#000; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:8px;">VOTRE MATCH</span>` 
                 : `<span style="background:#555; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.7em; margin-left:8px;">RIVAL</span>`;
-
+            
+            // --- NOUVELLE LIGNE AJOUTÉE ICI ---
+            // Crée le badge J7, J8, etc. si l'info est dispo
+            let dayBadge = item.journee ? `<span class="day-badge">J${item.journee}</span>` : '';
             // Couleurs basées sur le score cumulé
             let scoreCumule = item.score_cumule || item.score || 0;
             let scoreQualif = item.score_qualif || item.score || 0;
@@ -788,20 +791,24 @@ async function lancerHypometre() {
             let barColorQualif = scoreQualif > 20 ? "#e74c3c" : (scoreQualif > 10 ? "#f1c40f" : "#3498db");
             let barColorTop8 = scoreTop8 > 20 ? "#e74c3c" : (scoreTop8 > 10 ? "#f1c40f" : "#9b59b6");
             
-            let barWidthQualif = Math.min(100, scoreQualif * 3);
-            let barWidthTop8 = Math.min(100, scoreTop8 * 3);
+            let barWidthQualif = Math.min(100, Math.abs(scoreQualif) * 3);
+            let barWidthTop8 = Math.min(100, Math.abs(scoreTop8) * 3);
 
             let html = `
             <div class="match-card" style="${borderStyle} ${bgStyle} padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="font-weight:600; font-size:1.05rem;">${item.match} ${badge}</div>
+                    <div style="font-weight:600; font-size:1.05rem;">
+                        ${dayBadge} ${item.match} ${badge}
+                    </div>
                 </div>
                 
                 <div style="display:flex; gap:15px;">
                     <div style="flex:1;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-size:0.8rem; color:#888;">Top 24</span>
-                            <span style="font-size:1rem; font-weight:700; color:${barColorQualif};">${scoreQualif}%</span>
+                            <span style="font-size:1rem; font-weight:700; color:${barColorQualif};">
+                                ${item.score_qualif > 0 ? '+' : ''}${item.score_qualif}%
+                            </span>
                         </div>
                         <div style="width:100%; height:5px; background:rgba(0,0,0,0.2); border-radius:3px; overflow:hidden; margin-top:3px;">
                             <div style="width:${barWidthQualif}%; height:100%; background:${barColorQualif}; transition: width 0.5s ease;"></div>
@@ -811,7 +818,9 @@ async function lancerHypometre() {
                     <div style="flex:1;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-size:0.8rem; color:#888;">Top 8</span>
-                            <span style="font-size:1rem; font-weight:700; color:${barColorTop8};">${scoreTop8}%</span>
+                            <span style="font-size:1rem; font-weight:700; color:${barColorTop8};">
+                                ${item.score_top8 > 0 ? '+' : ''}${item.score_top8}%
+                            </span>
                         </div>
                         <div style="width:100%; height:5px; background:rgba(0,0,0,0.2); border-radius:3px; overflow:hidden; margin-top:3px;">
                             <div style="width:${barWidthTop8}%; height:100%; background:${barColorTop8}; transition: width 0.5s ease;"></div>

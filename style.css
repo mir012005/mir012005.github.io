@@ -922,3 +922,23 @@ body.dark-mode .member-photo {
 body.dark-mode .team-member h4 {
     color: var(--text-main); /* Texte blanc en mode nuit */
 }
+
+/* --- AJOUTER À LA FIN DE STYLE.CSS --- */
+
+.day-badge {
+    display: inline-block;
+    background-color: #002f5f; /* Bleu nuit UEFA */
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-right: 8px; /* Espace avant le nom du match */
+    vertical-align: middle;
+}
+
+/* Optionnel : Si vous avez un mode sombre, pour que le badge reste lisible */
+body.dark-mode .day-badge {
+    background-color: #4da3ff; /* Bleu plus clair en mode nuit */
+    color: #000;
+}
