@@ -399,7 +399,7 @@ def simuler_N_saisons_avec_resultats(N, donnees_initiales, journee_debut, journe
 # =============================================================================
 
 def calculer_distribution_positions(positions, mask=None):
-    """Calcule {club: {position: proba}} - VERSION OPTIMISÉE"""
+    """Calcule {club: {position: proba}}"""
     if mask is not None:
         indices = np.where(mask)[0]
         N = len(indices)
@@ -427,7 +427,7 @@ def calculer_distribution_positions(positions, mask=None):
     return distribution
 
 def calculer_distribution_points(stats, mask=None):
-    """Calcule {club: {nb_points: proba}} - VERSION OPTIMISÉE"""
+    """Calcule {club: {nb_points: proba}}"""
     if mask is not None:
         indices = np.where(mask)[0]
         N = len(indices)
@@ -455,7 +455,7 @@ def calculer_distribution_points(stats, mask=None):
     return distribution
 
 def calculer_par_position(positions, stats, mask=None):
-    """Calcule {position: {nb_points: proba}} - VERSION OPTIMISÉE"""
+    """Calcule {position: {nb_points: proba}}"""
     if mask is not None:
         indices = np.where(mask)[0]
         pos = positions[indices]
@@ -485,7 +485,7 @@ def calculer_par_position(positions, stats, mask=None):
     return par_position
 
 def calculer_moyennes(stats, mask=None):
-    """Calcule les moyennes avec TOUS les champs - VERSION OPTIMISÉE."""
+    """Calcule les moyennes avec TOUS les champs"""
     if mask is not None:
         indices = np.where(mask)[0]
         N = len(indices)
@@ -526,7 +526,7 @@ def generer_donnees_guyon(journee_depart, journee_fin, n_simulations, generer_sc
     """Génère les données avec la méthode Guyon."""
     print(f"\n{'='*60}")
     print(f"GÉNÉRATION J{journee_depart} → J{journee_fin} (N={n_simulations:,})")
-    print(f"Méthode: GUYON (probabilités conditionnelles)")
+    print(f"Méthode: probabilités conditionnelles")
     print(f"{'='*60}")
     
     # Charger les ELO

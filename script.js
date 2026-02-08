@@ -1,10 +1,5 @@
-// =============================================================================
-// 1. GESTION GLOBALE & NAVIGATION
-// =============================================================================
-// =============================================================================
-// SYSTÈME DE TRADUCTION FR/EN
-// =============================================================================
 
+// SYSTÈME DE TRADUCTION FR/EN (Incomplète par manque de temps)
 const TRANSLATIONS = {
     fr: {
         // Accueil
@@ -164,7 +159,7 @@ function updateLangButton() {
     }
 }
 
-// =============================================================================
+
 // Stockage des instances de graphiques pour pouvoir les détruire avant redessin
 let charts = {};
 
@@ -217,10 +212,8 @@ function showPage(pageId) {
     if (target) target.style.display = 'block';
 }
 
-// =============================================================================
-// 2. ACCUEIL & DONNÉES CLUBS
-// =============================================================================
 
+// ACCUEIL & DONNÉES CLUBS
 async function chargerListeClubs() {
     const grid = document.getElementById('clubsGrid');
     try {
@@ -263,26 +256,19 @@ async function remplirDataListClubs() {
     } catch(e) {}
 }
 
-// =============================================================================
+
 // 3. SIMULATEUR INDIVIDUEL (MONTE CARLO)
-// =============================================================================
 
 // Variable globale pour le graphique
 let evolutionChartInstance = null;
 
 // 1. FONCTION PRINCIPALE DE SIMULATION
-// =============================================================================
-// FONCTION PRINCIPALE DE SIMULATION (STATS + GRAPHIQUE)
-// =============================================================================
-// =============================================================================
-// FONCTION PRINCIPALE DE SIMULATION (VOTRE VERSION + EVOLUTION)
-// =============================================================================
 async function simulate() {
-    // 1. On récupère le club (Input ou Placeholder si clic depuis l'accueil)
+    // On récupère le club (Input ou Placeholder si clic depuis l'accueil)
     const clubInput = document.getElementById('club');
     const club = clubInput.value.trim() || clubInput.placeholder;
 
-    // 2. On récupère la journée choisie (J0 par défaut)
+    // On récupère la journée choisie (J0 par défaut)
     const daySelect = document.getElementById('simDaySelect');
     const selectedDay = daySelect ? parseInt(daySelect.value) : 0;
     
@@ -298,7 +284,7 @@ async function simulate() {
         const response = await fetch('/api/simulate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // ICI : On envoie la journée choisie au lieu de 6
+            // On envoie la journée choisie au lieu de 6
             body: JSON.stringify({ club: club, day: selectedDay }) 
         });
         const data = await response.json();
@@ -308,8 +294,6 @@ async function simulate() {
             return;
         }
 
-        // 3. VOTRE HTML PRÉSERVÉ (Header + Stats Grid + Charts Column)
-        // J'ai juste ajouté le bloc "Evolution" tout en bas
         container.innerHTML = `
             <div class="club-header">
                 <div class="club-logo-wrapper" style="width:80px; height:80px;">
@@ -361,12 +345,11 @@ async function simulate() {
             </div>
         `;
         
-        // 4. LANCEMENT DES GRAPHIQUES
-        // Vos graphiques existants
+        // LANCEMENT DES GRAPHIQUES
         creerGraphique('pointsChart', data.distribution_points, 'Probabilité', '#007bff');
         creerGraphique('rankChart', data.distribution_rangs, 'Probabilité', '#6f42c1');
 
-        // Le nouveau graphique d'évolution
+        // Le graphique d'évolution
         if (typeof chargerGraphiqueEvolution === "function") {
             chargerGraphiqueEvolution(club, selectedDay);
         }
@@ -377,7 +360,7 @@ async function simulate() {
     }
 }
 
-// 2. FONCTION DU GRAPHIQUE
+// ONCTION DU GRAPHIQUE
 async function chargerGraphiqueEvolution(club, maxDay) {
     try {
         // On demande l'historique arrêté à maxDay
@@ -417,7 +400,7 @@ async function chargerGraphiqueEvolution(club, maxDay) {
                     {
                         label: 'Chance Top 8 (Direct)',
                         data: historyData.map(d => d.top8),
-                        borderColor: '#28a745', // Vert
+                        borderColor: '#28a745',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
                         borderDash: [5, 5], // Pointillés pour le Top 8
@@ -431,7 +414,7 @@ async function chargerGraphiqueEvolution(club, maxDay) {
                 maintainAspectRatio: false,
                 layout: {
                     padding: {
-                        top: 50,    // Marge en haut pour ne pas couper le point 100%
+                        top: 50,
                         bottom: 10,
                         left: 10,
                         right: 10
@@ -457,25 +440,22 @@ async function chargerGraphiqueEvolution(club, maxDay) {
     }
 }
 
-// =============================================================================
-// 4. DUEL (PRÉDICTEUR MATCH UNIQUE)
-// =============================================================================
+// DUEL (PRÉDICTEUR MATCH UNIQUE)
 async function remplirTousLesMenus() {
     try {
         const res = await fetch('/api/clubs');
         const clubs = await res.json();
         
-        // Cibles : Duel, Scénario ET Hypo-mètre (Nouveau)
         const selHome = document.getElementById('selHome');
         const selAway = document.getElementById('selAway');
         const selScenario = document.getElementById('scenarioClub');
-        const selHypo = document.getElementById('hypo-club-select'); // <--- AJOUT IMPORTANT
+        const selHypo = document.getElementById('hypo-club-select');
 
         clubs.forEach(c => {
             if (selHome) selHome.add(new Option(c, c));
             if (selAway) selAway.add(new Option(c, c));
             if (selScenario) selScenario.add(new Option(c, c));
-            if (selHypo) selHypo.add(new Option(c, c)); // <--- AJOUT IMPORTANT
+            if (selHypo) selHypo.add(new Option(c, c));
         });
 
         if (selAway) selAway.selectedIndex = 1; 
@@ -528,10 +508,7 @@ async function lancerDuel() {
     }
 }
 
-// =============================================================================
-// 5. CLASSEMENT PROJETÉ
-// =============================================================================
-
+// CLASSEMENT PROJETÉ
 async function chargerClassement() {
     const tbody = document.getElementById('rankingBody');
     const start = document.getElementById('startDay').value;
@@ -574,17 +551,14 @@ async function chargerClassement() {
     }
 }
 
-// =============================================================================
-// 6. ANALYSES GLOBALES & PROBABILITÉS
-// =============================================================================
-
+// ANALYSES GLOBALES & PROBABILITÉS
 async function chargerAnalysesGlobales() {
-    // 1. Récupération de la journée choisie
+    // Récupération de la journée choisie
     const select = document.getElementById('analysesStartDay');
     // Si le select n'existe pas encore (premier chargement), on prend 0 par défaut
     const day = select ? parseInt(select.value) : 0;
 
-    // 2. Appel API pour les SEUILS (Graphiques)
+    // Appel API pour les SEUILS (Graphiques)
     try {
         const response = await fetch('/api/seuils', {
             method: 'POST', 
@@ -598,7 +572,7 @@ async function chargerAnalysesGlobales() {
             return;
         }
 
-        // 3. Mise à jour des graphiques
+        // Mise à jour des graphiques
         creerGraphique('chartTop8', data.seuil_top8, `Points du 8ème (Base J${data.journee_utilisee})`, '#4bc0c0');
         creerGraphique('chart9eme', data.seuil_9eme, `Points du 9ème (Base J${data.journee_utilisee})`, '#b19cd9');
         creerGraphique('chartBarrage', data.seuil_barrage, `Points du 24ème (Base J${data.journee_utilisee})`, '#ffcd56');
@@ -642,10 +616,8 @@ async function chargerProbas() {
         tq.innerHTML = '<tr><td colspan="3">Erreur</td></tr>';
     }
 }
-// =============================================================================
-// 8. SECTION : LABO & HYPE (SCÉNARIOS + HYPO-MÈTRE)
-// =============================================================================
 
+// LABO & HYPE (SCÉNARIOS + HYPO-MÈTRE)
 // Gestion des onglets internes
 function switchScenarioTab(tabName) {
     // Masquer les contenus
@@ -668,8 +640,7 @@ function switchScenarioTab(tabName) {
     }
 }
 
-// --- PARTIE A : SCÉNARIO (WHAT-IF) ---
-
+// PARTIE A : SCÉNARIO
 async function lancerScenario() {
     const club = document.getElementById('scenarioClub').value;
     const start = document.getElementById('scenarioStartDay').value;
@@ -733,8 +704,7 @@ function updateDiffBadge(elementId, value) {
     }
 }
 
-// --- PARTIE B : HYPO-MÈTRE (NOUVELLE VERSION) ---
-
+// HYPO-MÈTRE
 async function lancerHypometre() {
     const club = document.getElementById('hypo-club-select').value;
     const day = document.getElementById('hypo-day-select').value;
@@ -751,7 +721,6 @@ async function lancerHypometre() {
     }
 
     try {
-        // C'est ici qu'on appelle la nouvelle route Python
         const res = await fetch('/api/hypometre', {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({club: club, day: day})
@@ -780,7 +749,6 @@ async function lancerHypometre() {
                 ? `<span style="background:#00d2be; color:#000; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:8px;">VOTRE MATCH</span>` 
                 : `<span style="background:#555; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.7em; margin-left:8px;">RIVAL</span>`;
             
-            // --- NOUVELLE LIGNE AJOUTÉE ICI ---
             // Crée le badge J7, J8, etc. si l'info est dispo
             let dayBadge = item.journee ? `<span class="day-badge">J${item.journee}</span>` : '';
             // Couleurs basées sur le score cumulé
@@ -838,10 +806,7 @@ async function lancerHypometre() {
     }
 }
 
-// =============================================================================
-// 9. UTILITAIRES GRAPHIQUES (CHART.JS)
-// =============================================================================
-
+// UTILITAIRES GRAPHIQUES (CHART.JS)
 function creerGraphique(canvasId, distributionData, label, color) {
     const ctx = document.getElementById(canvasId).getContext('2d');
     
@@ -849,9 +814,8 @@ function creerGraphique(canvasId, distributionData, label, color) {
     if (charts[canvasId]) {
         charts[canvasId].destroy();
     }
-    
 
-    // Créer un range CONTINU du min au max (même si certaines valeurs ont proba=0)
+    // Créer un range continu du min au max (même si certaines valeurs ont proba=0)
     const keys = Object.keys(distributionData).map(k => parseInt(k));
     const minVal = Math.min(...keys);
     const maxVal = Math.max(...keys);

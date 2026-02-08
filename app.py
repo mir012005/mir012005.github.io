@@ -1,14 +1,11 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-import simulator  # Ton fichier simulator.py
+import simulator
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-# ==============================================================================
-# 1. ROUTES STATIQUES (POUR AFFICHER LE SITE)
-# ==============================================================================
-
+# ROUTES STATIQUES (POUR AFFICHER LE SITE)
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -17,9 +14,7 @@ def index():
 def static_files(path):
     return send_from_directory('.', path)
 
-# ==============================================================================
-# 2. ROUTES GÉNÉRALES (SIMULATEUR, CLASSEMENT, DUEL)
-# ==============================================================================
+# ROUTES GÉNÉRALES (SIMULATEUR, CLASSEMENT, DUEL)
 
 @app.route('/api/clubs', methods=['GET'])
 def get_clubs():
@@ -51,7 +46,7 @@ def run_simulation():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/seuils', methods=['POST']) # Changé de GET à POST
+@app.route('/api/seuils', methods=['POST'])
 def get_seuils():
     try:
         data = request.json or {}
@@ -93,10 +88,6 @@ def get_probas():
         journee_depart=int(data.get('day', 6))
     ))
 
-# ==============================================================================
-# 4. ROUTES ONGLET 2 : SCÉNARIO & HYPE (RAPIDE)
-# ==============================================================================
-
 @app.route('/api/scenario', methods=['POST'])
 def run_scenario():
     try:
@@ -117,7 +108,6 @@ def run_scenario():
 def get_hypometre_route():
     try:
         data = request.json or {}
-        # Appel de la nouvelle fonction dans simulator.py
         res = simulator.get_web_hypometre(
             club_cible=data.get('club'), 
             nb_simulations=300, 
@@ -144,10 +134,6 @@ def get_evolution():
     except Exception as e:
         print(f"Erreur Evolution: {e}")
         return jsonify([])
-
-# ==============================================================================
-# LANCEMENT DU SERVEUR
-# ==============================================================================
 
 if __name__ == '__main__':
     print("Serveur lancé sur http://127.0.0.1:5000")

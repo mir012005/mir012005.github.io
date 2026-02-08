@@ -3,7 +3,7 @@
 """
 MODULE DE DONNÉES OFFLINE V2
 ============================
-Ce module charge les données pré-calculées pour TOUTES les combinaisons
+On charge les données pré-calculées pour TOUTES les combinaisons
 de journées (start → end) et fournit des fonctions d'accès rapide.
 
 Format des fichiers: data/J{start}_to_J{end}.json
@@ -82,7 +82,7 @@ def charger_toutes_les_donnees():
         except (ValueError, IndexError) as e:
             print(f"   ⚠️ Fichier ignoré: {filepath.name} ({e})")
     
-    # Rétrocompatibilité: charger aussi les anciens fichiers J0.json, J1.json...
+    # Charger aussi les anciens fichiers J0.json, J1.json...
     for j in range(8):
         old_filepath = DATA_DIR / f"J{j}.json"
         if old_filepath.exists() and (j, 8) not in _CACHE:
@@ -193,8 +193,6 @@ def get_scenario_distribution(start, end, journee_cible, club, resultat):
     """
     Retourne la distribution des positions pour un scénario spécifique.
     {club: {position: proba}}
-    
-    Note: Les scénarios ne sont générés que pour end=8.
     """
     data = get_donnees(start, end)
     if not data or "scenarios" not in data:
@@ -251,10 +249,3 @@ def calculer_points_moyens(distribution_points, club):
     for pts, proba in distrib.items():
         total += int(pts) * proba
     return total
-
-
-# =============================================================================
-# INITIALISATION
-# =============================================================================
-
-# Le chargement se fait à la demande ou au premier appel
