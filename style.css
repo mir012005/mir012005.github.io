@@ -1,8 +1,8 @@
 /* ==========================================================================
-   0. VARIABLES & THÈMES (GESTION DU DOUBLE MODE)
+   0. VARIABLES & THÈMES
    ========================================================================== */
 :root {
-    /* --- MODE PAR DÉFAUT (JOUR) : Fond Clair / Header Bleu Nuit --- */
+    /* --- MODE PAR DÉFAUT (JOUR) --- */
     --bg-color: #F4F7F6;
     --card-bg: #FFFFFF;
     --text-main: #2C3E50;
@@ -20,7 +20,7 @@
     --input-bg: #FFFFFF;
     --input-border: #E0E6ED;
     
-    --logo-filter: brightness(0) invert(1); /* Logo Blanc */
+    --logo-filter: brightness(0) invert(1);
     
     --shadow: 0 8px 30px rgba(0,0,0,0.08);
     --radius: 16px;
@@ -29,52 +29,51 @@
     --danger-color: #E74C3C;
 }
 
-/* --- MODE NUIT (DARK) : Fond Bleu Nuit / Header Blanc --- */
+/* --- MODE NUIT (DARK) --- */
 body.dark-mode {
-    --bg-color: #001229;        /* Fond très sombre */
-    --card-bg: #001F45;         /* Cartes bleu nuit */
-    --text-main: #F4F7F6;       /* Texte clair */
+    --bg-color: #001229;
+    --card-bg: #001F45;
+    --text-main: #F4F7F6;
     --text-light: #A0AEC0;
     
-    --header-bg: #FFFFFF;       /* Header BLANC (votre demande) */
-    --header-text: #002F6C;     /* Texte Header FONCÉ */
+    --header-bg: #FFFFFF;
+    --header-text: #002F6C;
     --nav-btn-bg: #F1F5F9;
     --nav-btn-text: #002F6C;
     --nav-btn-hover-bg: #002F6C;
     --nav-btn-hover-text: #FFFFFF;
     
-    --primary-color: #60A5FA;   /* Bleu plus électrique pour le contraste */
+    --primary-color: #60A5FA;
     --accent-color: #00D2BE;
     --input-bg: #002855;
     --input-border: #003666;
     
-    --logo-filter: none;        /* Logo Original (Couleur) sur fond blanc */
+    --logo-filter: none;
     
     --shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
 /* ==========================================================================
-   1. STYLE GLOBAL APPLIQUANT LES VARIABLES
+   1. STYLE GLOBAL
    ========================================================================== */
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
     font-family: 'Inter', sans-serif;
     margin: 0; padding: 0;
-    transition: background-color 0.3s ease, color 0.3s ease; /* Transition douce */
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Wrapper principal (Le conteneur qui centre tout) */
 main {
-    max-width: 1100px; /* Empêche le site de s'étirer à l'infini */
-    width: 90%;        /* Laisse 5% de marge de chaque côté sur tablette */
-    margin: 40px auto; /* CENTRE le bloc au milieu de la page */
-    padding: 0 20px;   /* Sécurité pour ne pas coller aux bords sur mobile */
+    max-width: 1100px;
+    width: 90%;
+    margin: 40px auto;
+    padding: 0 20px;
     min-height: 80vh;
 }
 
 /* ==========================================================================
-   2. HEADER & NAVIGATION DYNAMIQUE
+   2. HEADER & NAVIGATION
    ========================================================================== */
 header {
     background: var(--header-bg) !important;
@@ -90,7 +89,6 @@ header h1 {
     display: flex; align-items: center; justify-content: center; gap: 15px;
 }
 
-/* Gestion du Logo (Blanc ou Couleur selon le mode) */
 .header-logo {
     height: 50px; width: auto;
     filter: var(--logo-filter);
@@ -111,18 +109,10 @@ nav button:hover {
     transform: translateY(-3px);
 }
 
-/* Inputs adaptés au thème */
-input, select {
-    background-color: var(--input-bg);
-    color: var(--text-main);
-    border: 2px solid var(--input-border);
-}
-
 /* ==========================================================================
-   3. ÉLÉMENTS D'INTERFACE (BOUTONS, INPUTS, CARDS)
+   3. ÉLÉMENTS D'INTERFACE
    ========================================================================== */
 
-/* --- BOUTONS D'ACTION MODERNES --- */
 .action-btn, .big-btn {
     background: linear-gradient(135deg, var(--primary-color) 0%, #004085 100%);
     color: white;
@@ -139,7 +129,6 @@ input, select {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
 
-/* Effet "Néon" au survol */
 .action-btn:hover, .big-btn:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(0, 210, 190, 0.4);
@@ -148,7 +137,6 @@ input, select {
 
 .action-btn:active, .big-btn:active { transform: translateY(1px); }
 
-/* Bouton Secondaire */
 .big-btn.secondary {
     background: transparent;
     border: 2px solid #E0E6ED;
@@ -161,7 +149,6 @@ input, select {
     background: white;
 }
 
-/* Bouton Retour */
 .back-btn {
     background: transparent;
     border: 1px solid transparent;
@@ -181,7 +168,6 @@ input, select {
     transform: translateX(-3px);
 }
 
-/* --- INPUTS & BARRES DE CONTRÔLE --- */
 .search-box, .controls-bar {
     background: var(--card-bg);
     padding: 25px;
@@ -217,7 +203,6 @@ input:focus, select:focus {
     box-shadow: 0 0 0 4px rgba(0, 210, 190, 0.1);
 }
 
-/* --- INTERACTIVITÉ DES CARTES (Animation "Hover Lift") --- */
 .controls-bar, .scenario-wrapper, .stat-box, .chart-wrapper, .duel-container, .card, .match-card {
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease, border-color 0.3s;
 }
@@ -228,7 +213,6 @@ input:focus, select:focus {
     border-color: rgba(0, 210, 190, 0.3);
 }
 
-/* --- LOADER & ERREURS --- */
 .loader {
     border: 3px solid #f3f3f3;
     border-top: 3px solid var(--accent-color);
@@ -249,7 +233,7 @@ input:focus, select:focus {
 }
 
 /* ==========================================================================
-   4. SECTION ACCUEIL (CLUBS GRID)
+   4. SECTION ACCUEIL
    ========================================================================== */
 .hero { 
     text-align: center; 
@@ -262,10 +246,6 @@ input:focus, select:focus {
     font-weight: 900; 
     letter-spacing: -1px;
     margin-bottom: 10px;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
     display: inline-block;
 }
 
@@ -360,7 +340,7 @@ input:focus, select:focus {
 .chart-area { position: relative; height: 350px; width: 100% !important; }
 
 /* ==========================================================================
-   6. TABLEAUX (CLASSEMENT & PROBAS)
+   6. TABLEAUX
    ========================================================================== */
 .table-container, .table-wrapper {
     background: var(--card-bg); border-radius: var(--radius);
@@ -381,7 +361,6 @@ input:focus, select:focus {
 .ranking-table tr:hover { background-color: #F1F7FF; }
 .ranking-table tr:last-child td { border-bottom: none; }
 
-/* FIX LOGOS */
 .ranking-table img {
     width: 32px !important; height: 32px !important;
     object-fit: contain; vertical-align: middle;
@@ -410,7 +389,7 @@ input:focus, select:focus {
 .dot.red { background-color: var(--danger-color); }
 
 /* ==========================================================================
-   7. DUEL (STYLE TABLEAU D'AFFICHAGE)
+   7. DUEL
    ========================================================================== */
 .duel-container {
     display: flex; justify-content: center; align-items: center;
@@ -450,11 +429,11 @@ input:focus, select:focus {
 .p-bar.loss { background-color: var(--danger-color); }
 
 /* ==========================================================================
-   8. ONGLETS & IMPACT (DESIGN PREMIUM)
+   8. ONGLETS & IMPACT
    ========================================================================== */
 .tabs-container, .impact-tabs {
     display: inline-flex; justify-content: center;
-    background: #E0E5EC; padding: 6px; border-radius: 50px;
+    background: #E0E6ED; padding: 6px; border-radius: 50px;
     margin: 0 auto 35px auto; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
     position: relative; left: 50%; transform: translateX(-50%);
 }
@@ -627,7 +606,7 @@ input:focus, select:focus {
 .diff-badge.neutral { background-color: #F1F5F9; color: #475569; }
 
 /* ==========================================================================
-   10. SCROLLBAR PERSONNALISÉE
+   10. SCROLLBAR & ANIMATIONS
    ========================================================================== */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -639,16 +618,13 @@ input:focus, select:focus {
 ::-webkit-scrollbar-thumb:hover { background-color: var(--primary-color); }
 ::-webkit-scrollbar-thumb:active { background-color: var(--accent-color); }
 
-/* --- AMÉLIORATION 1 : FOND ANIMÉ --- */
 body {
-    /* Mode jour : dégradé clair */
     background: linear-gradient(-45deg, #F4F7F6, #d0e1f9, #e8f4f8, #b8d4e8);
     background-size: 400% 400%;
     animation: gradientBG 60s ease infinite;
 }
 
 body.dark-mode {
-    /* Mode nuit : dégradé foncé */
     background: linear-gradient(-45deg, var(--bg-color), #0a2e52, var(--bg-color), #001a3d);
     background-size: 400% 400%;
     animation: gradientBG 60s ease infinite;
@@ -660,68 +636,47 @@ body.dark-mode {
     100% { background-position: 0% 50%; }
 }
 
-/* --- AMÉLIORATION 2 : CARTES EN VERRE (GLASSMORPHISM) --- */
 body.dark-mode .club-card, 
 body.dark-mode .stat-box, 
 body.dark-mode .scenario-card,
 body.dark-mode .duel-container {
-    background: rgba(0, 31, 69, 0.7) !important; /* Semi-transparent */
-    backdrop-filter: blur(12px);                 /* Flou derrière la carte */
+    background: rgba(0, 31, 69, 0.7) !important;
+    backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);  /* Bordure fine brillante */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
-/* --- AMÉLIORATION 3 : LOGO TOURNANT --- */
 .header-logo {
     transition: transform 3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 header h1:hover .header-logo {
-    transform: rotate(360deg) scale(1.1); /* Tourne et grossit un peu */
+    transform: rotate(360deg) scale(1.1);
     cursor: pointer;
 }
 
-/* --- AMÉLIORATION 4 : TEXTE PREMIUM --- */
-/* Applique un dégradé Or/Jaune sur les scores du duel */
-/* --- AMÉLIORATION 4 : TEXTE PREMIUM (CORRIGÉ) --- */
 .score-digit {
     background: linear-gradient(to bottom, #ffffff 0%, #aab7c4 100%);
-    
-    /* On met les deux versions pour éviter l'erreur */
     -webkit-background-clip: text; 
     background-clip: text;
-    
-    /* Pareil pour la couleur transparente */
     -webkit-text-fill-color: transparent;
     color: transparent;
-    
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
-/* En mode nuit, effet Cyan électrique */
 body.dark-mode h2 {
     background: linear-gradient(90deg, #fff 0%, var(--accent-color) 100%);
-    
-    /* On met les deux versions ici aussi */
     -webkit-background-clip: text;
     background-clip: text;
-    
     -webkit-text-fill-color: transparent;
     color: transparent;
-    
-    display: inline-block; /* Nécessaire pour que le dégradé s'applique au texte */
+    display: inline-block;
 }
 
-/* --- CORRECTION VISIBILITÉ TEXTE HERO --- */
 .hero p {
-    /* On force la couleur du texte principal (qui est blanc en mode nuit) */
     color: var(--text-main) !important;
-    
-    /* On ajoute une ombre noire derrière le texte pour le décoller du fond */
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-    
-    /* Un peu de style en plus */
     font-size: 1.2rem;
     font-weight: 500;
     opacity: 1;
@@ -729,7 +684,6 @@ body.dark-mode h2 {
     margin: 10px auto;
 }
 
-/* --- FOOTER (PIED DE PAGE) --- */
 footer {
     text-align: center;
     padding: 40px 20px;
@@ -762,7 +716,6 @@ footer {
     transform: translateY(-3px);
 }
 
-/* En mode nuit, on adapte la bordure du footer */
 body.dark-mode footer {
     border-top-color: rgba(255,255,255,0.05);
 }
@@ -771,32 +724,20 @@ nav button i {
     margin-right: 8px;
     font-size: 1.1em;
 }
-/* ==========================================================================
-   CORRECTION : SURVOL DE LA SOURIS (HOVER) EN MODE NUIT
-   ========================================================================== */
 
-/* Cible la ligne quand la souris est dessus */
 body.dark-mode .ranking-table tr:hover,
 body.dark-mode .ranking-table tr:hover td {
-    
-    /* Au lieu de Blanc, on met un gris très foncé transparent */
     background-color: rgba(255, 255, 255, 0.1) !important; 
-    
-    /* On force le texte à rester BLANC */
     color: #FFFFFF !important;
-    
-    /* Optionnel : change le curseur pour montrer que c'est interactif */
     cursor: pointer;
 }
 
-/* Si jamais il y a une classe "active" ou "selected" qui met un fond blanc */
 body.dark-mode .ranking-table tr.active,
 body.dark-mode .ranking-table tr.selected {
-    background-color: rgba(0, 210, 190, 0.15) !important; /* Un léger Cyan sombre */
+    background-color: rgba(0, 210, 190, 0.15) !important;
     color: white !important;
 }
 
-/* Style de la page À Propos */
 .about-card {
     background: var(--bg-card);
     padding: 25px;
@@ -814,20 +755,17 @@ body.dark-mode .ranking-table tr.selected {
     margin-bottom: 15px;
 }
 
-/* Ajustement pour le mode sombre */
 body.dark-mode .about-card {
     background: #1e1e1e;
     border-color: #333;
 }
 
-/* --- CORRECTION : TITRE HERO EN MODE JOUR --- */
 .hero h2 {
     color: #FFFFFF !important;
     -webkit-text-fill-color: #FFFFFF !important;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-/* En mode nuit, on garde l'effet dégradé cyan */
 body.dark-mode .hero h2 {
     background: linear-gradient(90deg, #fff 0%, var(--accent-color) 100%);
     -webkit-background-clip: text;
@@ -838,53 +776,46 @@ body.dark-mode .hero h2 {
 }
 
 /* ==========================================================================
-   STYLE GALERIE ÉQUIPE (4 COLLABORATEURS)
+   GALERIE ÉQUIPE
    ========================================================================== */
-
-/* Conteneur de la grille */
 .team-grid {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap; /* Permet de passer à la ligne sur petit écran */
-    gap: 30px;       /* Espace entre les membres */
+    flex-wrap: wrap;
+    gap: 30px;
     margin-top: 20px;
 }
 
-/* Carte individuelle d'un membre */
 .team-member {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    width: 160px; /* Largeur fixe pour que tout soit bien aligné */
+    width: 160px;
 }
 
-/* Le cercle de la photo */
 .member-photo {
     width: 100px;  
     height: 100px;
-    border-radius: 50%; /* Rend l'image ronde */
+    border-radius: 50%;
     overflow: hidden;
     border: 3px solid var(--primary-color);
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     transition: transform 0.3s ease, border-color 0.3s;
-    background-color: #f0f0f0; /* Fond gris clair de sécurité */
+    background-color: #f0f0f0;
 }
 
-/* L'image à l'intérieur du cercle */
 .member-photo img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Recadre l'image sans la déformer */
+    object-fit: cover;
 }
 
-/* Effet au survol de la souris */
 .team-member:hover .member-photo {
-    transform: scale(1.1); /* Zoom léger */
-    border-color: var(--accent-color); /* La bordure change de couleur */
+    transform: scale(1.1);
+    border-color: var(--accent-color);
 }
 
-/* Nom du collaborateur */
 .team-member h4 {
     margin: 5px 0;
     color: var(--text-main);
@@ -894,13 +825,12 @@ body.dark-mode .hero h2 {
     line-height: 1.3;
 }
 
-/* Le petit bouton LinkedIn */
 .linkedin-pill {
     text-decoration: none;
-    background-color: #0077b5; /* Bleu officiel LinkedIn */
+    background-color: #0077b5;
     color: white !important;
     padding: 4px 12px;
-    border-radius: 20px; /* Bords très arrondis */
+    border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
     transition: opacity 0.2s, transform 0.2s;
@@ -914,32 +844,28 @@ body.dark-mode .hero h2 {
     transform: translateY(-2px);
 }
 
-/* --- AJUSTEMENTS MODE NUIT --- */
 body.dark-mode .member-photo {
-    border-color: var(--accent-color); /* Bordure brillante en mode nuit */
+    border-color: var(--accent-color);
     box-shadow: 0 5px 15px rgba(0,0,0,0.4);
 }
 
 body.dark-mode .team-member h4 {
-    color: var(--text-main); /* Texte blanc en mode nuit */
+    color: var(--text-main);
 }
-
-/* --- AJOUTER À LA FIN DE STYLE.CSS --- */
 
 .day-badge {
     display: inline-block;
-    background-color: #002f5f; /* Bleu nuit UEFA */
+    background-color: #002f5f;
     color: white;
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 0.85em;
     font-weight: bold;
-    margin-right: 8px; /* Espace avant le nom du match */
+    margin-right: 8px;
     vertical-align: middle;
 }
 
-/* Optionnel : Si vous avez un mode sombre, pour que le badge reste lisible */
 body.dark-mode .day-badge {
-    background-color: #4da3ff; /* Bleu plus clair en mode nuit */
+    background-color: #4da3ff;
     color: #000;
 }

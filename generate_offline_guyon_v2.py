@@ -416,7 +416,6 @@ def calculer_distribution_positions(positions, mask=None):
         else:
             col = positions[:, club_idx]
         
-        # bincount est BEAUCOUP plus rapide que sum(==p) en boucle
         counts = np.bincount(col, minlength=N_CLUBS + 1)
         
         distribution[club] = {}
@@ -444,7 +443,6 @@ def calculer_distribution_points(stats, mask=None):
         else:
             col = stats['points'][:, club_idx]
         
-        # bincount pour comptage rapide
         counts = np.bincount(col)
         
         distribution[club] = {}
