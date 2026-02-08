@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Ligue des Champions</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>
+            <img src="logo_ldc_sans_texte.png" alt="Logo Champions League" class="header-logo">
+            
+            Champions League Simulation
+        </h1>
+        <nav>
+            <button onclick="showPage('home')"><i class="fa-solid fa-house"></i> <span data-i18n="nav_home">Accueil</span></button>
+            <button onclick="showPage('probas-zone')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_probas">Probabilités</span></button>
+            <button onclick="showPage('ranking'); chargerClassement()"><i class="fa-solid fa-trophy"></i> <span data-i18n="nav_ranking">Classement</span></button>
+            <button onclick="showPage('analyses'); chargerAnalysesGlobales()"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_analyses">Seuils qualif</span></button>
+            <button onclick="showPage('impact-zone')"><i class="fa-solid fa-flask"></i> <span data-i18n="nav_labo">Scénarios</span></button>
+            <button onclick="showPage('duel')"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav_duel">Duel</span></button>
+            <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">Mode Nuit</span></button>
+            <button id="lang-toggle" class="theme-btn" onclick="toggleLanguage()"><i class="fa-solid fa-globe"></i> EN</button>
+            <button onclick="showPage('about')"><i class="fa-solid fa-circle-info"></i> <span data-i18n="nav_about">A propos</span></button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="page">
+            <div class="hero">
+                <h2 data-i18n="welcome">Bienvenue sur le Simulateur LDC</h2>
+                <p data-i18n="description">Ce projet utilise la méthode de Monte Carlo et les lois de Poisson pour prédire la fin de la saison.</p>
+
+                <input type="hidden" id="club">
+            </div>
+
+            <div class="clubs-container">
+                <h3 data-i18n="choose_team">Choisissez une équipe :</h3>
+                <div id="clubsGrid" class="clubs-grid">
+                    <div class="loader"></div> Chargement...
+                </div>
+            </div>
+        </section>
+
+        <section id="duel" class="page" style="display:none;">
+            <h2 data-i18n="duel_title">🔮 Prédicteur de Match</h2>
+            <p data-i18n="duel_desc">Simulez une rencontre spécifique en utilisant le modèle Elo + Poisson.</p>
+
+            <div class="duel-container">
+                <div class="team-selector">
+                    <label data-i18n="home">Domicile 🏠</label>
+                    <select id="selHome"></select>
+                </div>
+                <div class="vs-badge">VS</div>
+                <div class="team-selector">
+                    <label data-i18n="away">Extérieur ✈️</label>
+                    <select id="selAway"></select>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top:20px;">
+                <button class="big-btn" onclick="lancerDuel()" data-i18n="simulate_match">Simuler le match</button>
+            </div>
+
+            <div id="duelResult" class="duel-result" style="display:none;">
+                <div class="score-board">
+                    <div class="team-score">
+                        <span id="resHomeName">Home</span>
+                        <span id="resHomeScore" class="score-digit">0</span>
+                    </div>
+                    <div class="divider">-</div>
+                    <div class="team-score">
+                        <span id="resAwayName">Away</span>
+                        <span id="resAwayScore" class="score-digit">0</span>
+                    </div>
+                </div>
+                <div class="proba-bar-container">
+                    <div id="barWin" class="p-bar win">Win</div>
+                    <div id="barDraw" class="p-bar draw">Draw</div>
+                    <div id="barLoss" class="p-bar loss">Loss</div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="ranking" class="page" style="display:none;">
+            <h2 data-i18n="ranking_title">🏆 Classement Projeté (Moyenne)</h2>
+            <p data-i18n="ranking_desc">Simulez le classement sur une période précise.</p>
+            
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label for="startDay">Situation de départ (Après) :</label>
+                    <select id="startDay">
+                        <option value="0" selected>J0 (Début)</option>
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6 (Actuel)</option>
+                        <option value="7">J7</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="endDay">Simuler jusqu'à la :</label>
+                    <select id="endDay">
+                        <option value="1">J1</option>
+                        <option value="2">J2</option>
+                        <option value="3">J3</option>
+                        <option value="4">J4</option>
+                        <option value="5">J5</option>
+                        <option value="6">J6</option>
+                        <option value="7">J7</option>
+                        <option value="8" selected>J8 (Fin)</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="chargerClassement()">🔄 Calculer</button>
+            </div>
+
+            <div class="table-container">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align:left;">Club</th>
+                            <th>Pts</th>
+                            <th>Diff.</th>
+                            <th>Buts</th>
+                            <th class="secondary-stat">Buts Ext.</th>
+                            <th>Vic.</th>
+                            <th class="secondary-stat">Vict. Ext.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <tr><td colspan="8" style="text-align:center;">Cliquez sur Calculer...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="legend">
+                <span class="dot green"></span> Qualif Directe (1-8)
+                <span class="dot orange"></span> Barrages (9-24)
+                <span class="dot red"></span> Éliminé (25-36)
+            </div>
+        </section>
+
+        <section id="results" class="page" style="display:none;">
+            <h2 data-i18n="results_title">Résultats de la simulation</h2>
+            
+            <button onclick="showPage('home')" class="back-btn" data-i18n="back_btn">← Choisir un autre club</button>
+            
+            <div class="controls-bar" style="margin: 0 0 20px 0; justify-content: center; background-color: #f0f7ff; border: 1px solid #cce5ff;">
+                <div class="control-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                    <label for="simDaySelect" style="font-weight:bold; color:#002f5f; margin:0;">
+                        📅 Simuler la fin de saison à partir de la :
+                    </label>
+                    <select id="simDaySelect" onchange="simulate()" style="padding:8px; border:2px solid #0066cc; border-radius:6px; font-weight:bold; color:#002f5f; cursor:pointer; background: white;">
+                        <option value="0" selected>J0 (Début de saison)</option>
+                        <option value="1">Journée 1</option>
+                        <option value="2">Journée 2</option>
+                        <option value="3">Journée 3</option>
+                        <option value="4">Journée 4</option>
+                        <option value="5">Journée 5</option>
+                        <option value="6">Journée 6</option>
+                        <option value="7">Journée 7</option>
+                        <option value="8">Journée 8</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="resultsContainer"></div>
+        </section>
+
+        <section id="analyses" class="page" style="display:none;">
+            <h2>Seuils de qualification</h2>
+            
+            <div class="analysis-section">
+                <div class="controls-bar" style="margin-bottom: 20px; justify-content: center;">
+                    <div class="control-group">
+                        <label>Situation de départ :</label>
+                        <select id="analysesStartDay">
+                            <option value="0"selected>J0 (Début Saison)</option>
+                            <option value="1">J1</option>
+                            <option value="2">J2</option>
+                            <option value="3">J3</option>
+                            <option value="4">J4</option>
+                            <option value="5">J5</option>
+                            <option value="6">J6</option>
+                            <option value="7">J7</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="chargerAnalysesGlobales()">🔄 Actualiser</button>
+                </div>
+
+                
+                <p>Combien de points faut-il pour se qualifier ?</p>
+                <div class="charts-row">
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 8 (Qualif Directe)</h4>
+                        <div class="chart-area"><canvas id="chartTop8"></canvas></div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Pour le 9ème (Premier Barragiste)</h4>
+                        <div class="chart-area"><canvas id="chart9eme"></canvas></div>
+                    </div>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-wrapper">
+                        <h4>Pour le Top 24 (Dernier Qualifié)</h4>
+                        <div class="chart-area"><canvas id="chartBarrage"></canvas></div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Pour le 25ème (Premier Éliminé)</h4>
+                        <div class="chart-area"><canvas id="chart25eme"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="probas-zone" class="page" style="display:none;">
+            <h2>📊 Probabilités de Qualification</h2>
+            <p>Estimation des chances de chaque club selon la journée de départ (Simulé 1 000 000 fois).</p>
+
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label>Situation après la :</label>
+                    <select id="probaStartDay">
+                        <option value="0" selected>J0 (Début Saison)</option>
+                        <option value="1">Journée 1</option>
+                        <option value="2">Journée 2</option>
+                        <option value="3">Journée 3</option>
+                        <option value="4">Journée 4</option>
+                        <option value="5">Journée 5</option>
+                        <option value="6">Journée 6 (Actuel)</option>
+                        <option value="7">Journée 7</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="chargerProbas()">Calculer les chances</button>
+            </div>
+
+            <div class="probas-container">
+                <div class="proba-column">
+                    <h3 class="green-text">🏆 Favoris Top 8 (Qualif Directe)</h3>
+                    <div class="table-wrapper">
+                        <table class="ranking-table">
+                            <thead>
+                                <tr><th>#</th><th style="text-align:left;">Club</th><th>% Chance</th></tr>
+                            </thead>
+                            <tbody id="tbodyTop8">
+                                <tr><td colspan="3">Cliquez sur Calculer...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="proba-column">
+                    <h3 class="orange-text">🎟️ Favoris Top 24 (Barrages + Top8)</h3>
+                    <div class="table-wrapper">
+                        <table class="ranking-table">
+                            <thead>
+                                <tr><th>#</th><th style="text-align:left;">Club</th><th>% Chance</th></tr>
+                            </thead>
+                            <tbody id="tbodyQualif">
+                                <tr><td colspan="3">Cliquez sur Calculer...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    
+        <section id="impact-zone" class="page" style="display:none;">
+            <h2 data-i18n="labo_title">💥 Scénarios & Enjeux</h2>
+            <p data-i18n="labo_desc">Simulez des scénarios ou analysez les matchs cruciaux pour votre équipe.</p>
+
+            <div class="tabs-container" style="margin-bottom: 25px; display:flex; justify-content:center; gap:15px;">
+                <button id="btn-tab-scenario" class="tab-btn active" onclick="switchScenarioTab('scenario')">🔮 Scénario (What-If)</button>
+                <button id="btn-tab-hypo" class="tab-btn" onclick="switchScenarioTab('hypo')">🎯 Importance</button>
+            </div>
+
+            <div id="tab-scenario" class="tab-content" style="display:block;">
+                <div class="scenario-header">
+                    <h3>🧪 Simulateur de Résultat</h3>
+                    <p style="font-size:0.9em; color:#666;">Testez un résultat spécifique et voyez l'impact immédiat.</p>
+                </div>
+
+                <div class="controls-bar" style="justify-content: center; flex-wrap: wrap;">
+                    <div class="control-group">
+                        <label>Départ :</label>
+                        <select id="scenarioStartDay">
+                            <option value="0" selected>J0 (Début de saison)</option>
+                            <option value="1">Journée 1</option>
+                            <option value="2">Journée 2</option>
+                            <option value="3">Journée 3</option>
+                            <option value="4">Journée 4</option>
+                            <option value="5">Journée 5</option>
+                            <option value="6">Journée 6</option>
+                            <option value="7">Journée 7</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Match en :</label>
+                        <select id="scenarioTargetDay">
+                            <option value="0" selected>J0 (Début de saison)</option>
+                            <option value="1">Journée 1</option>
+                            <option value="2">Journée 2</option>
+                            <option value="3">Journée 3</option>
+                            <option value="4">Journée 4</option>
+                            <option value="5">Journée 5</option>
+                            <option value="6">Journée 6</option>
+                            <option value="7">Journée 7</option>
+                            <option value="8">Journée 8</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Hypothèse :</label>
+                        <select id="scenarioClub">
+                            <option value="" disabled selected>-- Club --</option>
+                            </select>
+                        <select id="scenarioResult">
+                            <option value="V">Victoire</option>
+                            <option value="N">Nul</option>
+                            <option value="D">Défaite</option>
+                        </select>
+                    </div>
+                    
+                    <button class="action-btn" onclick="lancerScenario()">Simuler</button>
+                </div>
+
+                <div id="scenarioResultBox" style="margin-top:20px; display:none;">
+                    <div class="impact-comparison-container">
+                        <div class="impact-col before">
+                            <h4>Avant</h4>
+                            <div class="stat-row"><span>Qualif</span><strong id="beforeQualif">--%</strong></div>
+                            <div class="stat-row"><span>Top 8</span><strong id="beforeTop8">--%</strong></div>
+                        </div>
+                        <div class="impact-arrow"><div id="resBadge" class="result-badge">SI RÉSULTAT</div></div>
+                        <div class="impact-col after">
+                            <h4>Après</h4>
+                            <div class="stat-row">
+                                <span>Qualif</span>
+                                <div><strong id="afterQualif">--%</strong> <span id="diffQualif" class="diff-badge">--</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <span>Top 8</span>
+                                <div><strong id="afterTop8">--%</strong> <span id="diffTop8" class="diff-badge">--</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-hypo" class="tab-content" style="display:none;">
+                <div class="scenario-header">
+                    <h3>🎯 Analyse des Matchs Clés</h3>
+                    <p style="font-size:0.9em; color:#666;">Quels matchs des AUTRES devez-vous surveiller ?</p>
+                </div>
+
+                <div class="controls-bar" style="justify-content: center; max-width: 800px; margin: 0 auto 30px auto;">
+                    <div class="control-group">
+                        <label>Je supporte :</label>
+                        <select id="hypo-club-select" class="club-selector">
+                            </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Après la journée :</label>
+                        <select id="hypo-day-select">
+                            <option value="0" selected>J0 (Début de saison)</option>
+                            <option value="1">Journée 1</option>
+                            <option value="2">Journée 2</option>
+                            <option value="3">Journée 3</option>
+                            <option value="4">Journée 4</option>
+                            <option value="5">Journée 5</option>
+                            <option value="6">Journée 6</option>
+                            <option value="7">Journée 7</option>
+                            <option value="8">Journée 8</option>
+                        </select>
+                    </div>
+
+                    <button class="action-btn" onclick="lancerHypometre()">
+                        <i class="fa-solid fa-radar"></i> Analyser
+                    </button>
+                </div>
+
+                <div id="hypo-loading" class="loader" style="display:none; margin: 20px auto;"></div>
+                <div id="hypo-resultats" class="matches-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;"></div>
+            </div>
+        </section>
+
+        <section id="about" class="page" style="display:none;">
+            <div class="about-container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+                <h2 style="text-align:center; margin-bottom: 30px;">Comment fonctionne ce simulateur ?</h2>
+                
+                <div class="about-card">
+                    <h3>🧠 La Méthodologie</h3>
+                    <p>Ce projet se base sur un modèle statistique developpé dans le cadre d'un projet de département IMI par <strong>Paul Vandercoilden</strong> et <strong>Oscar Pécoud-Gatti</strong> sous la supervision de <strong>Julien Guyon</strong> :</p>
+                    <ul style="line-height: 1.6; margin-top: 10px;">
+                        <li><strong>Le Classement Elo :</strong> Chaque équipe possède un score de force (Elo) qui évolue après chaque match réel. C'est ce score qui influence le plus sur la probabilité de victoire.</li>
+                        <li><strong>Loi mathématique utilisée :</strong> Pour chaque match simulé, nous utilisons <strong> la loi de Poisson</strong> pour générer des scores réalistes (0-0, 2-1, etc.) basés sur les forces des équipes, jouer à domicile ou pas, etc.</li>
+                        <li><strong>La Méthode de Monte Carlo :</strong> Nous ne simulons pas la saison une seule fois, mais <strong>jusqu'à 1 000 000 de fois</strong>. C'est la moyenne de ces milliers d'univers parallèles qui donne les probabilités affichées (ex: "PSG a 64% de chances de se qualifier").</li>
+                    </ul>
+                </div>
+
+                <div class="about-card" style="margin-top: 30px; text-align: center;">
+                    <h3 style="margin-bottom: 25px;">👥 L'Équipe du Projet</h3>
+                    
+                    <div class="team-grid">
+                        
+                        <div class="team-member">
+                            <div class="member-photo">
+                                <img src="photos/idris.jpg" alt="Idris" onerror="this.src='https://ui-avatars.com/api/?name=Idris+Rayane&background=00D2BE&color=fff'">
+                            </div>
+                            <h4>Idris Rayane MJIDI</h4>
+                            <a href="https://www.linkedin.com/in/idris-rayane-mjidi-17m01i2005r/" target="_blank" class="linkedin-pill">
+                                <i class="fa-brands fa-linkedin"></i> LinkedIn
+                            </a>
+                        </div>
+
+                        <div class="team-member">
+                            <div class="member-photo">
+                                <img src="photos/ilyas.jpg" alt="Ilyas" onerror="this.src='https://ui-avatars.com/api/?name=Ilyas+Zeriouel&background=00D2BE&color=fff'">
+                            </div>
+                            <h4>Ilyas Zeriouel</h4>
+                            <a href="https://www.linkedin.com/in/ilyas-zeriouel-5ba9b5354/" target="_blank" class="linkedin-pill">
+                                <i class="fa-brands fa-linkedin"></i> LinkedIn
+                            </a>
+                        </div>
+
+                        <div class="team-member">
+                            <div class="member-photo">
+                                <img src="photos/houssam.jpg" alt="Houssam" onerror="this.src='https://ui-avatars.com/api/?name=Houssam+Ehmimed&background=00D2BE&color=fff'">
+                            </div>
+                            <h4>Houssam Ehmimed</h4> 
+                            <a href="https://www.linkedin.com/in/houssam-ehmimed-a24911359/" target="_blank" class="linkedin-pill">
+                                <i class="fa-brands fa-linkedin"></i> LinkedIn
+                            </a>
+                        </div>
+
+                        <div class="team-member">
+                            <div class="member-photo">
+                                <img src="https://ui-avatars.com/api/?name=Prenom+Nom4&background=random&size=128&bold=true" alt="Naim">
+                            </div>
+                            <h4>Naim El Oussaidi</h4> 
+                            <a href="https://www.linkedin.com/in/na%C3%AFm-el-ouassaidi-81264a299/" target="_blank" class="linkedin-pill">
+                                <i class="fa-brands fa-linkedin"></i> LinkedIn
+                            </a>
+                        </div>
+
+                    </div>
+
+                    <p style="margin-top: 30px; font-size: 0.9em; color: var(--text-light);">Simulateur Ligue des Champions &copy; 2025/2026</p>
+                </div>
+
+                <div style="text-align:center; margin-top: 40px; color: var(--text-light);">
+                    <p>Site développé par <strong>Idris Rayane MJIDI</strong>, <strong>Ilyas Zeriouel</strong>, <strong>Houssam Ehmimed</strong>, <strong>Naim El Ouassaidi</strong>.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('theme-toggle');
+            
+            body.classList.toggle('dark-mode');
+            
+            const isDark = body.classList.contains('dark-mode');
+            const lang = localStorage.getItem('lang') || 'fr';
+            
+            if (isDark) {
+                const text = lang === 'fr' ? 'Mode Jour' : 'Day Mode';
+                btn.innerHTML = '<i class="fa-solid fa-sun"></i> <span data-i18n="theme_day">' + text + '</span>';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                const text = lang === 'fr' ? 'Mode Nuit' : 'Night Mode';
+                btn.innerHTML = '<i class="fa-solid fa-moon"></i> <span data-i18n="theme_night">' + text + '</span>';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Au chargement de la page : vérifier la préférence sauvegardée
+        window.onload = function() {
+            const savedTheme = localStorage.getItem('theme');
+            const lang = localStorage.getItem('lang') || 'fr';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                const text = lang === 'fr' ? 'Mode Jour' : 'Day Mode';
+                document.getElementById('theme-toggle').innerHTML = '<i class="fa-solid fa-sun"></i> <span data-i18n="theme_day">' + text + '</span>';
+            }
+        };
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>
