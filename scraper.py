@@ -3,7 +3,7 @@ import requests
 import io
 import os
 import re
-from bs4 import BeautifulSoup  # Nécessaire pour les scores précis
+from bs4 import BeautifulSoup
 import time
 from datetime import datetime
 import cloudscraper
@@ -140,7 +140,6 @@ MAPPING_WIKI = {
     "Newcastle Utd": "Newcastle", "Newcastle United": "Newcastle",
     "Pafos": "Paphos",
     "Kairat": "Kairat",
-    # Ajouts de sécurité pour d'autres clubs potentiels LDC 2024/25
     "Milan": "Milan", "Aston Villa": "Aston Villa", "Bologna": "Bologna",
     "Brest": "Brest", "Celtic": "Celtic", "Girona": "Girona",
     "Lille": "Lille", "RB Leipzig": "Leipzig", "Stuttgart": "Stuttgart",
@@ -148,7 +147,6 @@ MAPPING_WIKI = {
     "Sparta Prague": "Sparta Praha", "Sturm Graz": "Sturm Graz", 
     "Feyenoord": "Feyenoord", "Red Star": "Crvena Zvezda", "Slovan Bratislava": "Slovan Bratislava",
 
-    # Mapping API -> Vos Nom
     "Paris Saint-Germain FC": "Paris SG",
     "Real Madrid CF": "Real Madrid",
     "Manchester City FC": "Man City",
@@ -166,10 +164,10 @@ MAPPING_WIKI = {
     "Eintracht Frankfurt": "Frankfurt",
     "Club Brugge KV": "Brugge",
     "PSV": "PSV",
-    "AFC Ajax": "Ajax", # Si qualifié
-    "SSC Napoli": "Napoli", # Si qualifié
+    "AFC Ajax": "Ajax",
+    "SSC Napoli": "Napoli",
     "Sporting Clube de Portugal": "Sporting",
-    "AC Sparta Praha": "Sparta Praha", # Attention confusion possible avec Slavia
+    "AC Sparta Praha": "Sparta Praha",
     "SK Slavia Praha": "Slavia Praha",
     "Feyenoord Rotterdam": "Feyenoord",
     "AC Milan": "Milan",

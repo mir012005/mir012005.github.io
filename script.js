@@ -1,4 +1,3 @@
-
 // SYSTÈME DE TRADUCTION FR/EN (Incomplète par manque de temps)
 const TRANSLATIONS = {
     fr: {
